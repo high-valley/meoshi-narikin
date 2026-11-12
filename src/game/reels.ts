@@ -43,6 +43,8 @@ export interface PressOpts {
   /** 出してはいけないボーナスの形（右リールの図柄） */
   noBonusLine?: Sym[] | null;
   centerOnly?: boolean;
+  /** 止まっているリールとのつながりを見ずに、狙いの図柄が見えれば当たりにする（八門の扉チャンス） */
+  free?: boolean;
   last?: boolean;
 }
 
@@ -129,7 +131,7 @@ export function pressL(rs: Reel[], i: number, t: number, target: Sym | null, o: 
     const f = base + s, rows: number[] = [];
     if (target && s <= pull)
       for (const row of (o.centerOnly ? [1] : [1, 0, 2]))
-        if (symAt(r, f, row) === target && LINES.some(L => L[i] === row && o.done.every((df, j) => j === i || df == null || symAt(rs[j], df, L[j]) === (o.tgs ? o.tgs[j] : target))))
+        if (symAt(r, f, row) === target && (o.free || LINES.some(L => L[i] === row && o.done.every((df, j) => j === i || df == null || symAt(rs[j], df, L[j]) === (o.tgs ? o.tgs[j] : target)))))
           rows.push(row);
     cand.push({ s, f, rows });
   }
