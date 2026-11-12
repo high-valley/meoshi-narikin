@@ -110,8 +110,8 @@ button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
 .verbox{display:flex;flex-direction:column;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--dim)}
 .verbox .newer{color:var(--gold);font-weight:700}
 .verbox .btn{margin-top:4px}
-/* 新しい版の知らせ。打っている最中（リールの画面）は出さない */
-.upd-note{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:19;display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--gold);border-radius:999px;padding:5px 6px 5px 14px;font-size:13px;color:var(--paper);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+/* 新しい版の知らせ（ホーム画面の上だけ） */
+.upd-note{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--gold);border-radius:12px;padding:6px 6px 6px 12px;font-size:13px;color:var(--paper)}
+.upd-note span{flex:1;min-width:0}
 .upd-note button{font:inherit;font-size:12px;min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--gold);background:none;color:var(--gold);cursor:pointer}
 .upd-note .u-close{min-width:34px;padding:0;border-color:var(--line);color:var(--dim)}
-body:has(#reels) .upd-note{display:none}

@@ -187,7 +187,7 @@ function renderHome(){
   stopReelsLoop();status();
   const H=HOMES[S.home],inv=Object.entries(S.inv).filter(([,n])=>n>0);
   const ev=dailyEffects(S.placed,S.home,has('house')?5:0);
-  $('#view').innerHTML=`
+  $('#view').innerHTML=`${updNote()}
     <p class="sub">${isEvent(S.day)?'<b style="color:var(--neon)">今日は7のつく日。</b>どの店も設定が入りやすいが、整理券の抽選がある':`次のイベント日（7のつく日）まで あと${(17-S.day%10)%10||10}日`}</p>
     <div class="room"><canvas id="room" width="${H.w*16}" height="${H.h*16+20}" aria-label="部屋"></canvas></div>
     ${inv.length||selItem?`<div class="ch">持ち物（選んでから空いている床をタップ。置いた家具をタップで片付け）</div><div class="inv">${inv.map(([id,n])=>`<button class="chip" type="button" data-a="sel" data-id="${id}" aria-pressed="${selItem===id}"><canvas width="16" height="16" data-icon="${id}"></canvas>${ITEMS[id].n}×${n}</button>`).join('')}</div>`:'<p class="sub">家具をタップすると片付けられます。</p>'}
@@ -595,7 +595,8 @@ function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
 $('#view').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a,i=+b.dataset.i,id=b.dataset.id;
   if(a==='home'){selItem=null;renderHome()}
-  else if(a==='update'){save();reloadToLatest(latestBuild)}
+  else if(a==='update'){if(P)return;save();reloadToLatest(latestBuild)}
+  else if(a==='updClose'){noteClosed=true;const n=$('#updNote');if(n)n.remove()}
   else if(a==='sel'){selItem=selItem===id?null:id;renderHome()}
   else if(a==='food'){status();$('#view').innerHTML=shopHTML('ごはん',FOODS,'eat')}
   else if(a==='fun'){status();$('#view').innerHTML=shopHTML('息抜き',PLAYS,'play')}
@@ -634,16 +635,14 @@ document.addEventListener('keydown',e=>{
 let latestBuild=null,latestState='checking',lastCheck=0;
 function verText(){if(latestState==='checking')return '最新の版を確かめています…';if(latestState==='none')return '最新の版を確かめられませんでした（通信できないときなど）';if(latestState==='same')return 'これが最新の版です';return '新しい版があります：'+buildLabel(latestBuild)}
 function verBox(){return `<section class="verbox" aria-label="アプリの版"><p>今の版：${buildLabel(CURRENT_BUILD)}</p><p class="v-latest${latestState==='newer'?' newer':''}" aria-live="polite">${verText()}</p><button class="btn${latestState==='newer'?'':' alt'}" type="button" data-a="update">${latestState==='newer'?'最新の版に更新する':'読み直す'}</button></section>`}
+// 新しい版の知らせはホーム画面の上にだけ出す（打っている最中・ルーレット・バイトの途中では読み直せないように）
+let noteClosed=false;
+function updNote(){return latestState==='newer'&&!noteClosed?'<div class="upd-note" id="updNote" role="status"><span>新しい版があります</span><button type="button" data-a="update">更新する</button><button type="button" class="u-close" data-a="updClose" aria-label="とじる">×</button></div>':''}
 function checkLatest(){lastCheck=Date.now();fetchLatestBuild().then(l=>{
-  latestBuild=l;latestState=!l?'none':l.id===CURRENT_BUILD.id||CURRENT_BUILD.id==='dev'?'same':'newer';
-  const v=$('.verbox');if(v)v.outerHTML=verBox();
-  const old=$('#updNote');if(old)old.remove();
-  if(latestState!=='newer')return;
-  const n=document.createElement('div');n.id='updNote';n.className='upd-note';n.setAttribute('role','status');
-  n.innerHTML='<span>新しい版があります</span><button type="button" class="u-go">更新する</button><button type="button" class="u-close" aria-label="とじる">×</button>';
-  n.querySelector('.u-go').addEventListener('click',()=>{save();reloadToLatest(latestBuild)});
-  n.querySelector('.u-close').addEventListener('click',()=>n.remove());
-  document.body.append(n)})}
+  latestBuild=l;latestState=CURRENT_BUILD.id==='dev'||(l&&l.id===CURRENT_BUILD.id)?'same':!l?'none':'newer';
+  const v=$('.verbox');if(!v)return;
+  v.outerHTML=verBox();const old=$('#updNote');if(old)old.remove();
+  if(updNote())$('#view').insertAdjacentHTML('afterbegin',updNote())})}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastCheck>10*60*1000)checkLatest()});
 checkLatest();
 loadSymbols(()=>{const st=$('#stripT');if(st)drawStripTable(st)});
