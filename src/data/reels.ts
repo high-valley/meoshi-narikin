@@ -8,11 +8,11 @@ export const MAX_SLIP = 4;
 
 // 番号が大きいほど上（上から下へ流れる）。
 // ベルとリプレイは最大5コマ間隔で、順押しなら必ずそろう。左のチェリーはBARの真下、
-// スイカは左でBARの3コマ上・中右でBARの2コマ上。右は赤7の2コマ上にBAR（REGで滑ってくる）
+// スイカは左でBARの3コマ上・中右でBARの2コマ上。右は赤7とBARが1つずつで、赤7の2コマ上にBAR（1周に1か所だけの目印。REGで滑ってくる）
 export const STRIPS: Sym[][] = [
   ['R7','RP','R7','BL','RP','BL','CH','BAR','RP','BL','WM','RP','RP','RP','BL','CH','BAR','RP','BL','WM','BL'],
   ['R7','BL','RP','RP','BL','BAR','RP','WM','RP','BL','R7','RP','RP','RP','BL','BAR','RP','WM','BL','BL','RP'],
-  ['R7','RP','BAR','BL','WM','RP','BL','BL','BL','RP','BL','R7','RP','BAR','BL','WM','RP','RP','RP','BL','BL'],
+  ['R7','RP','BAR','BL','WM','RP','BL','BL','BL','RP','BL','RP','RP','BL','BL','WM','RP','RP','RP','BL','BL'],
 ];
 
 /** 左リールの「赤7・リプレイ・赤7」の真ん中のリプレイ（福招きBIG中のビタ押しポイント） */
@@ -32,10 +32,10 @@ export const SYMBOL_SCALE: Partial<Record<Sym, number>> = { BL: .72, RP: .72, WM
 
 /**
  * ボーナス図柄の光（実機のリールで、ボーナス図柄だけ明るく見えて狙いやすいのに合わせる）。
- * back は図柄の後ろを照らす光（reach は枠の大きさに対する広がり）、halo は図柄の縁の光（blur は図柄の高さに対する割合）
+ * panel は図柄の枠全体を照らす明かり、halo は図柄の縁の光（blur は図柄の高さに対する割合）
  */
-export const SYMBOL_GLOW: Partial<Record<Sym, { back: string; reach: number; halo: string; blur: number }>> = {
-  R7: { back: 'rgba(255,226,120,.95)', reach: .62, halo: 'rgba(255,190,40,1)', blur: .22 },
-  BAR: { back: 'rgba(255,226,120,.95)', reach: .62, halo: 'rgba(255,200,40,1)', blur: .22 },
-  B7: { back: 'rgba(150,215,255,.9)', reach: .62, halo: 'rgba(60,170,255,1)', blur: .22 },
+export const SYMBOL_GLOW: Partial<Record<Sym, { panel: string; edge: string; halo: string; blur: number }>> = {
+  R7: { panel: 'rgba(255,238,150,1)', edge: 'rgba(255,165,25,.95)', halo: 'rgba(255,170,20,1)', blur: .2 },
+  BAR: { panel: 'rgba(255,238,150,1)', edge: 'rgba(255,165,25,.95)', halo: 'rgba(255,190,30,1)', blur: .2 },
+  B7: { panel: 'rgba(210,240,255,1)', edge: 'rgba(80,180,255,.85)', halo: 'rgba(40,150,255,1)', blur: .2 },
 };
