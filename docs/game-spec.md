@@ -1,7 +1,7 @@
 # 目押し成金（仮） 仕様書 v0.9
 
-試作品：`prototype/narikin.html`（ブラウザで開けば遊べる単一ファイル）
-この仕様書は、試作品の実装値をそのまま記録したもの。数値はすべて調整前の暫定値。
+公開版：https://high-valley.github.io/meoshi-narikin/ 　試作品（参考用の単一ファイル）：`prototype/narikin.html`
+数値はすべて調整前の暫定値。コードでは `src/data/` に置く。
 
 ---
 
@@ -83,7 +83,7 @@
 | 19 | スイカ | ベル | ベル |
 | 20 | ベル | リプレイ | ベル |
 
-※ 正確な値は `prototype/narikin.html` の `STRIPS` が正。
+※ 正確な値は `src/data/reels.ts` の `STRIPS` が正。
 
 設計の約束：
 - 左のチェリーはBARの真下。スイカは左でBARの3コマ上、中右でBARの2コマ上。→「BARを上段に狙う（BAR狙い）」でチェリー・スイカを取りこぼさない。
