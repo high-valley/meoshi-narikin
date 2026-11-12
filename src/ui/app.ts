@@ -7,7 +7,7 @@ import { MACH, PAY, BITA_OK, BITA_NG, REG_G, REG_PAY, BIG_G, AT_G, AT_ADD, DOOR_
 import { roll, atRoll, pickSetting, isEvent } from '../game/machines';
 import { HOMES, HALLS, FOODS, PLAYS, ITEMS } from '../data/life';
 import { dailyEffects } from '../game/life';
-import { CURRENT_BUILD, buildLabel } from '../version';
+import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 
 export function startApp(){
@@ -205,7 +205,7 @@ function renderHome(){
       <button class="cmd" type="button" data-a="sleep"><b>寝る</b><span>次の日へ</span></button>
     </div>
     ${S.hist.length?`<div class="log"><span>最近の収支</span>${S.hist.slice(-4).reverse().map(h=>`<span>${h.day}日目 ${h.hall} ${h.m}：<b class="${h.v>=0?'pos':'neg'}">${h.v>=0?'+':''}${yen(h.v)}</b></span>`).join('')}</div>`:''}
-    <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p><p class="ver">${buildLabel(CURRENT_BUILD)}</p>`;
+    <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>${verBox()}`;
   document.querySelectorAll('[data-icon]').forEach(cv=>drawItem(cv.getContext('2d'),cv.dataset.icon,0,0));
   const cv=$('#room'),c=cv.getContext('2d');c.imageSmoothingEnabled=false;cv.style.maxWidth=Math.round(Math.min(window.innerHeight*.36,320)*cv.width/cv.height)+'px';cv.style.margin='0 auto';
   cancelAnimationFrame(roomRAF);const loop=t=>{if(!document.body.contains(cv))return;drawRoom(c,S.home,S.placed,selItem,t);roomRAF=requestAnimationFrame(loop)};roomRAF=requestAnimationFrame(loop);
@@ -595,6 +595,7 @@ function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
 $('#view').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a,i=+b.dataset.i,id=b.dataset.id;
   if(a==='home'){selItem=null;renderHome()}
+  else if(a==='update'){save();reloadToLatest(latestBuild)}
   else if(a==='sel'){selItem=selItem===id?null:id;renderHome()}
   else if(a==='food'){status();$('#view').innerHTML=shopHTML('ごはん',FOODS,'eat')}
   else if(a==='fun'){status();$('#view').innerHTML=shopHTML('息抜き',PLAYS,'play')}
@@ -628,6 +629,23 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();lever()}
   const k={KeyJ:0,KeyK:1,KeyL:2}[e.code];if(k!==undefined)stopAt(k,e);
 });
+// 版の確認。起動したときと、しばらくしてアプリに戻ってきたときに、公開されている最新の版と比べる
+// （ホーム画面に置いたアプリは閉じても読み直されないことがあるので、更新ボタンで読み直せるようにする）
+let latestBuild=null,latestState='checking',lastCheck=0;
+function verText(){if(latestState==='checking')return '最新の版を確かめています…';if(latestState==='none')return '最新の版を確かめられませんでした（通信できないときなど）';if(latestState==='same')return 'これが最新の版です';return '新しい版があります：'+buildLabel(latestBuild)}
+function verBox(){return `<section class="verbox" aria-label="アプリの版"><p>今の版：${buildLabel(CURRENT_BUILD)}</p><p class="v-latest${latestState==='newer'?' newer':''}" aria-live="polite">${verText()}</p><button class="btn${latestState==='newer'?'':' alt'}" type="button" data-a="update">${latestState==='newer'?'最新の版に更新する':'読み直す'}</button></section>`}
+function checkLatest(){lastCheck=Date.now();fetchLatestBuild().then(l=>{
+  latestBuild=l;latestState=!l?'none':l.id===CURRENT_BUILD.id||CURRENT_BUILD.id==='dev'?'same':'newer';
+  const v=$('.verbox');if(v)v.outerHTML=verBox();
+  const old=$('#updNote');if(old)old.remove();
+  if(latestState!=='newer')return;
+  const n=document.createElement('div');n.id='updNote';n.className='upd-note';n.setAttribute('role','status');
+  n.innerHTML='<span>新しい版があります</span><button type="button" class="u-go">更新する</button><button type="button" class="u-close" aria-label="とじる">×</button>';
+  n.querySelector('.u-go').addEventListener('click',()=>{save();reloadToLatest(latestBuild)});
+  n.querySelector('.u-close').addEventListener('click',()=>n.remove());
+  document.body.append(n)})}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastCheck>10*60*1000)checkLatest()});
+checkLatest();
 loadSymbols(()=>{const st=$('#stripT');if(st)drawStripTable(st)});
 route();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(P)layout()});
