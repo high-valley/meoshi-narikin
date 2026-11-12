@@ -32,10 +32,13 @@ function render(im: HTMLImageElement, k: Sym, pw: number, ph: number, glow: bool
   const r = Math.min(pw / im.naturalWidth, ph / im.naturalHeight), dw = im.naturalWidth * r, dh = im.naturalHeight * r;
   const dx = m + (pw - dw) / 2, dy = m + (ph - dh) / 2;
   if (g) {
-    const cx = m + pw / 2, cy = m + ph / 2, bg = c.createRadialGradient(cx, cy, 0, cx, cy, pw * g.reach);
-    bg.addColorStop(0, g.back); bg.addColorStop(1, 'rgba(255,255,255,0)');
-    c.save(); c.translate(cx, cy); c.scale(1, ph / pw); c.translate(-cx, -cy);
-    c.fillStyle = bg; c.fillRect(-1e4, -1e4, 2e4, 2e4); c.restore();
+    // 枠全体を裏から照らす（真ん中が明るく、縁が金色）
+    const bg = c.createRadialGradient(m + pw / 2, m + ph / 2, ph * .15, m + pw / 2, m + ph / 2, pw * .62);
+    bg.addColorStop(0, g.panel); bg.addColorStop(1, g.edge);
+    c.save(); c.shadowColor = g.edge; c.shadowBlur = g.blur * ph;
+    c.beginPath();
+    if (c.roundRect) c.roundRect(m + pw * .02, m + ph * .04, pw * .96, ph * .92, ph * .12); else c.rect(m + pw * .02, m + ph * .04, pw * .96, ph * .92);
+    c.fillStyle = bg; c.fill(); c.restore();
     c.shadowColor = g.halo; c.shadowBlur = g.blur * ph;
     c.drawImage(im, dx, dy, dw, dh);
     c.shadowBlur = 0; c.shadowColor = 'transparent';
