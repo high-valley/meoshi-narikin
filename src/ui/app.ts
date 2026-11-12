@@ -8,6 +8,7 @@ import { roll, atRoll, pickSetting, isEvent } from '../game/machines';
 import { HOMES, HALLS, FOODS, PLAYS, ITEMS } from '../data/life';
 import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel } from '../version';
+import { loadSymbols, drawSymImage } from './symbols';
 
 export function startApp(){
 
@@ -42,7 +43,9 @@ const ACH=[
 ];
 const has=id=>!!(S.ach&&S.ach[id]);
 function grant(id){if(has(id))return;const a=ACH.find(x=>x.id===id);S.ach[id]=S.day;S.title=a.n;if(a.give)a.give();save();setTimeout(()=>{cutin('実績 '+a.n);toast('実績「'+a.n+'」　'+a.r)},300)}
-function drawSym(c,k,x,y,w,h){
+// 画像が読み込めていればそれを描き、まだなら手描きの図柄。glow はリール上でボーナス図柄を光らせる
+function drawSym(c,k,x,y,w,h,glow=false){
+  if(drawSymImage(c,k,x,y,w,h,glow))return;
   const big=k==='R7'||k==='B7'||k==='BAR';
   if(!big){x+=w*.17;y+=h*.12;w*=.66;h*=.76}
   const cx=x+w/2,cy=y+h/2;
@@ -84,7 +87,7 @@ function drawReels(now){
   reels.forEach((r,n)=>{
     const x=PAD+n*(RW+GAP),y0=PAD,cy=y0+1.5*RH,p=posAt(r,now);
     c.save();rr(c,x,y0,RW,3*RH,6);c.clip();c.fillStyle='#f4efe2';c.fillRect(x,y0,RW,3*RH);
-    for(let i=Math.floor(p)-2;i<=Math.ceil(p)+2;i++){const yc=cy+(p-i)*RH;drawSym(c,r.strip[mod(i)],x,yc-RH/2,RW,RH)}
+    for(let i=Math.floor(p)-2;i<=Math.ceil(p)+2;i++){const yc=cy+(p-i)*RH;drawSym(c,r.strip[mod(i)],x,yc-RH/2,RW,RH,true)}
     const g=c.createLinearGradient(0,y0,0,y0+3*RH);g.addColorStop(0,'rgba(21,16,31,.45)');g.addColorStop(.22,'rgba(21,16,31,0)');g.addColorStop(.78,'rgba(21,16,31,0)');g.addColorStop(1,'rgba(21,16,31,.45)');
     c.fillStyle=g;c.fillRect(x,y0,RW,3*RH);c.restore();
     if(r.noSlip){c.strokeStyle='#ff3b6b';c.lineWidth=3;rr(c,x-1,y0-1,RW+2,3*RH+2,7);c.stroke()}
@@ -625,6 +628,7 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();lever()}
   const k={KeyJ:0,KeyK:1,KeyL:2}[e.code];if(k!==undefined)stopAt(k,e);
 });
+loadSymbols(()=>{const st=$('#stripT');if(st)drawStripTable(st)});
 route();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(P)layout()});
 
