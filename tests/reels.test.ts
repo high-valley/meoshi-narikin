@@ -57,10 +57,10 @@ describe('リール配列', () => {
       }
     }
   });
-  it('左のチェリーはBARの真下、赤7は左と中に2つ、右は赤7とBARが1つずつで1か所にまとまる', () => {
+  it('左のチェリーはBARの真下、赤7は左に2つ・中と右に1つ、右は赤7とBARが1か所にまとまる', () => {
     STRIPS[0].forEach((x, i) => { if (x === 'CH') expect(STRIPS[0][mod(i + 1)]).toBe('BAR'); });
-    for (const st of STRIPS.slice(0, 2)) expect(st.filter(x => x === 'R7').length).toBe(2);
-    expect(STRIPS[2].filter(x => x === 'R7').length).toBe(1);
+    expect(STRIPS[0].filter(x => x === 'R7').length).toBe(2);
+    for (const st of STRIPS.slice(1)) expect(st.filter(x => x === 'R7').length).toBe(1);
     expect(STRIPS[2].filter(x => x === 'BAR').length).toBe(1);
     STRIPS[2].forEach((x, i) => { if (x === 'R7') expect(STRIPS[2][mod(i + 2)]).toBe('BAR'); });
   });

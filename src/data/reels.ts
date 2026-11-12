@@ -8,10 +8,10 @@ export const MAX_SLIP = 4;
 
 // 番号が大きいほど上（上から下へ流れる）。
 // ベルとリプレイは最大5コマ間隔で、順押しなら必ずそろう。左のチェリーはBARの真下、
-// スイカは左でBARの3コマ上・中右でBARの2コマ上。右は赤7とBARが1つずつで、赤7の2コマ上にBAR（1周に1か所だけの目印。REGで滑ってくる）
+// スイカは左でBARの3コマ上・中右でBARの2コマ上。中の赤7は1つ。右は赤7とBARが1つずつで、赤7の2コマ上にBAR（1周に1か所だけの目印。REGで滑ってくる）
 export const STRIPS: Sym[][] = [
   ['R7','RP','R7','BL','RP','BL','CH','BAR','RP','BL','WM','RP','RP','RP','BL','CH','BAR','RP','BL','WM','BL'],
-  ['R7','BL','RP','RP','BL','BAR','RP','WM','RP','BL','R7','RP','RP','RP','BL','BAR','RP','WM','BL','BL','RP'],
+  ['R7','BL','RP','RP','BL','BAR','RP','WM','RP','BL','BL','RP','RP','RP','BL','BAR','RP','WM','BL','BL','RP'],
   ['R7','RP','BAR','BL','WM','RP','BL','BL','BL','RP','BL','RP','RP','BL','BL','WM','RP','RP','RP','BL','BL'],
 ];
 
