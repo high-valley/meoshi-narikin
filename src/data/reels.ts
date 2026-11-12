@@ -21,3 +21,18 @@ export const BITA_IDX = 1;
 /** 有効ライン（段：0上段・1中段・2下段）。上段・中段・下段・右下がり・右上がり */
 export const LINES: readonly (readonly [number, number, number])[] = [[0,0,0],[1,1,1],[2,2,2],[0,1,2],[2,1,0]];
 export const LINE_NAMES = ['上段','中段','下段','右下がり','右上がり'];
+
+/** 図柄の画像（public/symbols/ のファイル名） */
+export const SYMBOL_FILES: Record<Sym, string> = {
+  R7: 'r7.webp', B7: 'b7.webp', BAR: 'bar.webp', BL: 'bell.webp', RP: 'replay.webp', WM: 'watermelon.webp', CH: 'cherry.webp',
+};
+
+/**
+ * ボーナス図柄の光（実機のリールで、ボーナス図柄だけ明るく見えて狙いやすいのに合わせる）。
+ * back は図柄の後ろを照らす光（reach は枠の大きさに対する広がり）、halo は図柄の縁の光（blur は図柄の高さに対する割合）
+ */
+export const SYMBOL_GLOW: Partial<Record<Sym, { back: string; reach: number; halo: string; blur: number }>> = {
+  R7: { back: 'rgba(255,226,120,.75)', reach: .55, halo: 'rgba(255,190,40,.95)', blur: .16 },
+  BAR: { back: 'rgba(255,226,120,.75)', reach: .55, halo: 'rgba(255,200,40,.95)', blur: .16 },
+  B7: { back: 'rgba(150,215,255,.7)', reach: .55, halo: 'rgba(60,170,255,.95)', blur: .16 },
+};
