@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STRIPS, N, MAX_SLIP, type Sym } from '../src/data/reels';
+import { STRIPS, N, MAX_SLIP, LINES, type Sym } from '../src/data/reels';
 import { bonusLines, lineWins, mod, symAt, type PressOpts } from '../src/game/reels';
 import { playGame, rng } from './helpers';
 
@@ -98,6 +98,17 @@ describe('停止制御の約束（仕様書 4.3）', () => {
       expect(bonusLines(h.fs, h.rs, 'R7').length + bonusLines(h.fs, h.rs, 'BAR').length).toBe(0);
     }
   }, 120000);
+
+  it('左と中で7のラインができていれば、右にはそろえられる押し位置が必ずある', () => {
+    const lineOK = (fs: number[], right: Sym) => LINES.some(L => symAt(rs[0], fs[0], L[0]) === 'R7' && symAt(rs[1], fs[1], L[1]) === 'R7' && symAt(rs[2], fs[2], L[2]) === right);
+    for (const right of ['R7', 'BAR'] as Sym[])
+      for (let a = 0; a < N; a++) for (let c = 0; c < N; c++) {
+        if (!LINES.some(L => symAt(rs[0], a, L[0]) === 'R7' && symAt(rs[1], c, L[1]) === 'R7')) continue;
+        let hits = 0;
+        for (let b = 0; b < N; b++) if ([0, 1, 2, 3, 4].some(s => lineOK([a, c, mod(b + s)], right))) hits++;
+        expect(hits).toBeGreaterThan(0);
+      }
+  });
 
   it('ボーナスは 7・7・7（BIG）と 7・7・BAR（REG）でそろい、逆の形は出ない', () => {
     const r = rng(3);

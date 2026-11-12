@@ -420,7 +420,7 @@ function renderPlay(){
   <div class="grid2"><button class="cmd" type="button" data-a="auto" ${busyBonus||P.spinning?'disabled':''}><b>10G 回す</b><span>適当打ちで消化。ボーナスで止まる</span></button>
   <button class="cmd" type="button" data-a="quit" ${busyBonus||P.spinning?'disabled':''}><b>やめる</b><span>メダルを換金して帰る</span></button></div>
   <details class="strip"><summary>配当表と遊び方</summary>${payHTML()}</details>
-  <details class="strip"><summary>リール配列表（上から下へ流れる）</summary><p class="sub">左リールのチェリーはBARの真下、スイカは各リールのBARの2コマ上にあります。赤7は各リールに2つ。左リールの「7・リプレイ・7」の並びがBIG中のビタ押しポイントです。BARが上段に来るタイミング（枠の上から入ってきた瞬間）で押せば、どちらも取りこぼしません。</p><canvas id="stripT" aria-label="リール配列表"></canvas></details>
+  <details class="strip"><summary>リール配列表（上から下へ流れる）</summary><p class="sub">左リールのチェリーはBARの真下、スイカは左でBARの3コマ上、中でBARの2コマ上、右はBARの2コマ上ともう1か所にあります。赤7は左と中に2つ、右は「7・リプレイ・BAR」の1か所だけ。左リールの「7・リプレイ・7」の並びがBIG中のビタ押しポイントです。BARが上段に来るタイミング（枠の上から入ってきた瞬間）で押せば、どちらも取りこぼしません。</p><canvas id="stripT" aria-label="リール配列表"></canvas></details>
   <p class="sub">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}${P.log.slice(-2).join('　')}</p>`;
   bindCabinet();sync();const st=$('#stripT');if(st){drawStripTable(st);st.style.width=(st.width/2)+'px'}
 }
