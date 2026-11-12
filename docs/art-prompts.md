@@ -57,3 +57,15 @@ A pair of two round red cherries symbol, joined by two green stems meeting at th
 ```
 A big bold number "7" symbol, same shape as a red seven but in deep royal blue with a bright azure gradient, thick opaque white inner outline then a black outer outline, glossy highlight streak on the upper part, fills the full width of the frame, cool and mysterious feeling
 ```
+
+## アプリのアイコン（app-icon）
+
+正方形・背景あり（iPhone のホーム画面のアイコンは透過にできない）、文字なし、角は四角のまま（丸みは端末が付ける）。使ったのは案B。
+
+```
+mobile game app icon, square 1:1, 1024x1024, full-bleed background with no transparency, no rounded corners, bold simple composition readable at very small size, single clear focal point, glossy enamel-like rendering with bold thick black outlines matching a Japanese pachislot reel symbol style, rich saturated colors, no text, no letters, no logo, no border frame, original design not resembling any existing slot machine or game
+```
+
+```
+A big bold number "7" made of shiny solid gold with a red enamel inner stripe, standing on a small pile of gold coins, sparkles and a soft golden aura, a tiny glimpse of a city skyline with a tall tower apartment silhouette in the background at night, deep navy-purple background
+```
