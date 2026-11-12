@@ -1,5 +1,5 @@
 // リールの図柄の画像。読み込みが済むまでは呼び出し側の手描きの図柄を使う
-import { SYMBOL_FILES, SYMBOL_GLOW, type Sym } from '../data/reels';
+import { SYMBOL_FILES, SYMBOL_GLOW, SYMBOL_SCALE, type Sym } from '../data/reels';
 
 const imgs = new Map<Sym, HTMLImageElement>();
 // 拡大・縮小と光の処理を毎フレームしないよう、表示する大きさごとに描いておく
@@ -51,6 +51,8 @@ function render(im: HTMLImageElement, k: Sym, pw: number, ph: number, glow: bool
 export function drawSymImage(c: CanvasRenderingContext2D, k: Sym, x: number, y: number, w: number, h: number, glow = false): boolean {
   const im = imgs.get(k);
   if (!im) return false;
+  const sc = SYMBOL_SCALE[k] ?? 1;
+  if (sc !== 1) { x += w * (1 - sc) / 2; y += h * (1 - sc) / 2; w *= sc; h *= sc; }
   const t = c.getTransform(), s = Math.hypot(t.a, t.b) || 1;
   const pw = Math.max(1, Math.round(w * s)), ph = Math.max(1, Math.round(h * s)), lit = glow && !!SYMBOL_GLOW[k];
   const key = `${k}:${pw}:${ph}:${lit ? 1 : 0}`;

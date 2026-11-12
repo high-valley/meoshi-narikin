@@ -27,12 +27,15 @@ export const SYMBOL_FILES: Record<Sym, string> = {
   R7: 'r7.webp', B7: 'b7.webp', BAR: 'bar.webp', BL: 'bell.webp', RP: 'replay.webp', WM: 'watermelon.webp', CH: 'cherry.webp',
 };
 
+/** 図柄を描く大きさ（枠に対する割合）。ボーナス図柄を目立たせるため、ほかの図柄は小さめに描く */
+export const SYMBOL_SCALE: Partial<Record<Sym, number>> = { BL: .72, RP: .72, WM: .72, CH: .72 };
+
 /**
  * ボーナス図柄の光（実機のリールで、ボーナス図柄だけ明るく見えて狙いやすいのに合わせる）。
  * back は図柄の後ろを照らす光（reach は枠の大きさに対する広がり）、halo は図柄の縁の光（blur は図柄の高さに対する割合）
  */
 export const SYMBOL_GLOW: Partial<Record<Sym, { back: string; reach: number; halo: string; blur: number }>> = {
-  R7: { back: 'rgba(255,226,120,.75)', reach: .55, halo: 'rgba(255,190,40,.95)', blur: .16 },
-  BAR: { back: 'rgba(255,226,120,.75)', reach: .55, halo: 'rgba(255,200,40,.95)', blur: .16 },
-  B7: { back: 'rgba(150,215,255,.7)', reach: .55, halo: 'rgba(60,170,255,.95)', blur: .16 },
+  R7: { back: 'rgba(255,226,120,.95)', reach: .62, halo: 'rgba(255,190,40,1)', blur: .22 },
+  BAR: { back: 'rgba(255,226,120,.95)', reach: .62, halo: 'rgba(255,200,40,1)', blur: .22 },
+  B7: { back: 'rgba(150,215,255,.9)', reach: .62, halo: 'rgba(60,170,255,1)', blur: .22 },
 };
