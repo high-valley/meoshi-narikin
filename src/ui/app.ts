@@ -55,14 +55,14 @@ function drawSym(c,k,x,y,w,h,glow=false){
     c.lineWidth=h*.13;c.strokeStyle='#15101f';c.strokeText('7',0,0);c.lineWidth=h*.06;c.strokeStyle='#ffffff';c.strokeText('7',0,0);
     c.fillStyle=k==='R7'?'#e3203f':'#2a6fe0';c.fillText('7',0,0);
   }else if(k==='BAR'){
-    const bw=w*.94,bh=h*.64,top=cy-bh/2,sk=bh*.32,L=cx-bw/2,Rr=cx+bw/2;
-    const para=(ins)=>{c.beginPath();c.moveTo(L+sk+ins*1.4,top+ins);c.lineTo(Rr-ins,top+ins);c.lineTo(Rr-sk-ins*1.4,top+bh-ins);c.lineTo(L+ins,top+bh-ins);c.closePath()};
-    para(0);c.fillStyle='#15101f';c.fill();
-    para(h*.04);const gg=c.createLinearGradient(0,top,0,top+bh);gg.addColorStop(0,'#fff1a8');gg.addColorStop(.5,'#ffcf4a');gg.addColorStop(1,'#b8860b');c.fillStyle=gg;c.fill();
-    para(h*.1);const g2=c.createLinearGradient(0,top,0,top+bh);g2.addColorStop(0,'#ff5c7a');g2.addColorStop(.55,'#c8102e');g2.addColorStop(1,'#5c0820');c.fillStyle=g2;c.fill();
-    c.save();c.translate(cx,cy+bh*.04);c.transform(1,0,-.28,1,0,0);c.scale(1.45,1);c.font=`${bh*.6}px "Dela Gothic One",sans-serif`;c.textAlign='center';c.textBaseline='middle';
-    c.lineWidth=bh*.14;c.strokeStyle='#15101f';c.strokeText('BAR',0,0);c.fillStyle='#ffffff';c.fillText('BAR',0,0);c.restore();
-    c.fillStyle='#ffffff';c.fillRect(L+sk+h*.14,top+h*.13,bw*.22,Math.max(1,h*.035));
+    const bw=w*.94,bh=h*.64,top=cy-bh/2,L=cx-bw/2,rad=bh*.22;
+    rr(c,L,top,bw,bh,rad);c.fillStyle='#15101f';c.fill();
+    const gg=c.createLinearGradient(0,top,0,top+bh);gg.addColorStop(0,'#fff1a8');gg.addColorStop(.5,'#ffcf4a');gg.addColorStop(1,'#b8860b');
+    rr(c,L+h*.03,top+h*.03,bw-h*.06,bh-h*.06,rad*.85);c.fillStyle=gg;c.fill();
+    rr(c,L+h*.08,top+h*.08,bw-h*.16,bh-h*.16,rad*.6);c.fillStyle='#0d0a12';c.fill();
+    c.fillStyle=gg;c.fillRect(L+h*.13,top+h*.12,bw-h*.26,Math.max(1,h*.025));c.fillRect(L+h*.13,top+bh-h*.12-Math.max(1,h*.025),bw-h*.26,Math.max(1,h*.025));
+    c.save();c.translate(cx,cy+bh*.03);c.scale(1.3,1);c.font=`${bh*.5}px "Dela Gothic One",sans-serif`;c.textAlign='center';c.textBaseline='middle';
+    c.lineWidth=bh*.08;c.strokeStyle='#15101f';c.strokeText('BAR',0,0);c.fillStyle=gg;c.fillText('BAR',0,0);c.restore();
   }else if(k==='BL'){
     const b=h*.4;c.fillStyle='#f0b400';c.strokeStyle='#15101f';c.lineWidth=h*.06;
     c.beginPath();c.moveTo(cx-b*.95,cy+b*.7);c.quadraticCurveTo(cx-b*.6,cy+b*.45,cx-b*.62,cy);c.quadraticCurveTo(cx-b*.6,cy-b*.95,cx,cy-b*.98);c.quadraticCurveTo(cx+b*.6,cy-b*.95,cx+b*.62,cy);c.quadraticCurveTo(cx+b*.6,cy+b*.45,cx+b*.95,cy+b*.7);c.closePath();c.fill();c.stroke();

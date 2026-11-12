@@ -5,20 +5,26 @@ const imgs = new Map<Sym, HTMLImageElement>();
 // 拡大・縮小と光の処理を毎フレームしないよう、表示する大きさごとに描いておく
 const cache = new Map<string, HTMLCanvasElement>();
 
+/** 全部そろってから画像に切り替える（画像と手描きが混ざらないように）。1枚でも失敗したら手描きのまま */
 export function loadSymbols(onReady: () => void): void {
-  let left = 0;
-  for (const [k, file] of Object.entries(SYMBOL_FILES) as [Sym, string][]) {
+  const list = Object.entries(SYMBOL_FILES) as [Sym, string][], got = new Map<Sym, HTMLImageElement>();
+  let left = list.length, failed = false;
+  const done = () => {
+    if (--left > 0) return;
+    if (failed) { console.warn('図柄の画像を読み込めなかったので、手描きの図柄を使います'); return; }
+    for (const [k, im] of got) imgs.set(k, im);
+    onReady();
+  };
+  for (const [k, file] of list) {
     const im = new Image();
-    left++;
-    const done = () => { if (--left === 0) onReady(); };
-    im.onload = () => { imgs.set(k, im); done(); };
-    im.onerror = done;
+    im.onload = () => { got.set(k, im); done(); };
+    im.onerror = () => { failed = true; done(); };
     im.src = import.meta.env.BASE_URL + 'symbols/' + file;
   }
 }
 
 function render(im: HTMLImageElement, k: Sym, pw: number, ph: number, glow: boolean): HTMLCanvasElement {
-  const g = glow ? SYMBOL_GLOW[k] : undefined, m = g ? Math.ceil(g.blur * ph) : 0;
+  const g = glow ? SYMBOL_GLOW[k] : undefined, m = g ? Math.ceil(1.5 * g.blur * ph) : 0; // 影のぼかしは指定値の約1.5倍まで広がる
   const cv = document.createElement('canvas');
   cv.width = pw + 2 * m; cv.height = ph + 2 * m;
   const c = cv.getContext('2d')!;
@@ -26,7 +32,7 @@ function render(im: HTMLImageElement, k: Sym, pw: number, ph: number, glow: bool
   const r = Math.min(pw / im.naturalWidth, ph / im.naturalHeight), dw = im.naturalWidth * r, dh = im.naturalHeight * r;
   const dx = m + (pw - dw) / 2, dy = m + (ph - dh) / 2;
   if (g) {
-    const cx = m + pw / 2, cy = m + ph / 2, bg = c.createRadialGradient(cx, cy, 0, cx, cy, pw * .55);
+    const cx = m + pw / 2, cy = m + ph / 2, bg = c.createRadialGradient(cx, cy, 0, cx, cy, pw * g.reach);
     bg.addColorStop(0, g.back); bg.addColorStop(1, 'rgba(255,255,255,0)');
     c.save(); c.translate(cx, cy); c.scale(1, ph / pw); c.translate(-cx, -cy);
     c.fillStyle = bg; c.fillRect(-1e4, -1e4, 2e4, 2e4); c.restore();
