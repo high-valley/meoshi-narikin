@@ -471,7 +471,7 @@ function stopAt(i,e){
   if(P.navi>=0&&P.mode==='at'&&P.order.length===0&&i!==P.navi)P.navMiss=true;
   P.order.push(i);
   const tg=targetFor(i),done=reels.map((x,j)=>j!==i&&x.state!=='spin'?x.final:null);
-  const res=pressL(reels,i,evTime(e),tg,{done,centerOnly:P.mode==='big'&&i===0,hide:leftHide(),must:(['BL','RP'].includes(tg)&&P.flag!=='BONUS')?tg:null,tgs:P.flag==='BONUS'?[0,1,2].map(targetFor):null,noBonusLine:noBonusLine(),last:P.order.length===3,ok:okLines(tg)});
+  const res=pressL(reels,i,evTime(e),tg,{done,centerOnly:P.mode==='big'&&i===0,free:P.mode==='zen'&&i===1,hide:leftHide(),must:(['BL','RP'].includes(tg)&&P.flag!=='BONUS')?tg:null,tgs:P.flag==='BONUS'?[0,1,2].map(targetFor):null,noBonusLine:noBonusLine(),last:P.order.length===3,ok:okLines(tg)});
   if(P.mode==='big'&&i===0){const fi=mod(r.final),d=mod(BITA_IDX-fi);res.bita=fi===BITA_IDX;res.hit=res.bita;res.off=res.bita?0:(d<=10?d:d-21)}
   r.res=res;
   P.res[i]=res;SND.stop();

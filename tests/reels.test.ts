@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STRIPS, N, MAX_SLIP, LINES, type Sym } from '../src/data/reels';
-import { bonusLines, lineWins, mod, symAt, type PressOpts } from '../src/game/reels';
+import { bonusLines, lineWins, makeReel, mod, pressL, symAt, type PressOpts } from '../src/game/reels';
 import { playGame, rng } from './helpers';
 
 const rs = STRIPS.map(strip => ({ strip }));
@@ -108,6 +108,20 @@ describe('停止制御の約束（仕様書 4.3）', () => {
         for (let b = 0; b < N; b++) if ([0, 1, 2, 3, 4].some(s => lineOK([a, c, mod(b + s)], right))) hits++;
         expect(hits).toBeGreaterThan(0);
       }
+  });
+
+  it('八門の扉チャンス：左を先に止めても、中に赤7が見えれば当たり（つながりは見ない）', () => {
+    for (let lf = 0; lf < N; lf++) for (let b = 0; b < N; b++) {
+      const rs2 = STRIPS.map(s => makeReel(s));
+      rs2[0].final = lf;
+      Object.assign(rs2[1], { state: 'spin', p0: b, t0: 0, speed: 1 });
+      const res = pressL(rs2, 1, 0, 'R7', { done: [lf, null, null], free: true, ok: [] });
+      const seen = [0, 1, 2].some(row => symAt(rs2[1], rs2[1].final!, row) === 'R7');
+      if (res.hit) expect(seen).toBe(true);
+      // 4コマ以内に赤7がある押し位置なら必ず当たる
+      const reach = [0, 1, 2, 3, 4].some(s => [0, 1, 2].some(row => symAt(rs2[1], b + s, row) === 'R7'));
+      expect(res.hit).toBe(reach);
+    }
   });
 
   it('ボーナスは 7・7・7（BIG）と 7・7・BAR（REG）でそろい、逆の形は出ない', () => {
