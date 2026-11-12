@@ -13,7 +13,8 @@
   - `reels.ts` リールの停止制御（引き込み・蹴り・先読み・ライン判定）／`machines.ts` 抽選・設定・イベント日／`life.ts` 寝たときの効果
 - `src/ui/app.ts` … 画面（試作品から移したもの。作り直すときに分割する）
 - `src/ui/symbols.ts` … リールの図柄の画像とボーナス図柄の光（画像は `public/symbols/`、作ったときのプロンプトは `docs/art-prompts.md`）
-- `src/version.ts` … 版の表示（ビルドの印）
+- `src/version.ts` … 版の表示（ビルドの印）と、公開されている最新の版の確かめ方
+- `public/` … 図柄の画像（`symbols/`）、アプリのアイコン（`icons/`・`apple-touch-icon.png`）、`manifest.webmanifest`
 - `tests/` … Vitest の単体テスト（停止制御の約束、抽選、生活）
 - `prototype/narikin.html` … 試作品の単一ファイル（参考用）
 
