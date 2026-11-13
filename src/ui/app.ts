@@ -136,9 +136,9 @@ $('#snd').onclick=()=>{soundOn=!soundOn;if(soundOn&&!ac){try{ac=new (window.Audi
 const MICON={hun:'<path d="M8 3v7a2 2 0 0 1-1.5 1.9V21h-2v-9.1A2 2 0 0 1 3 10V3h1.2v5h1V3h1.2v5h1V3zM16 3c2 0 3 2.5 3 6s-1 4-2 4.3V21h-2V3z"/>',fun:'<path d="M7 7h10a5 5 0 0 1 4.8 6.4l-1 3.3a2.6 2.6 0 0 1-4.4 1L14.8 16H9.2l-1.6 1.7a2.6 2.6 0 0 1-4.4-1l-1-3.3A5 5 0 0 1 7 7zm0 3v1.5H5.5v1.5H7v1.5h1.5V13H10v-1.5H8.5V10zm8.5.3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm2 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>',hp:'<path d="M12 20.5 4.2 12.9A4.8 4.8 0 0 1 12 6.6a4.8 4.8 0 0 1 7.8 6.3z"/>'};
 function meterHTML(k,n,col){const v=S[k];return `<div class="mt ${v<25?'low':''}"><i class="mi" style="--c:${col}"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">${MICON[k]}</svg></i><div class="mtb"><div class="r"><span>${n}</span><b>${v}%</b></div><div class="bar"><i style="width:${v}%;background:${col}"></i></div></div></div>`}
 function status(){
-  $('#status').innerHTML=`<div class="moneybox"><i class="coin" aria-hidden="true"></i><span class="lbl">所持金</span><span class="cash${yen(S.money).length>11?' long':''}">${yen(S.money)}</span></div>
-  <div class="daybox"><b>${S.day}日目</b><span>${S.phase==='morning'?'朝':'夜'}${isEvent(S.day)?' <em>イベント日</em>':''}</span></div>
-  <span class="day">${HOMES[S.home].n}${S.title?'　「'+S.title+'」':''}</span>
+  $('#status').innerHTML=`<div class="moneybox"><i class="coin" aria-hidden="true"></i><span class="lbl">所持金</span><span class="cash${yen(S.money).length>13?' xlong':yen(S.money).length>9?' long':''}">${yen(S.money)}</span></div>
+  <div class="daybox"><b>${S.day}日目</b><span>${S.phase==='morning'?'朝':'夜'}</span></div>
+  <span class="day">${isEvent(S.day)?'<em>イベント日</em>　':''}${HOMES[S.home].n}${S.title?'　「'+S.title+'」':''}</span>
   <div class="meters">${meterHTML('hun','お腹','var(--hun)')}${meterHTML('fun','娯楽','var(--fun)')}${meterHTML('hp','体調','var(--hp)')}</div>`;
 }
 function apply(e){for(const [k,v] of Object.entries(e))S[k]=clamp(S[k]+v)}
@@ -253,7 +253,7 @@ function selfPage(){return `<p class="sub">一度身につけた力はずっと�
   ${Object.entries(UPG).map(([k,u])=>{const l=S.upg[k],done=l>=u.max;return buyCard({a:'upg',data:`data-id="${k}"`,name:`${u.n}　Lv${l}/${u.max}`,desc:done?'最大まで鍛えた':u.d(l),price:done?0:u.cost(l),ptext:done?'—':yen(u.cost(l)),disabled:done})}).join('')}
   ${buyCard({a:'drops',data:'',name:'目薬',desc:S.dropDay===S.day?'今日はもう差した':'今日1日、リールが3%ゆっくり見える',price:1500,disabled:S.dropDay===S.day})}`}
 function achPage(){return `<p class="sub">${Object.keys(S.ach).length}/${ACH.length} 達成。最後に達成した実績が称号として表示されます。</p>
-  ${ACH.map(a=>`<div class="cmd" style="cursor:default;${has(a.id)?'border-color:var(--gold)':'opacity:.6'}"><b>${has(a.id)?'★ ':''}${a.n}</b><span>${a.d}</span><span class="p">ごほうび：${a.r}${has(a.id)?`（${S.ach[a.id]}日目に達成）`:''}</span></div>`).join('')}`}
+  ${ACH.map(a=>`<div class="cmd ach ${has(a.id)?'got':'notyet'}"><b>${has(a.id)?'★ ':''}${a.n}</b><span>${a.d}</span><span class="p">ごほうび：${a.r}${has(a.id)?`（${S.ach[a.id]}日目に達成）`:''}</span></div>`).join('')}`}
 function settingsPage(){return `<p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>${verBox()}`}
 function renderMe(tab){
   if(tab)meTab=tab;status();const y=window.scrollY;
@@ -371,7 +371,7 @@ function renderFloor(){
   const Hs=hallState(hallIdx);if(Hs.visit!==S.day){Hs.visit=S.day;Hs.friend=Math.min(100,Hs.friend+2);save()}
   const free=F.ms.filter(x=>!x.taken).length,f=Hs.friend;
   const card=(x,i)=>{const m=MACH[x.k],hot=x.since>=CEIL[x.k]*.6,near=has('hyena')&&hot;
-    return `<button class="unit" type="button" data-a="sit" data-i="${i}" ${x.taken?'disabled':''} style="${near&&!x.taken?'border-color:var(--gold)':''}">
+    return `<button class="unit${near&&!x.taken?' near':''}" type="button" data-a="sit" data-i="${i}" ${x.taken?'disabled':''}>
       <span class="no">${x.no}番 <i style="color:${x.taken?'var(--bad)':'var(--ok)'}">${x.taken?'使用中':'空き'}</i></span>
       <b style="color:${hot?'var(--gold)':'var(--paper)'}">${x.since}G</b>
       ${f>=90?`<span class="tag">${x.reset?'リセット':'据え置き'}</span>`:''}
