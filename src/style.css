@@ -144,18 +144,6 @@ body.has-tabs #app{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .track{display:flex;align-items:flex-start;will-change:transform}
 .page{flex:0 0 100%;min-width:0;display:flex;flex-direction:column;gap:8px;padding-top:2px}
 
-/* ---------- スライドして購入 ---------- */
-.cmd.card{cursor:default;gap:3px}
-.cmd.card.dis{opacity:.55}
-.slide{--fill:0px;position:relative;margin-top:6px;height:46px;border-radius:999px;background:var(--panel2);border:1px solid var(--gold);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-.slide::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--fill);background:linear-gradient(90deg,rgba(255,207,74,.15),rgba(255,207,74,.45))}
-.slide-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-left:40px;color:var(--gold)!important;font-size:14px!important;font-weight:700;letter-spacing:.04em;pointer-events:none}
-.slide .knob{position:absolute;left:3px;top:3px;width:40px;height:38px;border-radius:999px;border:0;background:var(--gold);color:var(--ink);font-size:24px;font-weight:700;line-height:1;cursor:grab;touch-action:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.slide.off{border-color:var(--line)}
-.slide.off .slide-label{color:var(--dim)!important}
-.slide.off .knob{background:var(--line);color:var(--dim);cursor:default}
-.slide.done .knob{background:var(--ok)}
-
 /* ==========================================================================
    金の装飾テーマ（仕様書 9.5）。紺と紫の夜のホールに、金の縁取りと光沢のあるボタン。
    上の素の見た目を、ここでまとめて上書きする
@@ -260,9 +248,6 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 .tabbar button.on{color:#ffe08a;border:1.5px solid transparent;background:linear-gradient(180deg,#3a2f6b,#1b1640) padding-box,var(--gold-edge) border-box;box-shadow:0 0 12px rgba(255,200,80,.35)}
 .tabbar svg{color:inherit}
 
-/* スライドして購入 */
-.slide{border:2px solid transparent;background:linear-gradient(180deg,#0f0d26,#1c1940) padding-box,var(--gold-edge) border-box}
-.slide .knob{background:var(--gold-btn);color:#3a2200;border:1.5px solid #fff1b8}
 
 /* 部屋の枠 */
 .room{border-width:3px!important;border-radius:14px}
@@ -301,3 +286,19 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 .grid3 .cmd{padding:8px}
 .grid3 .cmd b{font-size:15px}
 .grid3 .cmd span{font-size:11px}
+
+/* ---------- 購入の確認（下からせり上がる画面） ---------- */
+.sheet-back{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,4,15,.66);animation:fade .18s ease-out}
+.sheet{width:100%;max-width:460px;display:flex;flex-direction:column;gap:10px;padding:18px max(16px,env(safe-area-inset-left,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));
+  border-radius:22px 22px 0 0;border:2px solid transparent;border-bottom:0;background:var(--panel-grad) padding-box,var(--gold-edge) border-box;box-shadow:0 -10px 30px rgba(0,0,0,.6);animation:up .22s cubic-bezier(.2,.8,.2,1)}
+.sheet h2{font-family:var(--disp);font-weight:400;font-size:22px;text-align:center;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sheet-body{display:flex;flex-direction:column;gap:8px;font-size:14px;color:#d9cfee}
+.sheet-btns{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:4px}
+.sheet-btns .btn:only-child{grid-column:1/-1}
+.sheet.ok .sheet-check{align-self:center;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:30px;font-weight:700;color:#0a3a1a;background:radial-gradient(circle at 40% 30%,#c8ffd8,#4fdc84 60%,#1f8a46);box-shadow:0 0 18px rgba(80,220,130,.6);animation:pop2 .35s ease-out}
+.done-name{text-align:center;font-family:var(--disp);font-size:18px;color:#fff3cf}
+.cmd .short{font-style:normal;color:var(--bad);font-family:var(--body);font-size:11px}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(100%)}}
+@keyframes pop2{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.sheet-back,.sheet,.sheet-check{animation:none}}

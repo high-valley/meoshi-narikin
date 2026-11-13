@@ -10,8 +10,8 @@ import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { SLIDE_BUY_MIN, AUTO_GAMES, HIST_MAX } from '../data/ui';
-import { setTabbar, pagesHTML, bindPages, slideHTML, bindSlides } from './widgets';
+import { AUTO_GAMES, HIST_MAX } from '../data/ui';
+import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
 export function startApp(){
 
@@ -222,19 +222,29 @@ function renderHome(){
 }
 // 買い物と自分の画面は、上のタブと横スワイプでページを切り替える（仕様書 9.4）
 let shopTab='food',meTab='self';
-// 高い買い物はスライドして決める。安いものはボタン1回
-function buyCard(o){const big=o.slide||o.price>=SLIDE_BUY_MIN,off=o.disabled||S.money<o.price;
-  if(!big)return `<button class="cmd" type="button" data-a="${o.a}" ${o.data} ${off?'disabled':''}><b>${o.name}</b><span>${o.desc}</span><span class="p">${o.ptext||yen(o.price)}</span></button>`;
-  const ds={};o.data.replace(/data-(\w+)="([^"]*)"/g,(_,k,v)=>{ds[k]=v});
-  return `<div class="cmd card${off?' dis':''}"><b>${o.name}</b><span>${o.desc}</span><span class="p">${o.ptext||yen(o.price)}</span>${slideHTML(o.slideLabel||'スライドして購入',o.a,ds,off)}</div>`}
-function foodPage(list,act){return `<div class="grid2">${list.map(x=>buyCard({a:act,data:`data-id="${x.id}"`,name:x.n,desc:effText(x.e),price:x.p})).join('')}</div>`}
+// 買い物はどれも、押すと「購入しますか？」の確認を出し、買ったら「購入しました」と結果を見せる（仕様書 9.4）
+const buyInfo={};let buySeq=0;
+function buyCard(o){const off=o.disabled||S.money<o.price,k='b'+(++buySeq);buyInfo[k]=o;
+  return `<button class="cmd" type="button" data-a="ask" data-k="${k}" ${off?'disabled':''}><b>${o.name}</b><span>${o.desc}</span><span class="p">${o.ptext||yen(o.price)}${!o.disabled&&S.money<o.price?'　<em class="short">お金が足りない</em>':''}</span></button>`}
+// 買う前と後でゲージが変わったものを「お腹 70 → 100」の形で見せる
+function gaugeDiff(g0){const N={hun:'お腹',fun:'娯楽',hp:'体調'},rows=Object.keys(N).filter(k=>S[k]!==g0[k]);
+  return rows.length?`<div class="res">${rows.map(k=>`<span>${N[k]}</span><b class="${S[k]>g0[k]?'pos':'neg'}">${g0[k]} → ${S[k]}</b>`).join('')}</div>`:''}
+function askBuy(k){const o=buyInfo[k];if(!o)return;
+  const verb=o.verb||'購入';
+  openSheet({title:o.name,body:`<p>${o.desc}</p><div class="res"><span>${o.ptext&&!o.price?'':'お値段'}</span><b>${yen(o.price)}</b><span>今の所持金</span><b>${yen(S.money)}</b><span>${verb}後の所持金</span><b class="${S.money-o.price<0?'neg':''}">${yen(S.money-o.price)}</b></div>`,
+    yes:`${verb}する`,no:'やめる',onYes:()=>{
+      const before=S.money,g0={hun:S.hun,fun:S.fun,hp:S.hp},el=document.createElement('button');o.data.replace(/data-(\w+)="([^"]*)"/g,(_,a,v)=>{el.dataset[a]=v});
+      act(o.a,el);
+      if(S.money<before)openSheet({title:`${verb}しました`,ok:true,body:`<p class="done-name">${o.name}</p>${o.after?`<p>${o.after}</p>`:''}${gaugeDiff(g0)}<div class="res"><span>支払い</span><b class="neg">−${yen(before-S.money)}</b><span>残りの所持金</span><b>${yen(S.money)}</b></div>`,yes:'OK'});
+    }})}
+function foodPage(list,act){return `<div class="grid2">${list.map(x=>buyCard({a:act,data:`data-id="${x.id}"`,name:x.n,desc:effText(x.e),price:x.p,after:effText(x.e)})).join('')}</div>`}
 function effText(e){const N={hun:'お腹',fun:'娯楽',hp:'体調'};return Object.entries(e).map(([k,v])=>`${N[k]}${v>0?'+':''}${v}`).join(' ')}
-function furnPage(){return `<div class="grid2">${Object.entries(ITEMS).filter(([,i])=>i.p>0).map(([id,it])=>buyCard({a:'buyF',data:`data-id="${id}"`,name:it.n,desc:it.d,price:it.p,ptext:`${yen(it.p)}　持ち物${(S.inv[id]||0)+placedCount(id)}`})).join('')}</div>
+function furnPage(){return `<div class="grid2">${Object.entries(ITEMS).filter(([,i])=>i.p>0).map(([id,it])=>buyCard({a:'buyF',data:`data-id="${id}"`,name:it.n,desc:it.d,price:it.p,after:'持ち物に入りました。ホームの部屋に置くと効果が出ます。',ptext:`${yen(it.p)}　持ち物${(S.inv[id]||0)+placedCount(id)}`})).join('')}</div>
   <p class="sub">買った家具は持ち物に入ります。ホームの部屋の床に置くと効果が出ます。寝具は一番良いものだけが効きます。</p>`}
 function estatePage(){return HOMES.map((h,i)=>{const cost=h.buy||h.move,cur=i===S.home,owned=i<S.home;
     const desc=`${h.d}。広さ ${h.w}×${h.h}マス、睡眠 体調+${h.sleep}`,pt=h.buy?'購入 '+yen(h.buy):i===0?'家賃 '+yen(h.rent)+'/日':'初期費用 '+yen(h.move)+'、家賃 '+yen(h.rent)+'/日';
     if(cur||owned||i===0)return `<div class="cmd card dis"><b>${h.n}${cur?'（今の家）':''}</b><span>${desc}</span><span class="p">${pt}</span></div>`;
-    return buyCard({a:'move',data:`data-i="${i}"`,name:h.n,desc,price:cost,ptext:pt,slide:true,slideLabel:h.buy?'スライドして購入':'スライドして引っ越す'})}).join('')+
+    return buyCard({a:'move',data:`data-i="${i}"`,name:h.n,desc,price:cost,ptext:pt,verb:h.buy?'購入':'引っ越し',after:'新しい家に移りました。家具は持ち物に戻っています。'})}).join('')+
   `<p class="sub">引っ越すと家具は持ち物に戻ります。家を買うと家賃がなくなり、高レートの店に入れるようになります。</p>`}
 function blackPage(){if(S.day<3)return '<p class="lead">裏市場は3日目から開きます。</p>';
   return `<p class="lead">「いいのがあるよ」</p>${buyCard({a:'buyKiban',data:'',name:'改造基盤',desc:`台に仕込むと、その日はボーナスが1.4倍当たりやすい。1回使い切り。仕込む時に${bustRate()}%で店員に見つかる。見つかると罰金（所持金の3割、最低5万円）と、その店に5日間出入り禁止。見つかるたびに次から見つかりやすくなる`,price:kibanPrice(),ptext:`${yen(kibanPrice())}　所持 ${S.kiban}`})}
@@ -244,7 +254,7 @@ function renderShop(tab){
   $('#view').innerHTML=`<div class="ch">買い物</div>`+pagesHTML([
     {key:'food',label:'ごはん',html:foodPage(FOODS,'eat')},{key:'fun',label:'息抜き',html:foodPage(PLAYS,'play')},
     {key:'furn',label:'家具',html:furnPage()},{key:'estate',label:'不動産',html:estatePage()},{key:'black',label:'裏市場',html:blackPage()}],shopTab);
-  bindPages($('#view'),shopTab,k=>{shopTab=k});bindSlides($('#view'),el=>act(el.dataset.slide,el));
+  bindPages($('#view'),shopTab,k=>{shopTab=k});
   if(!tab)window.scrollTo(0,y);tabs('shop');
 }
 function renderFurn(){renderShop('furn')}
@@ -265,7 +275,7 @@ function renderMe(tab){
   if(tab)meTab=tab;status();const y=window.scrollY;
   $('#view').innerHTML=`<div class="ch">自分</div>`+pagesHTML([
     {key:'self',label:'自己投資',html:selfPage()},{key:'hist',label:'収支',html:histPage()},{key:'ach',label:'実績',html:achPage()},{key:'set',label:'設定',html:settingsPage()}],meTab);
-  bindPages($('#view'),meTab,k=>{meTab=k});bindSlides($('#view'),el=>act(el.dataset.slide,el));
+  bindPages($('#view'),meTab,k=>{meTab=k});
   if(!tab)window.scrollTo(0,y);tabs('me');
 }
 function renderSelf(){renderMe('self')}
@@ -627,9 +637,10 @@ function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
 function tabs(t){setTabbar(t,go=>{selItem=null;if(go==='home')renderHome();else if(go==='halls')renderHalls();else if(go==='shop')renderShop(shopTab);else renderMe(meTab);window.scrollTo(0,0)})}
 $('#view').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;act(b.dataset.a,b)});
-// ボタン（data-a）とスライド（data-slide）の両方から呼ぶ
+// ボタン（data-a）と購入の確認画面から呼ぶ
 function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   if(a==='home'){selItem=null;renderHome()}
+  else if(a==='ask')askBuy(b.dataset.k);
   else if(a==='verTap'){const n=Date.now();devTaps=n-devTapAt<DEV_TAP_MS?devTaps+1:1;devTapAt=n;if(devTaps>=DEV_TAPS&&!$('#devPw')){devTaps=0;showDevLogin()}}
   else if(a==='devMoney'){S.money=DEV_MAX_MONEY;S.peak=Math.max(S.peak,DEV_MAX_MONEY);save();renderDev();toast('お金を最大にしました')}
   else if(a==='devUnlock'){devUnlockAll();save();renderDev();toast('全部解放しました')}
