@@ -121,3 +121,37 @@ button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
 .devpw{display:flex;gap:6px;margin-top:6px}
 .devpw input{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--paper)}
 .devpw .btn{margin:0;width:auto;flex:none;font-size:15px;padding:8px 14px}
+
+/* ---------- 下のタブバー（仕様書 9.4） ---------- */
+:root{--tab-on:var(--gold)}
+body.has-tabs #app{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);max-width:460px;margin:0 auto;
+  padding:6px max(10px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-right,0px));
+  background:rgba(15,13,23,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.tabbar[hidden]{display:none}
+.tabbar button{font:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px;padding:4px 0;background:none;border:0;border-radius:12px;color:var(--dim);font-size:11px;cursor:pointer}
+.tabbar svg{width:26px;height:26px}
+.tabbar button.on{color:var(--tab-on)}
+.tabbar button.on svg{filter:drop-shadow(0 0 6px rgba(255,207,74,.45))}
+.tabbar button:active{transform:scale(.94)}
+
+/* ---------- 上のタブ＋横スワイプのページ ---------- */
+.seg{display:flex;gap:4px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{font:inherit;flex:1 0 auto;min-height:36px;padding:0 12px;border:0;border-radius:999px;background:none;color:var(--dim);font-size:14px;cursor:pointer;white-space:nowrap}
+.seg button[aria-selected="true"]{background:var(--gold);color:var(--ink);font-weight:700}
+.pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;align-items:flex-start;transition:height .2s}
+.pages::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;display:flex;flex-direction:column;gap:8px;padding-top:2px}
+
+/* ---------- スライドして購入 ---------- */
+.cmd.card{cursor:default;gap:3px}
+.cmd.card.dis{opacity:.55}
+.slide{--fill:0px;position:relative;margin-top:6px;height:46px;border-radius:999px;background:var(--panel2);border:1px solid var(--gold);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.slide::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--fill);background:linear-gradient(90deg,rgba(255,207,74,.15),rgba(255,207,74,.45))}
+.slide-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-left:40px;color:var(--gold)!important;font-size:14px!important;font-weight:700;letter-spacing:.04em;pointer-events:none}
+.slide .knob{position:absolute;left:3px;top:3px;width:40px;height:38px;border-radius:999px;border:0;background:var(--gold);color:var(--ink);font-size:24px;font-weight:700;line-height:1;cursor:grab;touch-action:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.slide.off{border-color:var(--line)}
+.slide.off .slide-label{color:var(--dim)!important}
+.slide.off .knob{background:var(--line);color:var(--dim);cursor:default}
+.slide.done .knob{background:var(--ok)}

@@ -69,3 +69,49 @@ mobile game app icon, square 1:1, 1024x1024, full-bleed background with no trans
 ```
 A big bold number "7" made of shiny solid gold with a red enamel inner stripe, standing on a small pile of gold coins, sparkles and a soft golden aura, a tiny glimpse of a city skyline with a tall tower apartment silhouette in the background at night, deep navy-purple background
 ```
+
+## 部屋（アニメ調）
+
+家ごとの部屋の背景（家具なし）と、家具ごとの絵を別々に作り、家具は種類ごとに決まった場所に重ねる（仕様書 9.4）。
+背景はどれも同じカメラ位置（正面の壁と床が見える、立った目線から少し見下ろす）にそろえる。家具は透過背景で、同じ向き・同じ光の当たり方にそろえる。
+
+### 部屋の背景の共通スタイル
+
+```
+Japanese anime background art, slice-of-life game style, clean line art with soft cel shading, warm cozy lighting, front-facing view of an empty room interior showing the back wall and the floor, camera at standing eye level looking slightly down, symmetrical composition, the room is completely empty with no furniture, no people, no text, no logos, aspect ratio 4:3, original illustration
+```
+
+| 家 | ファイル名 | 部屋ごとの部分 |
+|---|---|---|
+| ボロアパート | room0 | `a shabby old six-tatami Japanese apartment room, worn tatami mats, stained beige walls, an old sliding glass window with a slightly torn curtain, a bare light bulb hanging from the ceiling, faded afternoon light` |
+| 1Kアパート | room1 | `a small clean one-room studio apartment, light wood flooring, white walls, a single window with simple curtains, modest and tidy` |
+| 分譲マンション | room2 | `a spacious modern condominium living room, warm wooden floor, large window with city view in daylight, soft indirect ceiling lights` |
+| 一戸建て | room3 | `a large bright living room of a detached house, high ceiling, big glass doors opening to a green garden, natural wood floor, sunlight` |
+| タワマン最上階 | room4 | `a luxurious penthouse living room on the top floor of a tower, polished marble floor, floor-to-ceiling windows with a sparkling night city skyline, elegant gold accent lights` |
+
+### 家具の共通スタイル
+
+```
+Japanese anime style game item, single isolated piece of furniture, clean line art with soft cel shading, warm cozy lighting from the upper left, three-quarter front view facing the camera, seen slightly from above, transparent background, no shadow on the background, no people, no text, original design
+```
+
+| 家具 | ファイル名 | 家具ごとの部分 |
+|---|---|---|
+| せんべい布団 | futon | `a thin worn-out Japanese futon mattress laid flat on the floor with a flat pillow and a thin blanket` |
+| ベッド | bed | `a simple single bed with a wooden frame, white sheets and a blue blanket` |
+| 高級ベッド | lbed | `a luxurious king-size bed with a tufted headboard, silky golden-beige bedding and many pillows` |
+| 小型テレビ | tv | `a small old flat-screen TV on a low wooden stand` |
+| ゲーム機 | game | `a home video game console with two controllers on a small low table, generic design not resembling any real console` |
+| 本棚 | shelf | `a wooden bookshelf filled with colorful manga and books` |
+| 観葉植物 | plant | `a potted leafy green houseplant in a ceramic pot` |
+| 冷蔵庫 | fridge | `a compact two-door kitchen refrigerator, white` |
+| ソファ | sofa | `a comfortable three-seat fabric sofa in navy blue with cushions` |
+| 大型テレビ | bigtv | `a very large thin flat-screen TV on a modern low TV board` |
+| 水槽 | tank | `a glowing aquarium fish tank with tropical fish and water plants on a black stand` |
+| マッサージチェア | mchair | `a premium reclining massage chair in black leather` |
+
+### 主人公
+
+```
+Japanese anime style game character, a young man in his twenties with messy dark hair, wearing a plain gray hoodie and jeans, slightly tired but hopeful expression, standing pose, full body, front view, clean line art with soft cel shading, transparent background, no text, original character
+```
