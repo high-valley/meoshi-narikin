@@ -3,3 +3,7 @@
 export const SLIDE_BUY_MIN = 100000;
 /** スライドをどこまで動かしたら決まりにするか（動かせる幅に対する割合） */
 export const SLIDE_DONE = 0.9;
+/** オートで回せるゲーム数（打つ画面のボタン） */
+export const AUTO_GAMES = [10, 100];
+/** 「自分」→「収支」に残す回数 */
+export const HIST_MAX = 60;

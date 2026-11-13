@@ -10,7 +10,7 @@ import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { SLIDE_BUY_MIN } from '../data/ui';
+import { SLIDE_BUY_MIN, AUTO_GAMES, HIST_MAX } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, slideHTML, bindSlides } from './widgets';
 
 export function startApp(){
@@ -204,8 +204,7 @@ function renderHome(){
       <button class="tile" type="button" data-a="job" ${S.phase!=='morning'?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M3 8.5 12 4l9 4.5v9L12 22l-9-4.5zm9 2.2 6.6-3.3L12 4.1 5.4 7.4zm-7 6 6 3V12L5 9z"/></svg><b>日雇いバイト</b><span>検品作業。出来高で給料</span></button>
       <button class="tile" type="button" data-a="sleep"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M2 19V6h2v8h7V9h7a4 4 0 0 1 4 4v6h-2v-2H4v2zm5-6a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg><b>寝る</b><span>次の日へ</span></button>
     </div>
-    ${S.hist.length?`<div class="log"><span>最近の収支</span>${S.hist.slice(-4).reverse().map(h=>`<span>${h.day}日目 ${h.hall} ${h.m}：<b class="${h.v>=0?'pos':'neg'}">${h.v>=0?'+':''}${yen(h.v)}</b></span>`).join('')}</div>`:''}
-    <p class="sub">ごはん・家具・不動産は下の「買い物」、自己投資・実績・設定は「自分」から。</p>
+    <p class="sub">ごはん・家具・不動産は下の「買い物」、自己投資・収支・実績・設定は「自分」から。</p>
     <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>`;
   tabs('home');
   document.querySelectorAll('[data-icon]').forEach(cv=>drawItem(cv.getContext('2d'),cv.dataset.icon,0,0));
@@ -254,11 +253,15 @@ function selfPage(){return `<p class="sub">一度身につけた力はずっと�
   ${buyCard({a:'drops',data:'',name:'目薬',desc:S.dropDay===S.day?'今日はもう差した':'今日1日、リールが3%ゆっくり見える',price:1500,disabled:S.dropDay===S.day})}`}
 function achPage(){return `<p class="sub">${Object.keys(S.ach).length}/${ACH.length} 達成。最後に達成した実績が称号として表示されます。</p>
   ${ACH.map(a=>`<div class="cmd ach ${has(a.id)?'got':'notyet'}"><b>${has(a.id)?'★ ':''}${a.n}</b><span>${a.d}</span><span class="p">ごほうび：${a.r}${has(a.id)?`（${S.ach[a.id]}日目に達成）`:''}</span></div>`).join('')}`}
+function histPage(){if(!S.hist.length)return '<p class="sub">まだ打っていません。パチ屋で打つと、ここに日ごとの収支が残ります。</p>';
+  const tot=S.hist.reduce((a,h)=>a+h.v,0),win=S.hist.filter(h=>h.v>0).length,best=Math.max(...S.hist.map(h=>h.v));
+  return `<div class="res"><span>通算の収支（直近${S.hist.length}回）</span><b class="big ${tot>=0?'pos':'neg'}">${tot>=0?'+':''}${yen(tot)}</b><span>勝った回数</span><b>${win}勝 ${S.hist.length-win}敗</b><span>いちばん勝った日</span><b class="pos">+${yen(Math.max(0,best))}</b></div>
+  <div class="log hist">${S.hist.slice().reverse().map(h=>`<div class="hrow"><span>${h.day}日目　${h.hall}</span><span>${h.m}</span><b class="${h.v>=0?'pos':'neg'}">${h.v>=0?'+':''}${yen(h.v)}</b></div>`).join('')}</div>`}
 function settingsPage(){return `<p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>${verBox()}`}
 function renderMe(tab){
   if(tab)meTab=tab;status();const y=window.scrollY;
   $('#view').innerHTML=`<div class="ch">自分</div>`+pagesHTML([
-    {key:'self',label:'自己投資',html:selfPage()},{key:'ach',label:'実績',html:achPage()},{key:'set',label:'設定',html:settingsPage()}],meTab);
+    {key:'self',label:'自己投資',html:selfPage()},{key:'hist',label:'収支',html:histPage()},{key:'ach',label:'実績',html:achPage()},{key:'set',label:'設定',html:settingsPage()}],meTab);
   bindPages($('#view'),meTab,k=>{meTab=k});bindSlides($('#view'),el=>act(el.dataset.slide,el));
   if(!tab)window.scrollTo(0,y);tabs('me');
 }
@@ -432,8 +435,8 @@ function renderPlay(){
     <div class="glass" id="glass"><canvas id="reels"></canvas></div><p class="sub" style="text-align:center;font-size:12px;margin-top:-4px">5ライン：上段・中段・下段・斜め2本</p>
     ${P.mode==='door'?doorHTML():P.mode==='cont'?contHTML():`<div class="ctrl"><button class="lever" id="lever" type="button">レバー</button><div class="stops" id="stops">${[0,1,2].map(i=>`<button class="stop" type="button" data-i="${i}" disabled>${['左','中','右'][i]}${P.navi>=0&&navOrder()[0]===i&&P.order.length===0?'<span class="nv">1</span>':''}</button>`).join('')}</div></div>`}
   </div>
-  <div class="grid2"><button class="cmd" type="button" data-a="auto" ${busyBonus||P.spinning?'disabled':''}><b>10G 回す</b><span>適当打ちで消化。ボーナスで止まる</span></button>
-  <button class="cmd" type="button" data-a="quit" ${busyBonus||P.spinning?'disabled':''}><b>やめる</b><span>メダルを換金して帰る</span></button></div>
+  <div class="grid3">${AUTO_GAMES.map(n=>`<button class="cmd" type="button" data-a="auto" data-i="${n}" ${busyBonus||P.spinning?'disabled':''}><b>${n}G 回す</b><span>適当打ち。ボーナスで止まる</span></button>`).join('')}
+  <button class="cmd" type="button" data-a="quit" ${busyBonus||P.spinning?'disabled':''}><b>やめる</b><span>換金して帰る</span></button></div>
   <details class="strip"><summary>配当表と遊び方</summary>${payHTML()}</details>
   <details class="strip"><summary>リール配列表（上から下へ流れる）</summary><p class="sub">左リールのチェリーはBARの真下、スイカは左でBARの3コマ上、中でBARの2コマ上、右はBARの2コマ上ともう1か所にあります。赤7は左に2つ、中に1つ、右は「7・リプレイ・BAR」の1か所だけ。左リールの「7・リプレイ・7」の並びがBIG中のビタ押しポイントです。BARが上段に来るタイミング（枠の上から入ってきた瞬間）で押せば、どちらも取りこぼしません。</p><canvas id="stripT" aria-label="リール配列表"></canvas></details>
   <p class="sub">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}${P.log.slice(-2).join('　')}</p>`;
@@ -447,6 +450,7 @@ function bindCabinet(){
 function sync(){
   const lv=$('#lever');if(lv)lv.disabled=!!P.spinning||P.autoRun;
   document.querySelectorAll('.stop').forEach((b,i)=>b.disabled=!reels[i]||reels[i].state!=='spin'||P.autoRun||(P.mode==='big'&&i>0&&reels[0].state==='spin'));
+  document.querySelectorAll('[data-a=auto]').forEach(b=>{b.querySelector('b').textContent=P.autoRun?'止める':b.dataset.i+'G 回す';b.classList.toggle('on',!!P.autoRun)});
   const l=$('#lamp');if(l){const [c,cl]=cue();l.innerHTML='<span>'+(c||'&nbsp;')+'</span>';l.className='lamp '+cl}
 }
 function navOrder(){const n=P.navi;return [n,(n+1)%3,(n+2)%3]}
@@ -564,9 +568,10 @@ function pickCont(d){
   save();renderPlay();
 }
 function randomStops(){for(let t=0;t<60;t++){reels.forEach(r=>{r.pos=Math.floor(Math.random()*N);r.final=r.pos;r.state='stop'});const fs=reels.map(r=>r.pos);if(!lineWins(fs,reels).length&&!bonusLines(fs,reels,'R7').length&&!bonusLines(fs,reels,'BAR').length&&![0,1,2].some(row=>['CH','WM'].includes(symAt(reels[0],fs[0],row))))break}if(P)P.wins=null}
-async function autoPlay(){
-  if(P.spinning||P.autoRun)return;P.autoRun=true;sync();
-  for(let n=0;n<10;n++){
+// オートで n ゲーム回す。回している間は、どのオートのボタンも「止める」になる
+async function autoPlay(games){
+  if(P.spinning||P.autoRun)return;P.autoRun=true;P.autoStop=false;sync();
+  for(let n=0;n<games&&!P.autoStop;n++){
     if(P.g>=CLOSE_MIN-OPEN_MIN){P.autoRun=false;return quit(true)}
     if(P.medals<3&&!borrow()){toast('お金が足りません');break}
     const f=roll(mach(),P.s,Math.random()),k=P.m.kind;
@@ -580,15 +585,16 @@ async function autoPlay(){
     randomStops();
     $('.counter').outerHTML=counterHTML();status();
     await new Promise(z=>setTimeout(z,110));
+    if(!P||!P.autoRun)return; // 途中で「やめる」を押した
     if(S.hp<=0){P.autoRun=false;return collapse()}
   }
-  P.autoRun=false;S.play.medals=P.medals;S.play.inv=P.inv;save();
+  P.autoRun=false;P.autoStop=false;sync();S.play.medals=P.medals;S.play.inv=P.inv;save();
   if(P.pend||P.mode==='align')toast('当たりの気配。ここからは手で打とう');
   renderPlay();
 }
 function quit(closed){
   const out=P.medals*P.rate,net=out-P.inv;S.money+=out;S.peak=Math.max(S.peak,S.money);
-  S.hist.push({day:S.day,hall:P.hall,m:P.m.n,v:net});S.hist=S.hist.slice(-20);
+  S.hist.push({day:S.day,hall:P.hall,m:P.m.n,v:net});S.hist=S.hist.slice(-HIST_MAX);
   if(FL()&&FL().ms[P.unit]){FL().ms[P.unit].since=P.since;FL().ms[P.unit].taken=true;FL().ms[P.unit].played=true}
   if(net>=50000)grant('win50');if(P.ev&&P.s===6)grant('six');
   S.phase='evening';S.play=null;const p=P;P=null;stopReelsLoop();save();status();
@@ -644,7 +650,7 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='halls')renderHalls();
   else if(a==='hall'){if(S.phase!=='morning')return renderHalls();hallIdx=i;renderFloor()}
   else if(a==='sit')sitDown(i);
-  else if(a==='auto')autoPlay();
+  else if(a==='auto'){if(P.autoRun)P.autoStop=true;else autoPlay(i)}
   else if(a==='quit')quit(false);
   else if(a==='door')pickDoor(+b.dataset.d);
   else if(a==='cont')pickCont(+b.dataset.d);
