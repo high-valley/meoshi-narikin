@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { STRIPS, N, MAX_SLIP, LINES, type Sym } from '../src/data/reels';
-import { bonusLines, lineWins, makeReel, mod, pressL, symAt, type PressOpts } from '../src/game/reels';
+import { STRIPS, N, MAX_SLIP, LINES, SPIN_UP_MS, FRAME_MS, type Sym } from '../src/data/reels';
+import { atFullSpeed, bonusLines, lineWins, makeReel, mod, posAt, pressL, symAt, type PressOpts } from '../src/game/reels';
 import { playGame, rng } from './helpers';
 
 const rs = STRIPS.map(strip => ({ strip }));
@@ -63,6 +63,24 @@ describe('リール配列', () => {
     for (const st of STRIPS.slice(1)) expect(st.filter(x => x === 'R7').length).toBe(1);
     expect(STRIPS[2].filter(x => x === 'BAR').length).toBe(1);
     STRIPS[2].forEach((x, i) => { if (x === 'R7') expect(STRIPS[2][mod(i + 2)]).toBe('BAR'); });
+  });
+});
+
+describe('回り始め', () => {
+  it('3本そろって加速し、全速になってからはこれまでと同じ速さで回る', () => {
+    const r = { ...makeReel(STRIPS[0]), state: 'spin' as const, p0: 3, t0: 1000, speed: 1 };
+    expect(posAt(r, 1000)).toBe(3);
+    let prev = 3, prevStep = 0;
+    for (let t = 1001; t <= 1000 + SPIN_UP_MS; t++) {
+      const p = posAt(r, t), step = p - prev;
+      expect(step).toBeGreaterThanOrEqual(prevStep - 1e-9); // 速さは落ちない
+      prev = p; prevStep = step;
+    }
+    expect(atFullSpeed(r, 1000 + SPIN_UP_MS - 1)).toBe(false);
+    expect(atFullSpeed(r, 1000 + SPIN_UP_MS)).toBe(true);
+    // 全速の後は1コマ FRAME_MS
+    const a = posAt(r, 1000 + SPIN_UP_MS + 100), b = posAt(r, 1000 + SPIN_UP_MS + 100 + FRAME_MS);
+    expect(b - a).toBeCloseTo(1, 9);
   });
 });
 

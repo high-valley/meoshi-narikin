@@ -1,5 +1,5 @@
 // リールの停止制御（仕様書 4.3）。画面・DOM に依存しない
-import { FRAME_MS, LINES, MAX_SLIP, N, type Sym } from '../data/reels';
+import { FRAME_MS, LINES, MAX_SLIP, N, SPIN_UP_MS, type Sym } from '../data/reels';
 
 export interface Reel {
   strip: Sym[];
@@ -54,8 +54,17 @@ export function makeReel(strip: Sym[], pos = 0): Reel {
   return { strip, pos, state: 'stop', speed: 1, noSlip: false, res: null };
 }
 
+/** 全速で回っているか（回り始めの加速が終わったか）。ストップボタンはこれから受け付ける */
+export function atFullSpeed(r: Reel, t: number): boolean {
+  return r.state === 'spin' && t - (r.t0 ?? 0) >= SPIN_UP_MS;
+}
+
 export function posAt(r: Reel, t: number): number {
-  if (r.state === 'spin') return (r.p0 ?? 0) + (t - (r.t0 ?? 0)) / FRAME_MS * r.speed;
+  if (r.state === 'spin') {
+    // 回り始めは SPIN_UP_MS かけて一定の加速で全速にする
+    const dt = Math.max(0, t - (r.t0 ?? 0)), run = dt < SPIN_UP_MS ? dt * dt / (2 * SPIN_UP_MS) : dt - SPIN_UP_MS / 2;
+    return (r.p0 ?? 0) + run / FRAME_MS * r.speed;
+  }
   if (r.state === 'slide') return Math.min(r.final ?? 0, (r.p0 ?? 0) + (t - (r.t0 ?? 0)) / FRAME_MS * r.speed);
   return r.pos;
 }
@@ -121,7 +130,8 @@ export function finishShare(rs: Reel[], fs: (number | null)[], o: PressOpts, mem
 
 /**
  * リール i を時刻 t に止める。狙いの図柄を、止まっているリールとラインがつながる段へ引き込み、
- * 残りのリールが食い違わずに止められる止め方を選ぶ。リールの状態（p0・t0・final・tEnd・state）を書き換える
+ * 残りのリールが食い違わずに止められる止め方を選ぶ。リールの状態（p0・t0・final・tEnd・state）を書き換える。
+ * 全速で回っているとき（atFullSpeed）に呼ぶこと。加速中に呼ぶと、そこから全速で滑ってしまう
  */
 export function pressL(rs: Reel[], i: number, t: number, target: Sym | null, o: PressOpts): StopResult {
   const r = rs[i], p = posAt(r, t), base = Math.ceil(p - 1e-9);
