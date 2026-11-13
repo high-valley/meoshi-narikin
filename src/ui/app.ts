@@ -9,6 +9,7 @@ import { HOMES, HALLS, FOODS, PLAYS, ITEMS } from '../data/life';
 import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
+import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
 
 export function startApp(){
 
@@ -116,7 +117,7 @@ const KEY='meoshi-narikin-v1';
 function fresh(){return {halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:30000,hun:70,fun:50,hp:80,home:0,inv:{},placed:[{id:'futon',x:0,y:1}],phase:'morning',peak:30000,hist:[],floor:null,play:null}}
 let S=fresh(),remote=null,saving=false,dirty=false;
 try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.day)S=v}catch(e){}
-function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun'])if(S[k]===undefined)S[k]=f[k]}norm();
+function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k]}norm();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}pushRemote()}
 async function pushRemote(){if(!remote)return;if(saving){dirty=true;return}saving=true;try{await remote.set(JSON.parse(JSON.stringify(S)))}catch(e){}saving=false;if(dirty){dirty=false;pushRemote()}}
 let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1900)}
@@ -131,7 +132,7 @@ $('#snd').onclick=()=>{soundOn=!soundOn;if(soundOn&&!ac){try{ac=new (window.Audi
 /* ---------- status ---------- */
 function meterHTML(k,n,col){const v=S[k];return `<div class="mt ${v<25?'low':''}"><div class="r"><span>${n}</span><b>${v}</b></div><div class="bar"><i style="width:${v}%;background:${col}"></i></div></div>`}
 function status(){
-  $('#status').innerHTML=`<span class="day">${S.day}日目 ${S.phase==='morning'?'朝':'夜'}${isEvent(S.day)?' <b style="color:var(--neon)">イベント日</b>':''}<br>${HOMES[S.home].n}${S.title?'　「'+S.title+'」':''}</span><span class="cash">${yen(S.money)}</span>
+  $('#status').innerHTML=`<span class="day">${S.day}日目 ${S.phase==='morning'?'朝':'夜'}${isEvent(S.day)?' <b style="color:var(--neon)">イベント日</b>':''}<br>${HOMES[S.home].n}${S.title?'　「'+S.title+'」':''}</span><span class="cash${yen(S.money).length>11?' long':''}">${yen(S.money)}</span>
   <div class="meters">${meterHTML('hun','お腹','var(--hun)')}${meterHTML('fun','娯楽','var(--fun)')}${meterHTML('hp','体調','var(--hp)')}</div>`;
 }
 function apply(e){for(const [k,v] of Object.entries(e))S[k]=clamp(S[k]+v)}
@@ -346,7 +347,7 @@ function drawTicket(){
 }
 function renderHalls(){
   status();
-  $('#view').innerHTML=`<div class="ch">どの店に行く？</div>${HALLS.map((h,i)=>{const open=!h.open||h.open(S),ban=(S.ban[i]||0)>=S.day;return `<button class="cmd" type="button" data-a="hall" data-i="${i}" ${open&&!ban?'':'disabled'}><b>${h.n}</b><span>${h.d}。1枚 ${yen(h.rate)}（50枚 ${yen(h.rate*50)}）</span><span class="p">${ban?`出入り禁止（${S.ban[i]}日目まで）`:open?'入れる':h.need}</span></button>`}).join('')}<button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
+  $('#view').innerHTML=`<div class="ch">どの店に行く？</div>${HALLS.map((h,i)=>{const open=!h.open||h.open(S)||!!S.devAll,ban=(S.ban[i]||0)>=S.day;return `<button class="cmd" type="button" data-a="hall" data-i="${i}" ${open&&!ban?'':'disabled'}><b>${h.n}</b><span>${h.d}。1枚 ${yen(h.rate)}（50枚 ${yen(h.rate*50)}）</span><span class="p">${ban?`出入り禁止（${S.ban[i]}日目まで）`:open?'入れる':h.need}</span></button>`}).join('')}<button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
 }
 let hallIdx=0;
 function renderFloor(){
@@ -597,6 +598,10 @@ function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
 $('#view').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a,i=+b.dataset.i,id=b.dataset.id;
   if(a==='home'){selItem=null;renderHome()}
+  else if(a==='verTap'){const n=Date.now();devTaps=n-devTapAt<DEV_TAP_MS?devTaps+1:1;devTapAt=n;if(devTaps>=DEV_TAPS&&!$('#devPw')){devTaps=0;showDevLogin()}}
+  else if(a==='devMoney'){S.money=DEV_MAX_MONEY;S.peak=Math.max(S.peak,DEV_MAX_MONEY);save();renderDev();toast('お金を最大にしました')}
+  else if(a==='devUnlock'){devUnlockAll();save();renderDev();toast('全部解放しました')}
+  else if(a==='devHeal'){S.hun=100;S.fun=100;S.hp=100;save();renderDev();toast('お腹・娯楽・体調を満タンにしました')}
   else if(a==='update'){if(P)return;save();reloadToLatest(latestBuild)}
   else if(a==='updClose'){noteClosed=true;const n=$('#updNote');if(n)n.remove()}
   else if(a==='sel'){selItem=selItem===id?null:id;renderHome()}
@@ -632,18 +637,46 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();lever()}
   const k={KeyJ:0,KeyK:1,KeyL:2}[e.code];if(k!==undefined)stopAt(k,e);
 });
+// 開発者画面（仕様書 9.3）。「今の版」を続けて押すとパスワード欄が出る
+let devTaps=0,devTapAt=0;
+function showDevLogin(){
+  const v=$('.verbox');if(!v)return;
+  v.insertAdjacentHTML('beforeend','<form class="devpw" id="devPw"><input type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="パスワード" aria-label="開発者パスワード"><button class="btn alt" type="submit">開く</button></form>');
+  const f=$('#devPw'),inp=f.querySelector('input');inp.focus();
+  f.addEventListener('submit',e=>{e.preventDefault();if(inp.value===DEV_PASSWORD){renderDev()}else{inp.value='';toast('パスワードが違います')}});
+}
+function devUnlockAll(){
+  S.devAll=true;
+  for(const k of Object.keys(UPG))S.upg[k]=UPG[k].max;
+  for(const a of ACH)if(!S.ach[a.id]){S.ach[a.id]=S.day;if(a.id!=='banned')S.title=a.n} // ごほうびのお金は出さない。称号は最後に足した実績名（「前科者」は除く）
+  for(const id of Object.keys(ITEMS))if(!placedCount(id)&&!(S.inv[id]>0))S.inv[id]=1;
+  S.ban={};
+  HALLS.forEach((_,i)=>{hallState(i).friend=100});
+}
+function renderDev(){
+  status();
+  $('#view').innerHTML=`<div class="ch">開発者画面</div>
+  <p class="sub">動作確認用です。ここでの変更はセーブデータに残ります。</p>
+  <button class="cmd" type="button" data-a="devMoney"><b>お金を最大にする</b><span>所持金を ${yen(DEV_MAX_MONEY)} にする</span></button>
+  <button class="cmd" type="button" data-a="devUnlock"><b>全部解放する</b><span>3つの店・自己投資の最大レベル・実績と称号すべて・家具を1つずつ・店員さんとの仲100・出入り禁止の解除（実績のごほうびのお金は出ない。家は所持金で買う）</span></button>
+  <button class="cmd" type="button" data-a="devHeal"><b>ゲージを満タンにする</b><span>お腹・娯楽・体調を100にする</span></button>
+  <button class="btn alt" type="button" data-a="home">ホームに戻る</button>`;
+}
 // 版の確認。起動したときと、しばらくしてアプリに戻ってきたときに、公開されている最新の版と比べる
 // （ホーム画面に置いたアプリは閉じても読み直されないことがあるので、更新ボタンで読み直せるようにする）
 let latestBuild=null,latestState='checking',lastCheck=0;
 function verText(){if(latestState==='checking')return '最新の版を確かめています…';if(latestState==='none')return '最新の版を確かめられませんでした（通信できないときなど）';if(latestState==='same')return 'これが最新の版です';return '新しい版があります：'+buildLabel(latestBuild)}
-function verBox(){return `<section class="verbox" aria-label="アプリの版"><p>今の版：${buildLabel(CURRENT_BUILD)}</p><p class="v-latest${latestState==='newer'?' newer':''}" aria-live="polite">${verText()}</p><button class="btn${latestState==='newer'?'':' alt'}" type="button" data-a="update">${latestState==='newer'?'最新の版に更新する':'読み直す'}</button></section>`}
+function verBox(){return `<section class="verbox" aria-label="アプリの版"><p data-a="verTap">今の版：${buildLabel(CURRENT_BUILD)}</p><p class="v-latest${latestState==='newer'?' newer':''}" aria-live="polite">${verText()}</p><button class="btn${latestState==='newer'?'':' alt'}" type="button" data-a="update">${latestState==='newer'?'最新の版に更新する':'読み直す'}</button></section>`}
 // 新しい版の知らせはホーム画面の上にだけ出す（打っている最中・ルーレット・バイトの途中では読み直せないように）
 let noteClosed=false;
 function updNote(){return latestState==='newer'&&!noteClosed?'<div class="upd-note" id="updNote" role="status"><span>新しい版があります</span><button type="button" data-a="update">更新する</button><button type="button" class="u-close" data-a="updClose" aria-label="とじる">×</button></div>':''}
 function checkLatest(){lastCheck=Date.now();fetchLatestBuild().then(l=>{
   latestBuild=l;latestState=CURRENT_BUILD.id==='dev'||(l&&l.id===CURRENT_BUILD.id)?'same':!l?'none':'newer';
   const v=$('.verbox');if(!v)return;
-  v.outerHTML=verBox();const old=$('#updNote');if(old)old.remove();
+  // パスワード欄を開いているときは消さないよう、版の欄は中身だけ書き換える
+  const nb=document.createElement('div');nb.innerHTML=verBox();const fresh2=nb.firstElementChild;
+  for(const sel of ['.v-latest','[data-a=update]']){const a2=v.querySelector(sel),b2=fresh2.querySelector(sel);if(a2&&b2)a2.replaceWith(b2)}
+  const old=$('#updNote');if(old)old.remove();
   if(updNote())$('#view').insertAdjacentHTML('afterbegin',updNote())})}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastCheck>10*60*1000)checkLatest()});
 checkLatest();
