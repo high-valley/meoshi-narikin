@@ -10,6 +10,8 @@ import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
+import { SLIDE_BUY_MIN } from '../data/ui';
+import { setTabbar, pagesHTML, bindPages, slideHTML, bindSlides } from './widgets';
 
 export function startApp(){
 
@@ -193,20 +195,15 @@ function renderHome(){
     <div class="room"><canvas id="room" width="${H.w*16}" height="${H.h*16+20}" aria-label="部屋"></canvas></div>
     ${inv.length||selItem?`<div class="ch">持ち物（選んでから空いている床をタップ。置いた家具をタップで片付け）</div><div class="inv">${inv.map(([id,n])=>`<button class="chip" type="button" data-a="sel" data-id="${id}" aria-pressed="${selItem===id}"><canvas width="16" height="16" data-icon="${id}"></canvas>${ITEMS[id].n}×${n}</button>`).join('')}</div>`:'<p class="sub">家具をタップすると片付けられます。</p>'}
     <p class="sub">寝ると 体調+${ev.sleep}${ev.fun?` 娯楽+${ev.fun}`:''}${ev.hp?` 体調+${ev.hp}`:''}${ev.keep?` お腹の減り−${ev.keep}`:''}${H.rent?`、家賃 ${yen(H.rent)}`:''}</p>
+    <button class="cmd main" type="button" data-a="halls" ${S.phase!=='morning'?'disabled':''}><b>パチ屋へ行く</b><span>${S.phase==='morning'?'閉店まで打てる。1日1回':'今日はもう打った'}</span></button>
     <div class="grid2">
-      <button class="cmd main wide" type="button" data-a="halls" ${S.phase!=='morning'?'disabled':''}><b>パチ屋へ行く</b><span>${S.phase==='morning'?'閉店まで打てる。1日1回':'今日はもう打った'}</span></button>
-      <button class="cmd" type="button" data-a="food"><b>ごはん</b><span>お腹を満たす</span></button>
-      <button class="cmd" type="button" data-a="fun"><b>息抜き</b><span>娯楽と体調</span></button>
-      <button class="cmd" type="button" data-a="furn"><b>家具屋</b><span>部屋に置ける</span></button>
-      <button class="cmd" type="button" data-a="estate"><b>不動産屋</b><span>引っ越し、家の購入</span></button>
       <button class="cmd" type="button" data-a="job" ${S.phase!=='morning'?'disabled':''}><b>日雇いバイト</b><span>検品作業。出来高で給料</span></button>
-      <button class="cmd" type="button" data-a="self"><b>自己投資</b><span>少しずつ打ち手として強くなる</span></button>
-      <button class="cmd" type="button" data-a="black" ${S.day<3?'disabled':''}><b>裏市場</b><span>${S.day<3?'3日目から':'危ない品が手に入る'}</span></button>
-      <button class="cmd" type="button" data-a="ach"><b>実績</b><span>${Object.keys(S.ach).length}/${ACH.length} 達成</span></button>
       <button class="cmd" type="button" data-a="sleep"><b>寝る</b><span>次の日へ</span></button>
     </div>
     ${S.hist.length?`<div class="log"><span>最近の収支</span>${S.hist.slice(-4).reverse().map(h=>`<span>${h.day}日目 ${h.hall} ${h.m}：<b class="${h.v>=0?'pos':'neg'}">${h.v>=0?'+':''}${yen(h.v)}</b></span>`).join('')}</div>`:''}
-    <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>${verBox()}`;
+    <p class="sub">ごはん・家具・不動産は下の「買い物」、自己投資・実績・設定は「自分」から。</p>
+    <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>`;
+  tabs('home');
   document.querySelectorAll('[data-icon]').forEach(cv=>drawItem(cv.getContext('2d'),cv.dataset.icon,0,0));
   const cv=$('#room'),c=cv.getContext('2d');c.imageSmoothingEnabled=false;cv.style.maxWidth=Math.round(Math.min(window.innerHeight*.36,320)*cv.width/cv.height)+'px';cv.style.margin='0 auto';
   cancelAnimationFrame(roomRAF);const loop=t=>{if(!document.body.contains(cv))return;drawRoom(c,S.home,S.placed,selItem,t);roomRAF=requestAnimationFrame(loop)};roomRAF=requestAnimationFrame(loop);
@@ -218,19 +215,51 @@ function renderHome(){
     if(at<0&&selItem&&S.inv[selItem]>0){S.inv[selItem]--;S.placed.push({id:selItem,x,y});if(!S.inv[selItem])selItem=null;save();renderHome();SND.coin()}
   });
 }
-function shopHTML(title,list,act){return `<div class="ch">${title}</div><div class="grid2">${list.map(x=>`<button class="cmd" type="button" data-a="${act}" data-id="${x.id}" ${S.money<x.p?'disabled':''}><b>${x.n}</b><span>${effText(x.e)}</span><span class="p">${yen(x.p)}</span></button>`).join('')}</div><button class="btn alt" type="button" data-a="home">部屋に戻る</button>`}
+// 買い物と自分の画面は、上のタブと横スワイプでページを切り替える（仕様書 9.4）
+let shopTab='food',meTab='self';
+// 高い買い物はスライドして決める。安いものはボタン1回
+function buyCard(o){const big=o.slide||o.price>=SLIDE_BUY_MIN,off=o.disabled||S.money<o.price;
+  if(!big)return `<button class="cmd" type="button" data-a="${o.a}" ${o.data} ${off?'disabled':''}><b>${o.name}</b><span>${o.desc}</span><span class="p">${o.ptext||yen(o.price)}</span></button>`;
+  const ds={};o.data.replace(/data-(\w+)="([^"]*)"/g,(_,k,v)=>{ds[k]=v});
+  return `<div class="cmd card${off?' dis':''}"><b>${o.name}</b><span>${o.desc}</span><span class="p">${o.ptext||yen(o.price)}</span>${slideHTML(o.slideLabel||'スライドして購入',o.a,ds,off)}</div>`}
+function foodPage(list,act){return `<div class="grid2">${list.map(x=>buyCard({a:act,data:`data-id="${x.id}"`,name:x.n,desc:effText(x.e),price:x.p})).join('')}</div>`}
 function effText(e){const N={hun:'お腹',fun:'娯楽',hp:'体調'};return Object.entries(e).map(([k,v])=>`${N[k]}${v>0?'+':''}${v}`).join(' ')}
-function renderFurn(){
-  status();
-  $('#view').innerHTML=`<div class="ch">家具屋</div><div class="grid2">${Object.entries(ITEMS).filter(([,i])=>i.p>0).map(([id,it])=>`<button class="cmd" type="button" data-a="buyF" data-id="${id}" ${S.money<it.p?'disabled':''}><b>${it.n}</b><span>${it.d}</span><span class="p">${yen(it.p)}　持ち物${(S.inv[id]||0)+placedCount(id)}</span></button>`).join('')}</div>
-  <p class="sub">買った家具は持ち物に入ります。部屋の床に置くと効果が出ます。寝具は一番良いものだけが効きます。</p><button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
+function furnPage(){return `<div class="grid2">${Object.entries(ITEMS).filter(([,i])=>i.p>0).map(([id,it])=>buyCard({a:'buyF',data:`data-id="${id}"`,name:it.n,desc:it.d,price:it.p,ptext:`${yen(it.p)}　持ち物${(S.inv[id]||0)+placedCount(id)}`})).join('')}</div>
+  <p class="sub">買った家具は持ち物に入ります。ホームの部屋の床に置くと効果が出ます。寝具は一番良いものだけが効きます。</p>`}
+function estatePage(){return HOMES.map((h,i)=>{const cost=h.buy||h.move,cur=i===S.home,owned=i<S.home;
+    const desc=`${h.d}。広さ ${h.w}×${h.h}マス、睡眠 体調+${h.sleep}`,pt=h.buy?'購入 '+yen(h.buy):i===0?'家賃 '+yen(h.rent)+'/日':'初期費用 '+yen(h.move)+'、家賃 '+yen(h.rent)+'/日';
+    if(cur||owned||i===0)return `<div class="cmd card dis"><b>${h.n}${cur?'（今の家）':''}</b><span>${desc}</span><span class="p">${pt}</span></div>`;
+    return buyCard({a:'move',data:`data-i="${i}"`,name:h.n,desc,price:cost,ptext:pt,slide:true,slideLabel:h.buy?'スライドして購入':'スライドして引っ越す'})}).join('')+
+  `<p class="sub">引っ越すと家具は持ち物に戻ります。家を買うと家賃がなくなり、高レートの店に入れるようになります。</p>`}
+function blackPage(){if(S.day<3)return '<p class="lead">裏市場は3日目から開きます。</p>';
+  return `<p class="lead">「いいのがあるよ」</p>${buyCard({a:'buyKiban',data:'',name:'改造基盤',desc:`台に仕込むと、その日はボーナスが1.4倍当たりやすい。1回使い切り。仕込む時に${bustRate()}%で店員に見つかる。見つかると罰金（所持金の3割、最低5万円）と、その店に5日間出入り禁止。見つかるたびに次から見つかりやすくなる`,price:kibanPrice(),ptext:`${yen(kibanPrice())}　所持 ${S.kiban}`})}
+  <p class="sub">ゲームの中だけの話です。現実の不正は犯罪です。</p>`}
+function renderShop(tab){
+  if(tab)shopTab=tab;status();const y=window.scrollY;
+  $('#view').innerHTML=`<div class="ch">買い物</div>`+pagesHTML([
+    {key:'food',label:'ごはん',html:foodPage(FOODS,'eat')},{key:'fun',label:'息抜き',html:foodPage(PLAYS,'play')},
+    {key:'furn',label:'家具',html:furnPage()},{key:'estate',label:'不動産',html:estatePage()},{key:'black',label:'裏市場',html:blackPage()}],shopTab);
+  bindPages($('#view'),shopTab,k=>{shopTab=k});bindSlides($('#view'),el=>act(el.dataset.slide,el));
+  if(!tab)window.scrollTo(0,y);tabs('shop');
 }
-function renderEstate(){
-  status();
-  $('#view').innerHTML=`<div class="ch">不動産屋</div>${HOMES.map((h,i)=>{const cost=h.buy||h.move,cur=i===S.home,owned=i<S.home;
-    return `<button class="cmd" type="button" data-a="move" data-i="${i}" ${cur||owned||S.money<cost?'disabled':''}><b>${h.n}${cur?'（今の家）':''}</b><span>${h.d}。広さ ${h.w}×${h.h}マス、睡眠 体調+${h.sleep}</span><span class="p">${h.buy?'購入 '+yen(h.buy):i===0?'家賃 '+yen(h.rent)+'/日':'初期費用 '+yen(h.move)+'、家賃 '+yen(h.rent)+'/日'}</span></button>`}).join('')}
-  <p class="sub">引っ越すと家具は持ち物に戻ります。家を買うと家賃がなくなり、高レートの店に入れるようになります。</p><button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
+function renderFurn(){renderShop('furn')}
+function renderEstate(){renderShop('estate')}
+function renderBlack(){renderShop('black')}
+function selfPage(){return `<p class="sub">一度身につけた力はずっと残ります。効果は小さく、値段はだんだん上がります。</p>
+  ${Object.entries(UPG).map(([k,u])=>{const l=S.upg[k],done=l>=u.max;return buyCard({a:'upg',data:`data-id="${k}"`,name:`${u.n}　Lv${l}/${u.max}`,desc:done?'最大まで鍛えた':u.d(l),price:done?0:u.cost(l),ptext:done?'—':yen(u.cost(l)),disabled:done})}).join('')}
+  ${buyCard({a:'drops',data:'',name:'目薬',desc:S.dropDay===S.day?'今日はもう差した':'今日1日、リールが3%ゆっくり見える',price:1500,disabled:S.dropDay===S.day})}`}
+function achPage(){return `<p class="sub">${Object.keys(S.ach).length}/${ACH.length} 達成。最後に達成した実績が称号として表示されます。</p>
+  ${ACH.map(a=>`<div class="cmd" style="cursor:default;${has(a.id)?'border-color:var(--gold)':'opacity:.6'}"><b>${has(a.id)?'★ ':''}${a.n}</b><span>${a.d}</span><span class="p">ごほうび：${a.r}${has(a.id)?`（${S.ach[a.id]}日目に達成）`:''}</span></div>`).join('')}`}
+function settingsPage(){return `<p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>${verBox()}`}
+function renderMe(tab){
+  if(tab)meTab=tab;status();const y=window.scrollY;
+  $('#view').innerHTML=`<div class="ch">自分</div>`+pagesHTML([
+    {key:'self',label:'自己投資',html:selfPage()},{key:'ach',label:'実績',html:achPage()},{key:'set',label:'設定',html:settingsPage()}],meTab);
+  bindPages($('#view'),meTab,k=>{meTab=k});bindSlides($('#view'),el=>act(el.dataset.slide,el));
+  if(!tab)window.scrollTo(0,y);tabs('me');
 }
+function renderSelf(){renderMe('self')}
+function renderAch(){renderMe('ach')}
 function moveTo(i){const h=HOMES[i];if(!spend(h.buy||h.move))return;if(i>=3)grant('house');if(i===4)grant('tower');for(const p of S.placed)S.inv[p.id]=(S.inv[p.id]||0)+1;S.placed=[];S.home=i;apply({fun:20});save();cutin(h.n+'へ');renderHome()}
 function sleep(){
   const H=HOMES[S.home],ev=dailyEffects(S.placed,S.home,has('house')?5:0);
@@ -249,24 +278,10 @@ const UPG={
   data:{n:'データ分析',max:3,cost:l=>[30000,120000,400000][l],d:l=>['台のデータにREG回数が出る','前日の差枚が出る','高設定の気配が出る（6割の精度）'][l]||'最大'},
   body:{n:'体力づくり',max:3,cost:l=>15000*(l+1)*(l+1),d:l=>`打っている時のお腹と体調の減りが${(l+1)*10}%少ない`}
 };
-function renderSelf(){
-  status();
-  $('#view').innerHTML=`<div class="ch">自己投資</div><p class="sub">一度身につけた力はずっと残ります。効果は小さく、値段はだんだん上がります。</p>
-  ${Object.entries(UPG).map(([k,u])=>{const l=S.upg[k],done=l>=u.max;return `<button class="cmd" type="button" data-a="upg" data-id="${k}" ${done||S.money<u.cost(l)?'disabled':''}><b>${u.n}　Lv${l}/${u.max}</b><span>${done?'最大まで鍛えた':u.d(l)}</span><span class="p">${done?'—':yen(u.cost(l))}</span></button>`}).join('')}
-  <button class="cmd" type="button" data-a="drops" ${S.money<1500||S.dropDay===S.day?'disabled':''}><b>目薬</b><span>${S.dropDay===S.day?'今日はもう差した':'今日1日、リールが3%ゆっくり見える'}</span><span class="p">${yen(1500)}</span></button>
-  <button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
-}
 function kibanPrice(){return 50000*(1+S.home)}
-function renderBlack(){
-  status();
-  $('#view').innerHTML=`<div class="ch">裏市場</div><p class="lead">「いいのがあるよ」</p>
-  <button class="cmd" type="button" data-a="buyKiban" ${S.money<kibanPrice()?'disabled':''}><b>改造基盤</b><span>台に仕込むと、その日はボーナスが1.4倍当たりやすい。1回使い切り。仕込む時に${bustRate()}%で店員に見つかる。見つかると罰金（所持金の3割、最低5万円）と、その店に5日間出入り禁止。見つかるたびに次から見つかりやすくなる</span><span class="p">${yen(kibanPrice())}　所持 ${S.kiban}</span></button>
-  <p class="sub">ゲームの中だけの話です。現実の不正は犯罪です。</p>
-  <button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
-}
 function roulette(i){
   const rate=bustRate(),n=10,bust=Math.round(rate/10),segs=Array.from({length:n},(_,k)=>k<bust);segs.sort(()=>Math.random()-.5);
-  const stop=Math.floor(Math.random()*n),caught=segs[stop];
+  const stop=Math.floor(Math.random()*n),caught=segs[stop];tabs(null);
   $('#view').innerHTML=`<div class="ch">仕込み中…店員の目は？</div><canvas id="rl" width="240" height="240" style="width:240px;max-width:100%;margin:0 auto;display:block"></canvas><p class="lead" id="rlt" style="text-align:center">　</p>`;
   const c=$('#rl').getContext('2d'),t0=performance.now(),dur=2600,turns=4+stop/n;
   const draw=a=>{c.clearRect(0,0,240,240);for(let k=0;k<n;k++){c.beginPath();c.moveTo(120,120);c.arc(120,120,110,a+k*2*Math.PI/n,a+(k+1)*2*Math.PI/n);c.closePath();c.fillStyle=segs[k]?'#ff3b6b':(k%2?'#2a2445':'#3b3460');c.fill();c.strokeStyle='#15101f';c.stroke();
@@ -283,7 +298,7 @@ function roulette(i){
 
 /* ---------- part-time job: inspection line ---------- */
 function startJob(){
-  status();
+  status();tabs(null);
   $('#view').innerHTML=`<div class="ch">日雇いバイト　検品ライン</div><p class="sub">流れてくる箱が金の枠に入った瞬間に「検品」を押す。赤い×の箱（不良品）は押さずに見送る。</p>
   <div class="room"><canvas id="job" width="320" height="110" style="width:100%;max-width:100%;image-rendering:pixelated"></canvas></div>
   <div class="counter"><div>正確<b id="jg">0</b></div><div>ミス<b id="jm">0</b></div><div>残り<b id="jl">30</b></div><div>給料<b id="jp">¥0</b></div></div>
@@ -307,13 +322,6 @@ function startJob(){
       $('#view').insertAdjacentHTML('beforeend',`<div class="res"><span>正確に検品</span><b>${good}箱</b><span>ミス</span><b>${miss}回</b><span>給料</span><b class="big pos">${yen(p)}</b></div><button class="btn" type="button" data-a="home">家に帰る</button>`);$('#jobBtn').disabled=true;return}
     requestAnimationFrame(loop)};
   requestAnimationFrame(loop);upd();
-}
-
-function renderAch(){
-  status();
-  $('#view').innerHTML=`<div class="ch">実績（${Object.keys(S.ach).length}/${ACH.length}）</div>
-  ${ACH.map(a=>`<div class="cmd" style="cursor:default;${has(a.id)?'border-color:var(--gold)':'opacity:.6'}"><b>${has(a.id)?'★ ':''}${a.n}</b><span>${a.d}</span><span class="p">ごほうび：${a.r}${has(a.id)?`（${S.ach[a.id]}日目に達成）`:''}</span></div>`).join('')}
-  <p class="sub">最後に達成した実績が称号として表示されます。</p><button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
 }
 
 /* ---------- hall floor ---------- */
@@ -346,13 +354,14 @@ function drawTicket(){
   return ahead;
 }
 function renderHalls(){
-  status();
-  $('#view').innerHTML=`<div class="ch">どの店に行く？</div>${HALLS.map((h,i)=>{const open=!h.open||h.open(S)||!!S.devAll,ban=(S.ban[i]||0)>=S.day;return `<button class="cmd" type="button" data-a="hall" data-i="${i}" ${open&&!ban?'':'disabled'}><b>${h.n}</b><span>${h.d}。1枚 ${yen(h.rate)}（50枚 ${yen(h.rate*50)}）</span><span class="p">${ban?`出入り禁止（${S.ban[i]}日目まで）`:open?'入れる':h.need}</span></button>`}).join('')}<button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
+  status();tabs('halls');
+  const done=S.phase!=='morning'; // パチ屋は1日1回（打った後・バイトの後は次の日まで入れない）
+  $('#view').innerHTML=`<div class="ch">どの店に行く？</div>${done?'<p class="lead">今日はもう出かけた。寝ると次の日になります。</p>':''}${HALLS.map((h,i)=>{const open=!h.open||h.open(S)||!!S.devAll,ban=(S.ban[i]||0)>=S.day;return `<button class="cmd" type="button" data-a="hall" data-i="${i}" ${open&&!ban&&!done?'':'disabled'}><b>${h.n}</b><span>${h.d}。1枚 ${yen(h.rate)}（50枚 ${yen(h.rate*50)}）</span><span class="p">${ban?`出入り禁止（${S.ban[i]}日目まで）`:open?'入れる':h.need}</span></button>`}).join('')}<button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
 }
 let hallIdx=0;
 function renderFloor(){
   if(!FL()||FL().day!==S.day)makeFloor();
-  status();const h=HALLS[hallIdx],F=FL();
+  status();tabs('halls');const h=HALLS[hallIdx],F=FL();
   if(F.ev&&!F.ticket){
     $('#view').innerHTML=`<div class="ch">${h.n}　イベント日の朝</div><p class="lead">開店前から長い列。整理券の抽選で入場順が決まる。</p><p class="sub">番号が若いほど先に入れます。後ろの番号だと、良さそうな台から他の客に取られていきます。</p><button class="btn" type="button" data-a="ticket">整理券を引く</button><button class="btn alt" type="button" data-a="home">並ばずに帰る</button>`;return}
   const Hs=hallState(hallIdx);if(Hs.visit!==S.day){Hs.visit=S.day;Hs.friend=Math.min(100,Hs.friend+2);save()}
@@ -381,12 +390,13 @@ const OPEN_MIN=10*60,CLOSE_MIN=22*60+40;
 function clock(g){const m=OPEN_MIN+g;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
 function mach(){if(!P.boost)return P.m;const m=P.m;return {...m,big:s=>m.big(s)*1.4,reg:m.reg?s=>m.reg(s)*1.4:null}}
 function sitDown(i){
-  if(S.kiban>0&&!S._skipKiban){$('#view').innerHTML=kibanAsk(i);return}
+  if(S.kiban>0&&!S._skipKiban){$('#view').innerHTML=kibanAsk(i);tabs(null);return}
   S._skipKiban=false;sitDown2(i,false)}
 function kibanAsk(i){return `<div class="ch">裏市場の改造基盤</div><p class="lead">この台に改造基盤を仕込みますか？</p><p class="sub">成功すればこの日はボーナスが1.4倍当たりやすくなります。仕込む瞬間に店員に見つかると、罰金と出入り禁止です。見つかる確率は今 ${bustRate()}%。</p>
   <div class="grid2"><button class="cmd main" type="button" data-a="kiban" data-i="${i}"><b>仕込む</b><span>ルーレットで判定</span></button><button class="cmd" type="button" data-a="nokiban" data-i="${i}"><b>普通に打つ</b><span>基盤は持ったまま</span></button></div>`}
 function bustRate(){return Math.min(60,20+S.conv*10)}
 function sitDown2(i,boost){
+  if(S.phase!=='morning'){toast('今日はもう出かけた。寝ると次の日');return renderHalls()}
   const x=FL().ms[i];
   P={unit:i,since:x.since,startSince:x.since,ceilHit:false,ev:FL().ev,boost,m:MACH[x.k],s:x.s,rate:HALLS[hallIdx].rate,hall:HALLS[hallIdx].n,medals:0,inv:0,g:0,big:0,mode:'normal',flag:null,pend:null,order:[],navi:-1,hint:-1,left:0,doors:null,zen:0,log:[],auto:false,big8:0,res:[]};
   S.phase='hall';S.play={hall:P.hall,rate:P.rate,m:P.m.n,medals:0,inv:0};save();
@@ -410,7 +420,7 @@ function cue(){
 }
 function counterHTML(){const out=P.medals*P.rate,net=out-P.inv;return `<div class="counter"><div>時刻<b>${clock(P.g)}</b></div><div>回転<b>${P.g}G</b></div><div>持ちメダル<b>${P.medals}</b></div><div>収支<b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
 function renderPlay(){
-  status();const [c,cl]=cue();
+  status();tabs(null);const [c,cl]=cue();
   const busyBonus=['big','reg','at','zen','align','door','cont'].includes(P.mode);
   $('#view').innerHTML=`<div class="cab"><div class="cabtop"><b>${P.m.n}</b><span class="sub">${P.hall}　BIG ${P.big} REG ${P.reg||0}${P.boost?' 基盤':''}${S.dropDay===S.day?' 目薬':''}</span></div>
     ${counterHTML()}
@@ -595,43 +605,46 @@ function stopReelsLoop(){cancelAnimationFrame(reelRAF)}
 
 /* ---------- routing ---------- */
 function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
+// 下のタブバー。打っている最中・バイト・ルーレットの途中は隠す（その画面で tabs(null)）
+function tabs(t){setTabbar(t,go=>{selItem=null;if(go==='home')renderHome();else if(go==='halls')renderHalls();else if(go==='shop')renderShop(shopTab);else renderMe(meTab);window.scrollTo(0,0)})}
 $('#view').addEventListener('click',e=>{
-  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a,i=+b.dataset.i,id=b.dataset.id;
+  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;act(b.dataset.a,b)});
+// ボタン（data-a）とスライド（data-slide）の両方から呼ぶ
+function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   if(a==='home'){selItem=null;renderHome()}
   else if(a==='verTap'){const n=Date.now();devTaps=n-devTapAt<DEV_TAP_MS?devTaps+1:1;devTapAt=n;if(devTaps>=DEV_TAPS&&!$('#devPw')){devTaps=0;showDevLogin()}}
   else if(a==='devMoney'){S.money=DEV_MAX_MONEY;S.peak=Math.max(S.peak,DEV_MAX_MONEY);save();renderDev();toast('お金を最大にしました')}
   else if(a==='devUnlock'){devUnlockAll();save();renderDev();toast('全部解放しました')}
   else if(a==='devHeal'){S.hun=100;S.fun=100;S.hp=100;save();renderDev();toast('お腹・娯楽・体調を満タンにしました')}
-  else if(a==='update'){if(P)return;save();reloadToLatest(latestBuild)}
+  else if(a==='update'){if(!onHomeOrSettings())return;save();reloadToLatest(latestBuild)}
   else if(a==='updClose'){noteClosed=true;const n=$('#updNote');if(n)n.remove()}
   else if(a==='sel'){selItem=selItem===id?null:id;renderHome()}
-  else if(a==='food'){status();$('#view').innerHTML=shopHTML('ごはん',FOODS,'eat')}
-  else if(a==='fun'){status();$('#view').innerHTML=shopHTML('息抜き',PLAYS,'play')}
-  else if(a==='eat'||a==='play'){const x=(a==='eat'?FOODS:PLAYS).find(z=>z.id===id);if(spend(x.p)){apply(x.e);save();SND.coin();toast(x.n+'　'+effText(x.e));status();$('#view').innerHTML=shopHTML(a==='eat'?'ごはん':'息抜き',a==='eat'?FOODS:PLAYS,a)}}
+  else if(a==='eat'||a==='play'){const x=(a==='eat'?FOODS:PLAYS).find(z=>z.id===id);if(spend(x.p)){apply(x.e);save();SND.coin();toast(x.n+'　'+effText(x.e));renderShop()}}
   else if(a==='furn')renderFurn();
-  else if(a==='buyF'){const it=ITEMS[id];if(spend(it.p)){S.inv[id]=(S.inv[id]||0)+1;save();SND.coin();toast(it.n+'を買った。部屋に置こう');renderFurn()}}
+  else if(a==='buyF'){const it=ITEMS[id];if(spend(it.p)){S.inv[id]=(S.inv[id]||0)+1;save();SND.coin();toast(it.n+'を買った。ホームの部屋に置こう');renderShop()}}
   else if(a==='estate')renderEstate();
   else if(a==='move')moveTo(i);
   else if(a==='job')startJob();
   else if(a==='self')renderSelf();
+  else if(a==='me')renderMe('set');
   else if(a==='ach')renderAch();
   else if(a==='gift'){const H=hallState(hallIdx);if(H.gift!==S.day&&spend(HALLS[hallIdx].gift)){H.gift=S.day;H.friend=Math.min(100,H.friend+8);save();toast('店員さん「いつもありがとうございます」');renderFloor()}}
   else if(a==='ticket'){const ahead=drawTicket();toast(`${FL().ticket}番。先に${ahead}人が台を選んだ`);renderFloor()}
-  else if(a==='upg'){const u=UPG[id],l=S.upg[id];if(l<u.max&&spend(u.cost(l))){S.upg[id]++;save();SND.fan();renderSelf()}}
-  else if(a==='drops'){if(spend(1500)){S.dropDay=S.day;save();toast('目がすっきりした');renderSelf()}}
+  else if(a==='upg'){const u=UPG[id],l=S.upg[id];if(l<u.max&&spend(u.cost(l))){S.upg[id]++;save();SND.fan();renderMe()}}
+  else if(a==='drops'){if(spend(1500)){S.dropDay=S.day;save();toast('目がすっきりした');renderMe()}}
   else if(a==='black')renderBlack();
-  else if(a==='buyKiban'){if(spend(kibanPrice())){S.kiban++;save();renderBlack()}}
+  else if(a==='buyKiban'){if(spend(kibanPrice())){S.kiban++;save();renderShop()}}
   else if(a==='kiban')roulette(i);
   else if(a==='nokiban')sitDown2(i,false);
   else if(a==='sleep')sleep();
   else if(a==='halls')renderHalls();
-  else if(a==='hall'){hallIdx=i;renderFloor()}
+  else if(a==='hall'){if(S.phase!=='morning')return renderHalls();hallIdx=i;renderFloor()}
   else if(a==='sit')sitDown(i);
   else if(a==='auto')autoPlay();
   else if(a==='quit')quit(false);
   else if(a==='door')pickDoor(+b.dataset.d);
   else if(a==='cont')pickCont(+b.dataset.d);
-});
+}
 document.addEventListener('keydown',e=>{
   if(!P||e.repeat)return;
   if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();lever()}
@@ -654,13 +667,13 @@ function devUnlockAll(){
   HALLS.forEach((_,i)=>{hallState(i).friend=100});
 }
 function renderDev(){
-  status();
+  status();tabs('me');
   $('#view').innerHTML=`<div class="ch">開発者画面</div>
   <p class="sub">動作確認用です。ここでの変更はセーブデータに残ります。</p>
   <button class="cmd" type="button" data-a="devMoney"><b>お金を最大にする</b><span>所持金を ${yen(DEV_MAX_MONEY)} にする</span></button>
   <button class="cmd" type="button" data-a="devUnlock"><b>全部解放する</b><span>3つの店・自己投資の最大レベル・実績と称号すべて・家具を1つずつ・店員さんとの仲100・出入り禁止の解除（実績のごほうびのお金は出ない。家は所持金で買う）</span></button>
   <button class="cmd" type="button" data-a="devHeal"><b>ゲージを満タンにする</b><span>お腹・娯楽・体調を100にする</span></button>
-  <button class="btn alt" type="button" data-a="home">ホームに戻る</button>`;
+  <button class="btn alt" type="button" data-a="me">設定に戻る</button>`;
 }
 // 版の確認。起動したときと、しばらくしてアプリに戻ってきたときに、公開されている最新の版と比べる
 // （ホーム画面に置いたアプリは閉じても読み直されないことがあるので、更新ボタンで読み直せるようにする）
@@ -672,12 +685,15 @@ let noteClosed=false;
 function updNote(){return latestState==='newer'&&!noteClosed?'<div class="upd-note" id="updNote" role="status"><span>新しい版があります</span><button type="button" data-a="update">更新する</button><button type="button" class="u-close" data-a="updClose" aria-label="とじる">×</button></div>':''}
 function checkLatest(){lastCheck=Date.now();fetchLatestBuild().then(l=>{
   latestBuild=l;latestState=CURRENT_BUILD.id==='dev'||(l&&l.id===CURRENT_BUILD.id)?'same':!l?'none':'newer';
-  const v=$('.verbox');if(!v)return;
+  const v=$('.verbox');
   // パスワード欄を開いているときは消さないよう、版の欄は中身だけ書き換える
-  const nb=document.createElement('div');nb.innerHTML=verBox();const fresh2=nb.firstElementChild;
-  for(const sel of ['.v-latest','[data-a=update]']){const a2=v.querySelector(sel),b2=fresh2.querySelector(sel);if(a2&&b2)a2.replaceWith(b2)}
+  if(v){const nb=document.createElement('div');nb.innerHTML=verBox();const fresh2=nb.firstElementChild;
+    for(const sel of ['.v-latest','[data-a=update]']){const a2=v.querySelector(sel),b2=fresh2.querySelector(sel);if(a2&&b2)a2.replaceWith(b2)}}
+  // 知らせはホーム画面にだけ出す（ほかの画面の途中で読み直して、結果をやり直せないように）
+  if(P||!$('#room'))return;
   const old=$('#updNote');if(old)old.remove();
   if(updNote())$('#view').insertAdjacentHTML('afterbegin',updNote())})}
+function onHomeOrSettings(){return !P&&(!!$('#room')||!!$('.verbox'))}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastCheck>10*60*1000)checkLatest()});
 checkLatest();
 loadSymbols(()=>{const st=$('#stripT');if(st)drawStripTable(st)});
