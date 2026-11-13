@@ -49,12 +49,21 @@ export function bindPages(root: HTMLElement, current: string, onChange: (key: st
   if (!box || !seg) return;
   const pages = [...box.querySelectorAll<HTMLElement>('.page')];
   const keyAt = () => pages[Math.round(box.scrollLeft / Math.max(1, box.clientWidth))]?.dataset.key ?? current;
+  // ページの高さを今のページに合わせる（短いページの下に大きな空きができないように）。中身が増えたら合わせ直す
+  let cur: HTMLElement | undefined;
+  const fit = () => { if (cur) box.style.height = cur.scrollHeight + 'px'; };
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null;
   const mark = (k: string) => {
     for (const b of seg.querySelectorAll<HTMLElement>('[data-page]')) b.setAttribute('aria-selected', String(b.dataset.page === k));
-    seg.querySelector<HTMLElement>(`[data-page="${k}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    // ページの高さを今のページに合わせる（短いページの下に大きな空きができないように）
-    const p = pages.find(x => x.dataset.key === k);
-    if (p) box.style.height = p.scrollHeight + 'px';
+    // 上のタブを横にだけ動かして見えるようにする（画面全体は動かさない）
+    const t = seg.querySelector<HTMLElement>(`[data-page="${k}"]`);
+    if (t) seg.scrollTo({ left: t.offsetLeft - (seg.clientWidth - t.offsetWidth) / 2, behavior: 'smooth' });
+    // 見えていないページはキーボードでも届かないようにする
+    for (const p of pages) p.inert = p.dataset.key !== k;
+    if (ro && cur) ro.unobserve(cur);
+    cur = pages.find(x => x.dataset.key === k);
+    if (cur && ro) ro.observe(cur);
+    fit();
   };
   const i0 = Math.max(0, pages.findIndex(p => p.dataset.key === current));
   box.scrollLeft = i0 * box.clientWidth;

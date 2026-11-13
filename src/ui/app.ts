@@ -201,7 +201,8 @@ function renderHome(){
       <button class="cmd" type="button" data-a="sleep"><b>寝る</b><span>次の日へ</span></button>
     </div>
     ${S.hist.length?`<div class="log"><span>最近の収支</span>${S.hist.slice(-4).reverse().map(h=>`<span>${h.day}日目 ${h.hall} ${h.m}：<b class="${h.v>=0?'pos':'neg'}">${h.v>=0?'+':''}${yen(h.v)}</b></span>`).join('')}</div>`:''}
-    <p class="sub">ごはん・家具・不動産は下の「買い物」、自己投資・実績・設定は「自分」から。</p>`;
+    <p class="sub">ごはん・家具・不動産は下の「買い物」、自己投資・実績・設定は「自分」から。</p>
+    <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>`;
   tabs('home');
   document.querySelectorAll('[data-icon]').forEach(cv=>drawItem(cv.getContext('2d'),cv.dataset.icon,0,0));
   const cv=$('#room'),c=cv.getContext('2d');c.imageSmoothingEnabled=false;cv.style.maxWidth=Math.round(Math.min(window.innerHeight*.36,320)*cv.width/cv.height)+'px';cv.style.margin='0 auto';
@@ -354,7 +355,8 @@ function drawTicket(){
 }
 function renderHalls(){
   status();tabs('halls');
-  $('#view').innerHTML=`<div class="ch">どの店に行く？</div>${HALLS.map((h,i)=>{const open=!h.open||h.open(S)||!!S.devAll,ban=(S.ban[i]||0)>=S.day;return `<button class="cmd" type="button" data-a="hall" data-i="${i}" ${open&&!ban?'':'disabled'}><b>${h.n}</b><span>${h.d}。1枚 ${yen(h.rate)}（50枚 ${yen(h.rate*50)}）</span><span class="p">${ban?`出入り禁止（${S.ban[i]}日目まで）`:open?'入れる':h.need}</span></button>`}).join('')}<button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
+  const done=S.phase!=='morning'; // パチ屋は1日1回（打った後・バイトの後は次の日まで入れない）
+  $('#view').innerHTML=`<div class="ch">どの店に行く？</div>${done?'<p class="lead">今日はもう出かけた。寝ると次の日になります。</p>':''}${HALLS.map((h,i)=>{const open=!h.open||h.open(S)||!!S.devAll,ban=(S.ban[i]||0)>=S.day;return `<button class="cmd" type="button" data-a="hall" data-i="${i}" ${open&&!ban&&!done?'':'disabled'}><b>${h.n}</b><span>${h.d}。1枚 ${yen(h.rate)}（50枚 ${yen(h.rate*50)}）</span><span class="p">${ban?`出入り禁止（${S.ban[i]}日目まで）`:open?'入れる':h.need}</span></button>`}).join('')}<button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
 }
 let hallIdx=0;
 function renderFloor(){
@@ -394,6 +396,7 @@ function kibanAsk(i){return `<div class="ch">裏市場の改造基盤</div><p cl
   <div class="grid2"><button class="cmd main" type="button" data-a="kiban" data-i="${i}"><b>仕込む</b><span>ルーレットで判定</span></button><button class="cmd" type="button" data-a="nokiban" data-i="${i}"><b>普通に打つ</b><span>基盤は持ったまま</span></button></div>`}
 function bustRate(){return Math.min(60,20+S.conv*10)}
 function sitDown2(i,boost){
+  if(S.phase!=='morning'){toast('今日はもう出かけた。寝ると次の日');return renderHalls()}
   const x=FL().ms[i];
   P={unit:i,since:x.since,startSince:x.since,ceilHit:false,ev:FL().ev,boost,m:MACH[x.k],s:x.s,rate:HALLS[hallIdx].rate,hall:HALLS[hallIdx].n,medals:0,inv:0,g:0,big:0,mode:'normal',flag:null,pend:null,order:[],navi:-1,hint:-1,left:0,doors:null,zen:0,log:[],auto:false,big8:0,res:[]};
   S.phase='hall';S.play={hall:P.hall,rate:P.rate,m:P.m.n,medals:0,inv:0};save();
@@ -613,7 +616,7 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='devMoney'){S.money=DEV_MAX_MONEY;S.peak=Math.max(S.peak,DEV_MAX_MONEY);save();renderDev();toast('お金を最大にしました')}
   else if(a==='devUnlock'){devUnlockAll();save();renderDev();toast('全部解放しました')}
   else if(a==='devHeal'){S.hun=100;S.fun=100;S.hp=100;save();renderDev();toast('お腹・娯楽・体調を満タンにしました')}
-  else if(a==='update'){if(P)return;save();reloadToLatest(latestBuild)}
+  else if(a==='update'){if(!onHomeOrSettings())return;save();reloadToLatest(latestBuild)}
   else if(a==='updClose'){noteClosed=true;const n=$('#updNote');if(n)n.remove()}
   else if(a==='sel'){selItem=selItem===id?null:id;renderHome()}
   else if(a==='eat'||a==='play'){const x=(a==='eat'?FOODS:PLAYS).find(z=>z.id===id);if(spend(x.p)){apply(x.e);save();SND.coin();toast(x.n+'　'+effText(x.e));renderShop()}}
@@ -635,7 +638,7 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='nokiban')sitDown2(i,false);
   else if(a==='sleep')sleep();
   else if(a==='halls')renderHalls();
-  else if(a==='hall'){hallIdx=i;renderFloor()}
+  else if(a==='hall'){if(S.phase!=='morning')return renderHalls();hallIdx=i;renderFloor()}
   else if(a==='sit')sitDown(i);
   else if(a==='auto')autoPlay();
   else if(a==='quit')quit(false);
@@ -682,12 +685,15 @@ let noteClosed=false;
 function updNote(){return latestState==='newer'&&!noteClosed?'<div class="upd-note" id="updNote" role="status"><span>新しい版があります</span><button type="button" data-a="update">更新する</button><button type="button" class="u-close" data-a="updClose" aria-label="とじる">×</button></div>':''}
 function checkLatest(){lastCheck=Date.now();fetchLatestBuild().then(l=>{
   latestBuild=l;latestState=CURRENT_BUILD.id==='dev'||(l&&l.id===CURRENT_BUILD.id)?'same':!l?'none':'newer';
-  const v=$('.verbox');if(!v)return;
+  const v=$('.verbox');
   // パスワード欄を開いているときは消さないよう、版の欄は中身だけ書き換える
-  const nb=document.createElement('div');nb.innerHTML=verBox();const fresh2=nb.firstElementChild;
-  for(const sel of ['.v-latest','[data-a=update]']){const a2=v.querySelector(sel),b2=fresh2.querySelector(sel);if(a2&&b2)a2.replaceWith(b2)}
+  if(v){const nb=document.createElement('div');nb.innerHTML=verBox();const fresh2=nb.firstElementChild;
+    for(const sel of ['.v-latest','[data-a=update]']){const a2=v.querySelector(sel),b2=fresh2.querySelector(sel);if(a2&&b2)a2.replaceWith(b2)}}
+  // 知らせはホーム画面にだけ出す（ほかの画面の途中で読み直して、結果をやり直せないように）
+  if(P||!$('#room'))return;
   const old=$('#updNote');if(old)old.remove();
   if(updNote())$('#view').insertAdjacentHTML('afterbegin',updNote())})}
+function onHomeOrSettings(){return !P&&(!!$('#room')||!!$('.verbox'))}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastCheck>10*60*1000)checkLatest()});
 checkLatest();
 loadSymbols(()=>{const st=$('#stripT');if(st)drawStripTable(st)});
