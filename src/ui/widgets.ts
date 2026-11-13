@@ -1,5 +1,4 @@
-// 画面の部品：下のタブバー、上のタブと横スワイプで切り替えるページ、スライドして決める操作
-import { SLIDE_DONE } from '../data/ui';
+// 画面の部品：下のタブバー、上のタブと横スワイプで切り替えるページ、購入の確認画面
 
 export type Tab = 'home' | 'halls' | 'shop' | 'me';
 
@@ -45,7 +44,7 @@ export function pagesHTML(pages: Page[], current: string): string {
 
 /**
  * ページ送り。横に指を動かしたときだけページをめくり、縦の動きはふつうに画面をスクロールさせる。
- * ブラウザの横スクロールに任せると、iPhone で途中のページに止まったり、スライドして購入の操作でページまで動いたりするため、自前で動かす
+ * ブラウザの横スクロールに任せると、iPhone で途中のページに止まることがあるため、自前で動かす
  */
 export function bindPages(root: HTMLElement, current: string, onChange: (key: string) => void): void {
   const box = root.querySelector<HTMLElement>('.pages'), seg = root.querySelector<HTMLElement>('.seg'), track = box?.querySelector<HTMLElement>('.track');
@@ -79,11 +78,11 @@ export function bindPages(root: HTMLElement, current: string, onChange: (key: st
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-page]');
     if (b) go(pages.findIndex(p => p.dataset.key === b.dataset.page));
   });
-  // 指の動き：はじめの 10px で横か縦かを決める。スライドして購入のつまみからは始めない
+  // 指の動き：はじめの 10px で横か縦かを決める
   let x0 = 0, y0 = 0, dx = 0, mode: 'none' | 'h' | 'v' = 'none', id = -1, moved = false;
   box.addEventListener('pointerdown', e => {
     if (id !== -1 || !e.isPrimary) return; // 2本目以降の指は使わない
-    if ((e.target as HTMLElement).closest('.slide') || (e.pointerType === 'mouse' && e.button !== 0)) { moved = false; return; }
+    if (e.pointerType === 'mouse' && e.button !== 0) { moved = false; return; }
     x0 = e.clientX; y0 = e.clientY; dx = 0; mode = 'none'; id = e.pointerId; moved = false;
   });
   box.addEventListener('pointermove', e => {
@@ -118,30 +117,38 @@ export function bindPages(root: HTMLElement, current: string, onChange: (key: st
   box.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
 }
 
-/** スライドして決めるボタン。data-* はそのまま決めたときの処理に渡る */
-export function slideHTML(label: string, act: string, data: Record<string, string | number>, disabled: boolean): string {
-  const attrs = Object.entries(data).map(([k, v]) => `data-${k}="${v}"`).join(' ');
-  return `<div class="slide${disabled ? ' off' : ''}" data-slide="${act}" ${attrs}><span class="slide-label">${label}</span><button type="button" class="knob" aria-label="${label}（Enterでも決定）" ${disabled ? 'disabled' : ''}>›</button></div>`;
-}
-
-/** 右端まで（SLIDE_DONE の割合以上）動かしたら onDone。途中で離すと戻る */
-export function bindSlides(root: HTMLElement, onDone: (el: HTMLElement) => void): void {
-  for (const el of root.querySelectorAll<HTMLElement>('.slide:not(.off)')) {
-    const knob = el.querySelector<HTMLButtonElement>('.knob')!;
-    let x0 = 0, dx = 0, max = 0, drag = false;
-    const set = (v: number) => { knob.style.transform = `translateX(${v}px)`; el.style.setProperty('--fill', `${v + knob.offsetWidth}px`); };
-    const back = () => { knob.style.transition = 'transform .2s'; set(0); el.style.setProperty('--fill', '0px'); setTimeout(() => { knob.style.transition = ''; }, 200); };
-    knob.addEventListener('pointerdown', e => {
-      drag = true; x0 = e.clientX; dx = 0; max = el.clientWidth - knob.offsetWidth - 8;
-      knob.setPointerCapture(e.pointerId); knob.style.transition = '';
-    });
-    knob.addEventListener('pointermove', e => { if (!drag) return; dx = Math.min(max, Math.max(0, e.clientX - x0)); set(dx); });
-    const end = () => {
-      if (!drag) return; drag = false;
-      if (dx >= max * SLIDE_DONE) { set(max); el.classList.add('done'); onDone(el); } else back();
-    };
-    knob.addEventListener('pointerup', end);
-    knob.addEventListener('pointercancel', () => { drag = false; back(); });
-    knob.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.classList.add('done'); onDone(el); } });
-  }
+/**
+ * 下からせり上がる確認の画面。yes を押すと onYes。背景を押すか Esc で閉じる（no と同じ）
+ */
+let closeSheet: (() => void) | null = null;
+export function openSheet(o: { title: string; body: string; yes: string; no?: string; ok?: boolean; onYes?: () => void }): void {
+  closeSheet?.();
+  const back = document.createElement('div');
+  back.id = 'sheet';
+  back.className = 'sheet-back';
+  back.innerHTML = `<div class="sheet${o.ok ? ' ok' : ''}" role="dialog" aria-modal="true" aria-labelledby="sheetT">
+    ${o.ok ? '<div class="sheet-check" aria-hidden="true">✓</div>' : ''}<h2 id="sheetT">${o.title}</h2><div class="sheet-body">${o.body}</div>
+    <div class="sheet-btns">${o.no ? `<button type="button" class="btn alt" data-s="no">${o.no}</button>` : ''}<button type="button" class="btn" data-s="yes">${o.yes}</button></div></div>`;
+  const prev = document.activeElement as HTMLElement | null;
+  // 開いている間は後ろの画面とタブに触れない（キーボードでも届かない）
+  const behind = [document.getElementById('app'), document.getElementById('tabbar')].filter((x): x is HTMLElement => !!x);
+  for (const el of behind) el.inert = true;
+  const key = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  const close = () => {
+    back.remove(); document.removeEventListener('keydown', key);
+    for (const el of behind) el.inert = false;
+    closeSheet = null;
+    if (prev && document.contains(prev)) prev.focus();
+  };
+  closeSheet = close;
+  back.addEventListener('click', e => {
+    const s = (e.target as HTMLElement).closest<HTMLElement>('[data-s]')?.dataset.s;
+    if (e.target === back || s === 'no') close();
+    else if (s === 'yes') { close(); o.onYes?.(); }
+  });
+  // 押し続けた Enter で確認を飛ばさないよう、最初は「やめる」にフォーカス（完了の画面は OK）
+  back.addEventListener('keydown', e => { if (e.repeat && (e.key === 'Enter' || e.key === ' ')) e.preventDefault(); });
+  document.addEventListener('keydown', key);
+  document.body.append(back);
+  back.querySelector<HTMLElement>(o.no ? '[data-s="no"]' : '[data-s="yes"]')?.focus();
 }
