@@ -155,3 +155,141 @@ body.has-tabs #app{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .slide.off .slide-label{color:var(--dim)!important}
 .slide.off .knob{background:var(--line);color:var(--dim);cursor:default}
 .slide.done .knob{background:var(--ok)}
+
+/* ==========================================================================
+   金の装飾テーマ（仕様書 9.5）。紺と紫の夜のホールに、金の縁取りと光沢のあるボタン。
+   上の素の見た目を、ここでまとめて上書きする
+   ========================================================================== */
+:root{
+  --bg:#0b0a1c; --panel:#1a1838; --panel2:#262250; --line:#3d3770; --ink:#0a0918;
+  --gold:#ffd25a;
+  --gold-grad:linear-gradient(180deg,#fff8d6 0%,#ffe07a 35%,#f2b938 70%,#ffd25a 100%);
+  --gold-btn:linear-gradient(180deg,#fff6c8 0%,#ffdc6e 45%,#f0b232 100%);
+  --gold-edge:linear-gradient(160deg,#fff3b0,#e2a92e 30%,#7a4e0c 55%,#f6d06a 80%,#a8731a);
+  --panel-grad:linear-gradient(180deg,#26234d 0%,#16143a 100%);
+  --red-grad:linear-gradient(180deg,#ff8a7a 0%,#e5303a 30%,#a5121f 70%,#6e0a14 100%);
+  --frame-shadow:0 3px 0 rgba(0,0,0,.45),0 0 14px rgba(255,190,60,.12);
+}
+html,body{background:var(--bg)}
+body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0) 60%),radial-gradient(80% 50% at 100% 100%,#2a1240 0%,rgba(42,18,64,0) 70%),var(--bg);background-attachment:fixed}
+
+/* 金の縁取り：中を塗った上に、縁だけ金のグラデーション */
+.status,.cmd,.tile,.island,.res,.friend,.verbox,.strip,.seg,.counter,.upd-note,.room,.unit,.log{
+  border:2px solid transparent!important;background:var(--panel-grad) padding-box,var(--gold-edge) border-box!important;box-shadow:var(--frame-shadow)}
+.unit{border-width:1.5px!important}
+.unit:disabled{opacity:.42}
+
+/* ロゴ */
+.top{align-items:flex-end}
+.logo{display:flex;flex-direction:column;line-height:1}
+.logo span{font-family:var(--disp);font-size:30px;letter-spacing:.04em;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.6px #5a3608;filter:drop-shadow(0 2px 0 #2a1600) drop-shadow(0 0 10px rgba(255,190,60,.35))}
+.logo small{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:11px;letter-spacing:.12em;color:#e8c56a;margin:3px 0 0 4px}
+.mini{border:1.5px solid transparent;background:var(--panel-grad) padding-box,var(--gold-edge) border-box;color:#ffe9a8;font-weight:700;padding:5px 12px}
+
+/* 上の所持金・日付・ゲージ */
+.status{grid-template-columns:1fr auto;gap:8px;padding:10px}
+.moneybox{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:8px;min-width:0;padding:6px 10px;border-radius:10px;border:1.5px solid transparent;background:linear-gradient(180deg,#0f0d26,#1c1940) padding-box,var(--gold-edge) border-box}
+.coin{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff8cf,#ffd14d 40%,#b67b12 75%,#6d4709);box-shadow:inset 0 0 0 2px rgba(255,240,180,.5),0 1px 0 #3a2400;position:relative}
+.coin::after{content:"";position:absolute;inset:6px;border-radius:50%;border:1.5px solid rgba(110,70,10,.6)}
+.moneybox .lbl{font-size:13px;font-weight:700;color:#f3dc9a}
+.status .cash{font-size:24px;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 #2a1600)}
+.status .cash.long{font-size:18px}
+.status .cash.xlong{font-size:15px}
+.daybox{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 10px;border-radius:10px;border:1.5px solid transparent;background:linear-gradient(180deg,#0f0d26,#1c1940) padding-box,var(--gold-edge) border-box;line-height:1.2;min-width:68px}
+.daybox b{font-family:var(--disp);font-weight:400;font-size:15px;color:#ffe9a8}
+.daybox span{font-size:12px;color:var(--dim)}
+.daybox em{font-style:normal;color:var(--neon);font-weight:700}
+.status .day{grid-column:1/-1;font-family:var(--body);font-size:12px;color:#d9cfee;padding-left:2px}
+.meters{grid-column:1/-1;gap:6px}
+.mt{flex-direction:row;align-items:center;gap:6px}
+.mi{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--c);border:1.5px solid transparent;background:radial-gradient(circle at 40% 30%,#2e2a5c,#110f2a) padding-box,var(--gold-edge) border-box}
+.mi svg{width:17px;height:17px;filter:drop-shadow(0 0 4px var(--c))}
+.mtb{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.mt .r{font-size:11px;color:#e6dcf7}
+.mt .r b{font-family:var(--disp);font-size:12px;color:var(--paper)}
+.bar{height:8px;border-radius:999px;background:#07061a;box-shadow:inset 0 1px 2px rgba(0,0,0,.8),0 0 0 1px rgba(255,210,90,.25)}
+.bar i{border-radius:999px;box-shadow:inset 0 2px 0 rgba(255,255,255,.35)}
+
+/* 見出し：金の飾り板 */
+.ch{align-self:center;position:relative;max-width:100%;text-align:center;text-wrap:balance;font-family:var(--disp);font-size:15px;letter-spacing:.12em;color:#fff1c4;padding:5px 26px;border-radius:999px;border:1.5px solid transparent;background:linear-gradient(180deg,#3a1f6b,#1b1240) padding-box,var(--gold-edge) border-box;text-shadow:0 1px 0 #000,0 0 8px rgba(255,200,80,.5);box-shadow:0 2px 0 rgba(0,0,0,.5);border-radius:16px}
+.ch::before,.ch::after{content:"◆";position:absolute;top:50%;transform:translateY(-50%);font-size:8px;color:#ffd25a}
+.ch::before{left:10px}.ch::after{right:10px}
+.lead{color:#fff1c4;text-shadow:0 1px 0 #000}
+.sub{color:#b5acd6}
+
+/* カード状のボタン */
+.cmd{padding:10px 12px;transition:transform .08s}
+.cmd b{color:#fff3cf;text-shadow:0 1px 0 #000}
+.cmd .p{color:#ffd25a;font-family:var(--disp);font-size:14px;text-shadow:0 1px 0 #000}
+.cmd:active:not(:disabled){transform:scale(.98)}
+.cmd.on{background:linear-gradient(180deg,#2f2a63,#1d1946) padding-box,linear-gradient(160deg,#9ff3ff,#3fd9ff 40%,#1b6d8a) border-box!important}
+
+/* 大きい赤いボタン（パチ屋へ行く） */
+.cta{position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;width:100%;min-height:78px;padding:10px 16px 10px 12px;font:inherit;text-align:left;cursor:pointer;border-radius:999px;border:3px solid transparent;
+  background:var(--red-grad) padding-box,var(--gold-edge) border-box;box-shadow:0 5px 0 #3a0a0f,0 0 22px rgba(255,80,60,.35),inset 0 0 0 1px rgba(255,220,150,.3);overflow:hidden}
+.cta::before{content:"";position:absolute;left:8%;right:8%;top:4px;height:38%;border-radius:999px;background:linear-gradient(rgba(255,255,255,.45),rgba(255,255,255,0));pointer-events:none}
+.cta-ic{display:flex;gap:2px;padding:6px 7px;border-radius:10px;background:linear-gradient(#fffbe8,#e9dcb8);border:2px solid #c99a2e;box-shadow:inset 0 0 0 1px #fff,0 2px 0 #3a0a0f}
+.cta-ic b{font-family:var(--disp);font-weight:400;font-size:17px;line-height:1;color:#e22b36;text-shadow:0 1px 0 #7a0d16}
+.cta-t{display:flex;flex-direction:column;min-width:0}
+.cta-t b{font-family:var(--disp);font-weight:400;font-size:26px;line-height:1.1;letter-spacing:.06em;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #4a0710)}
+.cta-t span{font-size:12px;color:#ffe2d8;text-shadow:0 1px 0 #4a0710}
+.cta-go{font-family:var(--disp);font-size:30px;color:#ffe08a;text-shadow:0 2px 0 #4a0710}
+.cta:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 #3a0a0f,0 0 18px rgba(255,80,60,.3)}
+.cta:disabled{filter:grayscale(.85) brightness(.6);cursor:default}
+
+/* アイコン付きのタイルボタン */
+.tile{font:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;border-radius:14px;cursor:pointer;color:var(--paper);text-align:center;min-width:0}
+.tile svg{width:30px;height:30px;color:#ffd25a;filter:drop-shadow(0 1px 0 #000) drop-shadow(0 0 6px rgba(255,200,80,.4))}
+.tile b{font-family:var(--disp);font-weight:400;font-size:16px;color:#fff3cf;text-shadow:0 1px 0 #000}
+.tile span{font-size:11px;color:#b5acd6;line-height:1.35}
+.tile:active:not(:disabled){transform:scale(.97)}
+.tile:disabled{opacity:.42;cursor:default}
+
+/* 金のボタン */
+.btn{color:#3a2200;background:var(--gold-btn);border:2px solid #fff1b8;border-radius:999px;box-shadow:0 4px 0 #5a3608,0 0 14px rgba(255,200,80,.3);text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.btn.alt{border:1.5px solid transparent;background:var(--panel-grad) padding-box,var(--gold-edge) border-box;color:#ffe9a8;border-radius:999px;box-shadow:0 2px 0 rgba(0,0,0,.5);text-shadow:none}
+
+/* 上のタブ（買い物・自分）：金の札 */
+.seg{border-radius:14px;padding:4px}
+.seg button{border-radius:10px;color:#cfc6ea;font-weight:700}
+.seg button[aria-selected="true"]{background:var(--gold-btn);color:#3a2200;box-shadow:0 2px 0 #5a3608,inset 0 1px 0 rgba(255,255,255,.6);text-shadow:0 1px 0 rgba(255,255,255,.5)}
+
+/* 下のタブバー */
+.tabbar{background:linear-gradient(180deg,#1d1a42,#0b0a1c);border-top:0;box-shadow:0 -2px 0 #c88a1e,0 -3px 0 #ffe08a,0 -10px 24px rgba(0,0,0,.6)}
+.tabbar button{color:#9d94c4;font-weight:700}
+.tabbar button.on{color:#ffe08a;border:1.5px solid transparent;background:linear-gradient(180deg,#3a2f6b,#1b1640) padding-box,var(--gold-edge) border-box;box-shadow:0 0 12px rgba(255,200,80,.35)}
+.tabbar svg{color:inherit}
+
+/* スライドして購入 */
+.slide{border:2px solid transparent;background:linear-gradient(180deg,#0f0d26,#1c1940) padding-box,var(--gold-edge) border-box}
+.slide .knob{background:var(--gold-btn);color:#3a2200;border:1.5px solid #fff1b8}
+
+/* 部屋の枠 */
+.room{border-width:3px!important;border-radius:14px}
+
+/* ---------- 台（打つ画面） ---------- */
+.cab{border:3px solid transparent;background:linear-gradient(180deg,#3a1030 0%,#1a0b24 40%,#120c2c 100%) padding-box,var(--gold-edge) border-box;box-shadow:0 0 0 2px #000,0 0 24px rgba(255,120,60,.25);border-radius:18px}
+.cabtop b{font-size:22px;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #4a0710)}
+.counter div{color:#cfc6ea}
+.counter b{color:#fff3cf}
+.lamp b{background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.glass{border-radius:10px;padding:4px;background:linear-gradient(180deg,#5a3a10,#2a1a06);box-shadow:inset 0 0 0 2px #ffe08a,0 0 0 2px #000}
+.stop{color:#fff1c4;font-size:13px;border:3px solid transparent;border-radius:999px;background:radial-gradient(circle at 50% 30%,#ffb3a8 0%,#ff3b3b 30%,#b0101c 70%,#5a0610 100%) padding-box,var(--gold-edge) border-box;box-shadow:0 5px 0 #000,0 0 14px rgba(255,60,60,.45);text-shadow:0 1px 0 #4a0710}
+.lever{color:#3a2200;border:3px solid transparent;background:radial-gradient(circle at 40% 30%,#fffbe0,#ffd25a 40%,#a8731a 85%) padding-box,var(--gold-edge) border-box;box-shadow:0 5px 0 #000,0 0 14px rgba(255,200,80,.4)}
+.door{background:linear-gradient(#6a3a14,#2a1406);border:2px solid #ffd25a;box-shadow:0 3px 0 #000}
+.res .big.pos{background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.res .big.neg{color:var(--bad)}
+.toast{background:var(--gold-btn);color:#3a2200;border:1.5px solid #fff1b8;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.cut{background:linear-gradient(90deg,#3a0a12,#8a1420,#3a0a12);border-block:3px solid #ffd25a;text-shadow:0 2px 0 #000,0 0 12px rgba(255,200,80,.6)}
+
+/* 状態を表す見た目（金の縁取りの上でも区別できるように） */
+.unit.near{background:linear-gradient(180deg,#3a2f12,#1e1840) padding-box,linear-gradient(160deg,#fff6c2,#ffd25a 40%,#ff9a2e) border-box!important;box-shadow:0 0 12px rgba(255,200,60,.55)}
+.cmd.ach{cursor:default}
+.cmd.ach.got{box-shadow:0 0 12px rgba(255,200,60,.45)}
+.cmd.ach.notyet{opacity:.55;filter:grayscale(.6)}
+.cmd.main{background:var(--red-grad) padding-box,var(--gold-edge) border-box!important}
+.cmd.main span{color:#ffe2d8}
+.lamp{border:1.5px solid #c88a1e;box-shadow:0 2px 0 rgba(0,0,0,.45)}
+.log{padding:8px 12px;border-radius:12px}
+.mt.low .r b{color:var(--bad)}
+.status .day em{font-style:normal;color:var(--neon);font-weight:700}
