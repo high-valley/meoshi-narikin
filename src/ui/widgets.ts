@@ -1,4 +1,4 @@
-// 画面の部品：下のタブバー、上のタブと横スワイプで切り替えるページ、スライドして決める操作
+// 画面の部品：下のタブバー、上のタブと横スワイプで切り替えるページ、購入の確認画面
 
 export type Tab = 'home' | 'halls' | 'shop' | 'me';
 
@@ -120,8 +120,9 @@ export function bindPages(root: HTMLElement, current: string, onChange: (key: st
 /**
  * 下からせり上がる確認の画面。yes を押すと onYes。背景を押すか Esc で閉じる（no と同じ）
  */
+let closeSheet: (() => void) | null = null;
 export function openSheet(o: { title: string; body: string; yes: string; no?: string; ok?: boolean; onYes?: () => void }): void {
-  document.getElementById('sheet')?.remove();
+  closeSheet?.();
   const back = document.createElement('div');
   back.id = 'sheet';
   back.className = 'sheet-back';
@@ -129,14 +130,25 @@ export function openSheet(o: { title: string; body: string; yes: string; no?: st
     ${o.ok ? '<div class="sheet-check" aria-hidden="true">✓</div>' : ''}<h2 id="sheetT">${o.title}</h2><div class="sheet-body">${o.body}</div>
     <div class="sheet-btns">${o.no ? `<button type="button" class="btn alt" data-s="no">${o.no}</button>` : ''}<button type="button" class="btn" data-s="yes">${o.yes}</button></div></div>`;
   const prev = document.activeElement as HTMLElement | null;
-  const close = () => { back.remove(); document.removeEventListener('keydown', key); prev?.focus?.(); };
+  // 開いている間は後ろの画面とタブに触れない（キーボードでも届かない）
+  const behind = [document.getElementById('app'), document.getElementById('tabbar')].filter((x): x is HTMLElement => !!x);
+  for (const el of behind) el.inert = true;
   const key = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  const close = () => {
+    back.remove(); document.removeEventListener('keydown', key);
+    for (const el of behind) el.inert = false;
+    closeSheet = null;
+    if (prev && document.contains(prev)) prev.focus();
+  };
+  closeSheet = close;
   back.addEventListener('click', e => {
     const s = (e.target as HTMLElement).closest<HTMLElement>('[data-s]')?.dataset.s;
     if (e.target === back || s === 'no') close();
     else if (s === 'yes') { close(); o.onYes?.(); }
   });
+  // 押し続けた Enter で確認を飛ばさないよう、最初は「やめる」にフォーカス（完了の画面は OK）
+  back.addEventListener('keydown', e => { if (e.repeat && (e.key === 'Enter' || e.key === ' ')) e.preventDefault(); });
   document.addEventListener('keydown', key);
   document.body.append(back);
-  back.querySelector<HTMLElement>('[data-s="yes"]')?.focus();
+  back.querySelector<HTMLElement>(o.no ? '[data-s="no"]' : '[data-s="yes"]')?.focus();
 }

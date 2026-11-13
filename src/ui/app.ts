@@ -124,8 +124,8 @@ function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','dr
   if(!S.tot){const h=S.hist||[];S.tot={sum:h.reduce((a,x)=>a+x.v,0),n:h.length,win:h.filter(x=>x.v>0).length,lose:h.filter(x=>x.v<0).length,best:h.length?Math.max(0,...h.map(x=>x.v)):0}}}norm();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}pushRemote()}
 async function pushRemote(){if(!remote)return;if(saving){dirty=true;return}saving=true;try{await remote.set(JSON.parse(JSON.stringify(S)))}catch(e){}saving=false;if(dirty){dirty=false;pushRemote()}}
-let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1900)}
-function cutin(t){const el=document.createElement('div');el.className='cut';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),1050)}
+let toastT,quietBuy=false;function toast(m){if(quietBuy)return;const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1900)}
+function cutin(t){if(quietBuy)return;const el=document.createElement('div');el.className='cut';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),1050)}
 
 /* ---------- sound ---------- */
 let ac=null,soundOn=false;
@@ -231,25 +231,28 @@ function gaugeDiff(g0){const N={hun:'お腹',fun:'娯楽',hp:'体調'},rows=Obje
   return rows.length?`<div class="res">${rows.map(k=>`<span>${N[k]}</span><b class="${S[k]>g0[k]?'pos':'neg'}">${g0[k]} → ${S[k]}</b>`).join('')}</div>`:''}
 function askBuy(k){const o=buyInfo[k];if(!o)return;
   const verb=o.verb||'購入';
-  openSheet({title:o.name,body:`<p>${o.desc}</p><div class="res"><span>${o.ptext&&!o.price?'':'お値段'}</span><b>${yen(o.price)}</b><span>今の所持金</span><b>${yen(S.money)}</b><span>${verb}後の所持金</span><b class="${S.money-o.price<0?'neg':''}">${yen(S.money-o.price)}</b></div>`,
-    yes:`${verb}する`,no:'やめる',onYes:()=>{
+  openSheet({title:o.name,body:`<p>${o.desc}</p>${o.ptext&&o.ptext!==yen(o.price)?`<p class="cond">${o.ptext}</p>`:''}<div class="res"><span>支払う金額</span><b>${yen(o.price)}</b><span>今の所持金</span><b>${yen(S.money)}</b><span>${verb}後の所持金</span><b class="${S.money-o.price<0?'neg':''}">${yen(S.money-o.price)}</b></div>`,
+    yes:o.yesText||`${verb}する`,no:'やめる',onYes:()=>{
       const before=S.money,g0={hun:S.hun,fun:S.fun,hp:S.hp},el=document.createElement('button');o.data.replace(/data-(\w+)="([^"]*)"/g,(_,a,v)=>{el.dataset[a]=v});
-      act(o.a,el);
-      if(S.money<before)openSheet({title:`${verb}しました`,ok:true,body:`<p class="done-name">${o.name}</p>${o.after?`<p>${o.after}</p>`:''}${gaugeDiff(g0)}<div class="res"><span>支払い</span><b class="neg">−${yen(before-S.money)}</b><span>残りの所持金</span><b>${yen(S.money)}</b></div>`,yes:'OK'});
+      quietBuy=true;try{act(o.a,el)}finally{quietBuy=false}
+      if(S.money>=before)return;
+      const gd=gaugeDiff(g0);
+      openSheet({title:o.doneTitle||`${verb}しました`,ok:true,body:`<p class="done-name">${o.doneName||o.name}</p>${o.after?`<p>${o.after}</p>`:''}${gd||(o.food?'<p>ゲージはもう満タンだった。</p>':'')}<div class="res"><span>支払い</span><b class="neg">−${yen(before-S.money)}</b><span>残りの所持金</span><b>${yen(S.money)}</b></div>`,yes:'OK'});
     }})}
-function foodPage(list,act){return `<div class="grid2">${list.map(x=>buyCard({a:act,data:`data-id="${x.id}"`,name:x.n,desc:effText(x.e),price:x.p,after:effText(x.e)})).join('')}</div>`}
+function foodPage(list,act){return `<div class="grid2">${list.map(x=>buyCard({a:act,data:`data-id="${x.id}"`,name:x.n,desc:effText(x.e),price:x.p,food:true})).join('')}</div>`}
 function effText(e){const N={hun:'お腹',fun:'娯楽',hp:'体調'};return Object.entries(e).map(([k,v])=>`${N[k]}${v>0?'+':''}${v}`).join(' ')}
 function furnPage(){return `<div class="grid2">${Object.entries(ITEMS).filter(([,i])=>i.p>0).map(([id,it])=>buyCard({a:'buyF',data:`data-id="${id}"`,name:it.n,desc:it.d,price:it.p,after:'持ち物に入りました。ホームの部屋に置くと効果が出ます。',ptext:`${yen(it.p)}　持ち物${(S.inv[id]||0)+placedCount(id)}`})).join('')}</div>
   <p class="sub">買った家具は持ち物に入ります。ホームの部屋の床に置くと効果が出ます。寝具は一番良いものだけが効きます。</p>`}
 function estatePage(){return HOMES.map((h,i)=>{const cost=h.buy||h.move,cur=i===S.home,owned=i<S.home;
     const desc=`${h.d}。広さ ${h.w}×${h.h}マス、睡眠 体調+${h.sleep}`,pt=h.buy?'購入 '+yen(h.buy):i===0?'家賃 '+yen(h.rent)+'/日':'初期費用 '+yen(h.move)+'、家賃 '+yen(h.rent)+'/日';
     if(cur||owned||i===0)return `<div class="cmd card dis"><b>${h.n}${cur?'（今の家）':''}</b><span>${desc}</span><span class="p">${pt}</span></div>`;
-    return buyCard({a:'move',data:`data-i="${i}"`,name:h.n,desc,price:cost,ptext:pt,verb:h.buy?'購入':'引っ越し',after:'新しい家に移りました。家具は持ち物に戻っています。'})}).join('')+
+    return buyCard({a:'move',data:`data-i="${i}"`,name:h.n,desc,price:cost,ptext:pt,verb:h.buy?'購入':'引っ越し',doneTitle:h.buy?'購入しました':'引っ越しました',yesText:h.buy?'購入する':'引っ越す',after:'新しい家に移りました。家具は持ち物に戻っています。'})}).join('')+
   `<p class="sub">引っ越すと家具は持ち物に戻ります。家を買うと家賃がなくなり、高レートの店に入れるようになります。</p>`}
 function blackPage(){if(S.day<3)return '<p class="lead">裏市場は3日目から開きます。</p>';
   return `<p class="lead">「いいのがあるよ」</p>${buyCard({a:'buyKiban',data:'',name:'改造基盤',desc:`台に仕込むと、その日はボーナスが1.4倍当たりやすい。1回使い切り。仕込む時に${bustRate()}%で店員に見つかる。見つかると罰金（所持金の3割、最低5万円）と、その店に5日間出入り禁止。見つかるたびに次から見つかりやすくなる`,price:kibanPrice(),ptext:`${yen(kibanPrice())}　所持 ${S.kiban}`})}
   <p class="sub">ゲームの中だけの話です。現実の不正は犯罪です。</p>`}
 function renderShop(tab){
+  for(const k in buyInfo)delete buyInfo[k];
   if(tab)shopTab=tab;status();const y=window.scrollY;
   $('#view').innerHTML=`<div class="ch">買い物</div>`+pagesHTML([
     {key:'food',label:'ごはん',html:foodPage(FOODS,'eat')},{key:'fun',label:'息抜き',html:foodPage(PLAYS,'play')},
@@ -261,7 +264,7 @@ function renderFurn(){renderShop('furn')}
 function renderEstate(){renderShop('estate')}
 function renderBlack(){renderShop('black')}
 function selfPage(){return `<p class="sub">一度身につけた力はずっと残ります。効果は小さく、値段はだんだん上がります。</p>
-  ${Object.entries(UPG).map(([k,u])=>{const l=S.upg[k],done=l>=u.max;return buyCard({a:'upg',data:`data-id="${k}"`,name:`${u.n}　Lv${l}/${u.max}`,desc:done?'最大まで鍛えた':u.d(l),price:done?0:u.cost(l),ptext:done?'—':yen(u.cost(l)),disabled:done})}).join('')}
+  ${Object.entries(UPG).map(([k,u])=>{const l=S.upg[k],done=l>=u.max;return buyCard({a:'upg',data:`data-id="${k}"`,name:`${u.n}　Lv${l}/${u.max}`,doneName:u.n,after:done?'':`Lv${l} → Lv${l+1}　${u.d(l)}`,desc:done?'最大まで鍛えた':u.d(l),price:done?0:u.cost(l),ptext:done?'—':yen(u.cost(l)),disabled:done})}).join('')}
   ${buyCard({a:'drops',data:'',name:'目薬',desc:S.dropDay===S.day?'今日はもう差した':'今日1日、リールが3%ゆっくり見える',price:1500,disabled:S.dropDay===S.day})}`}
 function achPage(){return `<p class="sub">${Object.keys(S.ach).length}/${ACH.length} 達成。最後に達成した実績が称号として表示されます。</p>
   ${ACH.map(a=>`<div class="cmd ach ${has(a.id)?'got':'notyet'}"><b>${has(a.id)?'★ ':''}${a.n}</b><span>${a.d}</span><span class="p">ごほうび：${a.r}${has(a.id)?`（${S.ach[a.id]}日目に達成）`:''}</span></div>`).join('')}`}
@@ -272,6 +275,7 @@ function histPage(){if(!S.hist.length)return '<p class="sub">まだ打ってい�
   <div class="log hist">${S.hist.slice().reverse().map(h=>`<div class="hrow"><span>${h.day}日目　${h.hall}</span><span>${h.m}</span><b class="${h.v>=0?'pos':'neg'}">${h.v>=0?'+':''}${yen(h.v)}</b></div>`).join('')}</div>`}
 function settingsPage(){return `<p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>${verBox()}`}
 function renderMe(tab){
+  for(const k in buyInfo)delete buyInfo[k];
   if(tab)meTab=tab;status();const y=window.scrollY;
   $('#view').innerHTML=`<div class="ch">自分</div>`+pagesHTML([
     {key:'self',label:'自己投資',html:selfPage()},{key:'hist',label:'収支',html:histPage()},{key:'ach',label:'実績',html:achPage()},{key:'set',label:'設定',html:settingsPage()}],meTab);
@@ -660,7 +664,7 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='gift'){const H=hallState(hallIdx);if(H.gift!==S.day&&spend(HALLS[hallIdx].gift)){H.gift=S.day;H.friend=Math.min(100,H.friend+8);save();toast('店員さん「いつもありがとうございます」');renderFloor()}}
   else if(a==='ticket'){const ahead=drawTicket();toast(`${FL().ticket}番。先に${ahead}人が台を選んだ`);renderFloor()}
   else if(a==='upg'){const u=UPG[id],l=S.upg[id];if(l<u.max&&spend(u.cost(l))){S.upg[id]++;save();SND.fan();renderMe()}}
-  else if(a==='drops'){if(spend(1500)){S.dropDay=S.day;save();toast('目がすっきりした');renderMe()}}
+  else if(a==='drops'){if(S.dropDay!==S.day&&spend(1500)){S.dropDay=S.day;save();toast('目がすっきりした');renderMe()}}
   else if(a==='black')renderBlack();
   else if(a==='buyKiban'){if(spend(kibanPrice())){S.kiban++;save();renderShop()}}
   else if(a==='kiban')roulette(i);

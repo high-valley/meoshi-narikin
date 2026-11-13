@@ -302,3 +302,9 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 @keyframes up{from{transform:translateY(100%)}}
 @keyframes pop2{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.sheet-back,.sheet,.sheet-check{animation:none}}
+.cmd.card{cursor:default;gap:3px}
+.cmd.card.dis{opacity:.55}
+.sheet .cond{font-size:13px;color:#ffd25a}
+/* 実績のカットインとトーストは確認の画面より前に出す */
+.cut{z-index:50}
+.toast{z-index:50}
