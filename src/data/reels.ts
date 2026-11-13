@@ -5,6 +5,8 @@ export const N = 21;
 export const ROT_MS = 750;
 export const FRAME_MS = ROT_MS / N;
 export const MAX_SLIP = 4;
+/** 回り始めの加速にかける時間（3本そろってこの間に全速になる。ストップボタンは全速になってから受け付ける） */
+export const SPIN_UP_MS = 150;
 
 // 番号が大きいほど上（上から下へ流れる）。
 // ベルとリプレイは最大5コマ間隔で、順押しなら必ずそろう。左のチェリーはBARの真下、
