@@ -9,6 +9,7 @@ import { HOMES, HALLS, FOODS, PLAYS, ITEMS } from '../data/life';
 import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
+import { DEV_PASSWORD, DEV_TAPS, DEV_MAX_MONEY } from '../data/dev';
 
 export function startApp(){
 
@@ -346,7 +347,7 @@ function drawTicket(){
 }
 function renderHalls(){
   status();
-  $('#view').innerHTML=`<div class="ch">どの店に行く？</div>${HALLS.map((h,i)=>{const open=!h.open||h.open(S),ban=(S.ban[i]||0)>=S.day;return `<button class="cmd" type="button" data-a="hall" data-i="${i}" ${open&&!ban?'':'disabled'}><b>${h.n}</b><span>${h.d}。1枚 ${yen(h.rate)}（50枚 ${yen(h.rate*50)}）</span><span class="p">${ban?`出入り禁止（${S.ban[i]}日目まで）`:open?'入れる':h.need}</span></button>`}).join('')}<button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
+  $('#view').innerHTML=`<div class="ch">どの店に行く？</div>${HALLS.map((h,i)=>{const open=!h.open||h.open(S)||!!S.devAll,ban=(S.ban[i]||0)>=S.day;return `<button class="cmd" type="button" data-a="hall" data-i="${i}" ${open&&!ban?'':'disabled'}><b>${h.n}</b><span>${h.d}。1枚 ${yen(h.rate)}（50枚 ${yen(h.rate*50)}）</span><span class="p">${ban?`出入り禁止（${S.ban[i]}日目まで）`:open?'入れる':h.need}</span></button>`}).join('')}<button class="btn alt" type="button" data-a="home">部屋に戻る</button>`;
 }
 let hallIdx=0;
 function renderFloor(){
@@ -597,6 +598,10 @@ function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
 $('#view').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a,i=+b.dataset.i,id=b.dataset.id;
   if(a==='home'){selItem=null;renderHome()}
+  else if(a==='verTap'){const n=Date.now();devTaps=n-devTapAt<1500?devTaps+1:1;devTapAt=n;if(devTaps>=DEV_TAPS&&!$('#devPw')){devTaps=0;showDevLogin()}}
+  else if(a==='devMoney'){S.money=DEV_MAX_MONEY;S.peak=Math.max(S.peak,DEV_MAX_MONEY);save();renderDev();toast('お金を最大にしました')}
+  else if(a==='devUnlock'){devUnlockAll();save();renderDev();toast('全部解放しました')}
+  else if(a==='devHeal'){S.hun=100;S.fun=100;S.hp=100;save();renderDev();toast('お腹・娯楽・体調を満タンにしました')}
   else if(a==='update'){if(P)return;save();reloadToLatest(latestBuild)}
   else if(a==='updClose'){noteClosed=true;const n=$('#updNote');if(n)n.remove()}
   else if(a==='sel'){selItem=selItem===id?null:id;renderHome()}
@@ -632,11 +637,36 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();lever()}
   const k={KeyJ:0,KeyK:1,KeyL:2}[e.code];if(k!==undefined)stopAt(k,e);
 });
+// 開発者画面（仕様書 9.3）。「今の版」を続けて押すとパスワード欄が出る
+let devTaps=0,devTapAt=0;
+function showDevLogin(){
+  const v=$('.verbox');if(!v)return;
+  v.insertAdjacentHTML('beforeend','<form class="devpw" id="devPw"><input type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="パスワード" aria-label="開発者パスワード"><button class="btn alt" type="submit">開く</button></form>');
+  const f=$('#devPw'),inp=f.querySelector('input');inp.focus();
+  f.addEventListener('submit',e=>{e.preventDefault();if(inp.value===DEV_PASSWORD){renderDev()}else{inp.value='';toast('パスワードが違います')}});
+}
+function devUnlockAll(){
+  S.devAll=true;S.peak=Math.max(S.peak,500000);
+  for(const k of Object.keys(UPG))S.upg[k]=UPG[k].max;
+  for(const a of ACH)if(!S.ach[a.id])S.ach[a.id]=S.day; // ごほうびのお金は出さない
+  for(const id of Object.keys(ITEMS))if(!placedCount(id)&&!(S.inv[id]>0))S.inv[id]=1;
+  S.ban={};
+  HALLS.forEach((_,i)=>{hallState(i).friend=100});
+}
+function renderDev(){
+  status();
+  $('#view').innerHTML=`<div class="ch">開発者画面</div>
+  <p class="sub">動作確認用です。ここでの変更はセーブデータに残ります。</p>
+  <button class="cmd" type="button" data-a="devMoney"><b>お金を最大にする</b><span>所持金を ${yen(DEV_MAX_MONEY)} にする</span></button>
+  <button class="cmd" type="button" data-a="devUnlock"><b>全部解放する</b><span>3つの店・自分磨きの最大レベル・実績と称号すべて・家具を1つずつ・店員さんとの仲100・出入り禁止の解除（実績のごほうびのお金は出ない。家は所持金で買う）</span></button>
+  <button class="cmd" type="button" data-a="devHeal"><b>ゲージを満タンにする</b><span>お腹・娯楽・体調を100にする</span></button>
+  <button class="btn alt" type="button" data-a="home">ホームに戻る</button>`;
+}
 // 版の確認。起動したときと、しばらくしてアプリに戻ってきたときに、公開されている最新の版と比べる
 // （ホーム画面に置いたアプリは閉じても読み直されないことがあるので、更新ボタンで読み直せるようにする）
 let latestBuild=null,latestState='checking',lastCheck=0;
 function verText(){if(latestState==='checking')return '最新の版を確かめています…';if(latestState==='none')return '最新の版を確かめられませんでした（通信できないときなど）';if(latestState==='same')return 'これが最新の版です';return '新しい版があります：'+buildLabel(latestBuild)}
-function verBox(){return `<section class="verbox" aria-label="アプリの版"><p>今の版：${buildLabel(CURRENT_BUILD)}</p><p class="v-latest${latestState==='newer'?' newer':''}" aria-live="polite">${verText()}</p><button class="btn${latestState==='newer'?'':' alt'}" type="button" data-a="update">${latestState==='newer'?'最新の版に更新する':'読み直す'}</button></section>`}
+function verBox(){return `<section class="verbox" aria-label="アプリの版"><p data-a="verTap">今の版：${buildLabel(CURRENT_BUILD)}</p><p class="v-latest${latestState==='newer'?' newer':''}" aria-live="polite">${verText()}</p><button class="btn${latestState==='newer'?'':' alt'}" type="button" data-a="update">${latestState==='newer'?'最新の版に更新する':'読み直す'}</button></section>`}
 // 新しい版の知らせはホーム画面の上にだけ出す（打っている最中・ルーレット・バイトの途中では読み直せないように）
 let noteClosed=false;
 function updNote(){return latestState==='newer'&&!noteClosed?'<div class="upd-note" id="updNote" role="status"><span>新しい版があります</span><button type="button" data-a="update">更新する</button><button type="button" class="u-close" data-a="updClose" aria-label="とじる">×</button></div>':''}
