@@ -2,5 +2,7 @@
 export const DEV_PASSWORD = '77777';
 /** 開発者画面を出すには、ホーム画面いちばん下の「今の版」をこの回数続けて押す */
 export const DEV_TAPS = 5;
+/** 続けて押したと数える間隔（ミリ秒） */
+export const DEV_TAP_MS = 1500;
 /** 「お金を最大に」で入る金額 */
 export const DEV_MAX_MONEY = 9_999_999_999;
