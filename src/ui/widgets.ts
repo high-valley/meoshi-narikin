@@ -82,11 +82,13 @@ export function bindPages(root: HTMLElement, current: string, onChange: (key: st
   // 指の動き：はじめの 10px で横か縦かを決める。スライドして購入のつまみからは始めない
   let x0 = 0, y0 = 0, dx = 0, mode: 'none' | 'h' | 'v' = 'none', id = -1, moved = false;
   box.addEventListener('pointerdown', e => {
-    if ((e.target as HTMLElement).closest('.slide') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (id !== -1 || !e.isPrimary) return; // 2本目以降の指は使わない
+    if ((e.target as HTMLElement).closest('.slide') || (e.pointerType === 'mouse' && e.button !== 0)) { moved = false; return; }
     x0 = e.clientX; y0 = e.clientY; dx = 0; mode = 'none'; id = e.pointerId; moved = false;
   });
   box.addEventListener('pointermove', e => {
     if (e.pointerId !== id) return;
+    if (e.pointerType === 'mouse' && e.buttons === 0) { id = -1; mode = 'none'; return; } // ページの外で離された
     const mx = e.clientX - x0, my = e.clientY - y0;
     if (mode === 'none') {
       if (Math.abs(mx) > 10 && Math.abs(mx) > Math.abs(my) * 1.2) { mode = 'h'; box.setPointerCapture(id); }
@@ -99,16 +101,19 @@ export function bindPages(root: HTMLElement, current: string, onChange: (key: st
     dx = edge ? mx / 3 : mx;
     place(dx, false);
   });
-  const end = (e: PointerEvent) => {
+  const end = (e: PointerEvent, cancel: boolean) => {
     if (e.pointerId !== id) return;
     id = -1;
     if (mode !== 'h') { mode = 'none'; return; }
     mode = 'none';
     const w = box.clientWidth;
-    if (dx < -w * .18) go(idx + 1); else if (dx > w * .18) go(idx - 1); else place(0, true);
+    // 割り込まれたとき（OS の操作など）は元のページに戻すだけ
+    if (!cancel && dx < -w * .18) go(idx + 1); else if (!cancel && dx > w * .18) go(idx - 1); else place(0, true);
+    // めくった直後の click だけを止め、あとのキーボード操作は止めない
+    setTimeout(() => { moved = false; }, 350);
   };
-  box.addEventListener('pointerup', end);
-  box.addEventListener('pointercancel', end);
+  box.addEventListener('pointerup', e => end(e, false));
+  box.addEventListener('pointercancel', e => end(e, true));
   // めくった直後の指離しでボタンが押されないようにする
   box.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
 }

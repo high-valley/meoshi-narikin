@@ -116,10 +116,12 @@ const $=s=>document.querySelector(s);
 const yen=n=>(n<0?'−':'')+'¥'+Math.abs(Math.round(n)).toLocaleString('ja-JP');
 const clamp=v=>Math.max(0,Math.min(100,Math.round(v)));
 const KEY='meoshi-narikin-v1';
-function fresh(){return {halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:30000,hun:70,fun:50,hp:80,home:0,inv:{},placed:[{id:'futon',x:0,y:1}],phase:'morning',peak:30000,hist:[],floor:null,play:null}}
+function fresh(){return {tot:{sum:0,n:0,win:0,lose:0,best:0},halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:30000,hun:70,fun:50,hp:80,home:0,inv:{},placed:[{id:'futon',x:0,y:1}],phase:'morning',peak:30000,hist:[],floor:null,play:null}}
 let S=fresh(),remote=null,saving=false,dirty=false;
 try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.day)S=v}catch(e){}
-function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k]}norm();
+function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k];
+  // 通算の収支がない古いセーブは、残っている記録から作る
+  if(!S.tot){const h=S.hist||[];S.tot={sum:h.reduce((a,x)=>a+x.v,0),n:h.length,win:h.filter(x=>x.v>0).length,lose:h.filter(x=>x.v<0).length,best:h.length?Math.max(0,...h.map(x=>x.v)):0}}}norm();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}pushRemote()}
 async function pushRemote(){if(!remote)return;if(saving){dirty=true;return}saving=true;try{await remote.set(JSON.parse(JSON.stringify(S)))}catch(e){}saving=false;if(dirty){dirty=false;pushRemote()}}
 let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1900)}
@@ -254,8 +256,9 @@ function selfPage(){return `<p class="sub">一度身につけた力はずっと�
 function achPage(){return `<p class="sub">${Object.keys(S.ach).length}/${ACH.length} 達成。最後に達成した実績が称号として表示されます。</p>
   ${ACH.map(a=>`<div class="cmd ach ${has(a.id)?'got':'notyet'}"><b>${has(a.id)?'★ ':''}${a.n}</b><span>${a.d}</span><span class="p">ごほうび：${a.r}${has(a.id)?`（${S.ach[a.id]}日目に達成）`:''}</span></div>`).join('')}`}
 function histPage(){if(!S.hist.length)return '<p class="sub">まだ打っていません。パチ屋で打つと、ここに日ごとの収支が残ります。</p>';
-  const tot=S.hist.reduce((a,h)=>a+h.v,0),win=S.hist.filter(h=>h.v>0).length,best=Math.max(...S.hist.map(h=>h.v));
-  return `<div class="res"><span>通算の収支（直近${S.hist.length}回）</span><b class="big ${tot>=0?'pos':'neg'}">${tot>=0?'+':''}${yen(tot)}</b><span>勝った回数</span><b>${win}勝 ${S.hist.length-win}敗</b><span>いちばん勝った日</span><b class="pos">+${yen(Math.max(0,best))}</b></div>
+  const T=S.tot,draw=T.n-T.win-T.lose;
+  return `<div class="res"><span>通算の収支（${T.n}回）</span><b class="big ${T.sum>=0?'pos':'neg'}">${T.sum>=0?'+':''}${yen(T.sum)}</b><span>勝ち負け</span><b>${T.win}勝 ${T.lose}敗${draw?` ${draw}分け`:''}</b><span>いちばん勝った日</span><b class="${T.best>0?'pos':''}">${T.best>0?'+'+yen(T.best):'なし'}</b></div>
+  <p class="sub">日ごとの収支（直近${S.hist.length}回）</p>
   <div class="log hist">${S.hist.slice().reverse().map(h=>`<div class="hrow"><span>${h.day}日目　${h.hall}</span><span>${h.m}</span><b class="${h.v>=0?'pos':'neg'}">${h.v>=0?'+':''}${yen(h.v)}</b></div>`).join('')}</div>`}
 function settingsPage(){return `<p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>${verBox()}`}
 function renderMe(tab){
@@ -570,7 +573,9 @@ function pickCont(d){
 function randomStops(){for(let t=0;t<60;t++){reels.forEach(r=>{r.pos=Math.floor(Math.random()*N);r.final=r.pos;r.state='stop'});const fs=reels.map(r=>r.pos);if(!lineWins(fs,reels).length&&!bonusLines(fs,reels,'R7').length&&!bonusLines(fs,reels,'BAR').length&&![0,1,2].some(row=>['CH','WM'].includes(symAt(reels[0],fs[0],row))))break}if(P)P.wins=null}
 // オートで n ゲーム回す。回している間は、どのオートのボタンも「止める」になる
 async function autoPlay(games){
-  if(P.spinning||P.autoRun)return;P.autoRun=true;P.autoStop=false;sync();
+  if(P.spinning||P.autoRun)return;
+  if(P.pend||P.mode==='align'){toast('当たりの気配。ここからは手で打とう');return}
+  P.autoRun=true;P.autoStop=false;sync();
   for(let n=0;n<games&&!P.autoStop;n++){
     if(P.g>=CLOSE_MIN-OPEN_MIN){P.autoRun=false;return quit(true)}
     if(P.medals<3&&!borrow()){toast('お金が足りません');break}
@@ -594,7 +599,7 @@ async function autoPlay(games){
 }
 function quit(closed){
   const out=P.medals*P.rate,net=out-P.inv;S.money+=out;S.peak=Math.max(S.peak,S.money);
-  S.hist.push({day:S.day,hall:P.hall,m:P.m.n,v:net});S.hist=S.hist.slice(-HIST_MAX);
+  recordHist(P.hall,P.m.n,net);
   if(FL()&&FL().ms[P.unit]){FL().ms[P.unit].since=P.since;FL().ms[P.unit].taken=true;FL().ms[P.unit].played=true}
   if(net>=50000)grant('win50');if(P.ev&&P.s===6)grant('six');
   S.phase='evening';S.play=null;const p=P;P=null;stopReelsLoop();save();status();
@@ -606,7 +611,10 @@ function collapse(){
   const p=P;quit(false);S.money-=20000;S.hp=30;S.phase='evening';save();status();
   $('#view').insertAdjacentHTML('afterbegin','<p class="lead" style="color:var(--bad)">ホールで倒れて病院に運ばれた。治療費 ¥20,000</p>');
 }
-function cashOutStale(){const p=S.play;if(!p)return;S.money+=p.medals*p.rate;S.hist.push({day:S.day,hall:p.hall,m:p.m,v:p.medals*p.rate-p.inv});S.play=null;S.phase='evening';save()}
+function cashOutStale(){const p=S.play;if(!p)return;S.money+=p.medals*p.rate;S.peak=Math.max(S.peak,S.money);recordHist(p.hall,p.m,p.medals*p.rate-p.inv);S.play=null;S.phase='evening';save()}
+// 1回打つごとの収支を残す。日ごとの一覧は直近 HIST_MAX 回、通算（合計・勝ち・負け・最高）は全部
+function recordHist(hall,m,v){S.hist.push({day:S.day,hall,m,v});S.hist=S.hist.slice(-HIST_MAX);
+  const t=S.tot;t.sum+=v;t.n++;if(v>0)t.win++;else if(v<0)t.lose++;t.best=Math.max(t.best,v)}
 
 /* ---------- loop for reels ---------- */
 let reelRAF=0;
