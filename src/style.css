@@ -80,6 +80,8 @@ button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
 .stop{position:relative;font-family:var(--disp);font-size:14px;color:var(--ink);background:linear-gradient(#fff6c9,var(--gold));border:3px solid var(--chrome);border-radius:12px;min-height:66px;cursor:pointer;box-shadow:0 4px 0 var(--ink);touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .stop .nv{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--neon);color:var(--paper);font-size:13px;border-radius:999px;padding:0 8px;line-height:1.5}
 .lever:disabled,.stop:disabled{filter:grayscale(1) brightness(.45);cursor:default}
+/* 回り始めの加速中は、まだ押せないことが分かるよう暗くしておく */
+.stops.warm .stop:not(:disabled){filter:brightness(.6);cursor:default}
 .lever:active:not(:disabled),.stop:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
 .picks{display:grid;gap:8px}
 .picks.p3{grid-template-columns:repeat(3,1fr)}

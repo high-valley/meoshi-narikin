@@ -1,7 +1,7 @@
 // @ts-nocheck
 // 画面（試作品から移したもの）。エンジンは src/game/、数値は src/data/ に分けてある。
 // 画面を作り直すときに型を付けていく
-import { N, FRAME_MS, MAX_SLIP, STRIPS, BITA_IDX, LINES, LINE_NAMES as LINE_N } from '../data/reels';
+import { N, FRAME_MS, MAX_SLIP, STRIPS, BITA_IDX, LINES, LINE_NAMES as LINE_N, SPIN_UP_MS } from '../data/reels';
 import { mod, makeReel, posAt, symAt, lineWins, bonusLines, pressL, atFullSpeed } from '../game/reels';
 import { MACH, PAY, BITA_OK, BITA_NG, REG_G, REG_PAY, BIG_G, AT_G, AT_ADD, DOOR_WIN, DOOR_LOSE, ZEN_G, CEIL } from '../data/machines';
 import { roll, atRoll, pickSetting, isEvent } from '../game/machines';
@@ -453,6 +453,7 @@ function lever(){
   const sp=speedMul(),ms=maxSlip(),now=performance.now();
   reels.forEach((r,i)=>{r.res=null;r.speed=sp;r.maxSlip=ms;r.noSlip=P.mode==='big'&&i===0;r.p0=r.pos;r.t0=now;r.state='spin'});
   P.spinning=true;SND.lever();renderPlay();
+  const st=$('#stops');if(st){st.classList.add('warm');setTimeout(()=>{const s2=$('#stops');if(s2)s2.classList.remove('warm')},SPIN_UP_MS)}
 }
 function targetFor(i){
   const f=P.flag,k=P.m.kind;

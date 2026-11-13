@@ -130,7 +130,8 @@ export function finishShare(rs: Reel[], fs: (number | null)[], o: PressOpts, mem
 
 /**
  * リール i を時刻 t に止める。狙いの図柄を、止まっているリールとラインがつながる段へ引き込み、
- * 残りのリールが食い違わずに止められる止め方を選ぶ。リールの状態（p0・t0・final・tEnd・state）を書き換える
+ * 残りのリールが食い違わずに止められる止め方を選ぶ。リールの状態（p0・t0・final・tEnd・state）を書き換える。
+ * 全速で回っているとき（atFullSpeed）に呼ぶこと。加速中に呼ぶと、そこから全速で滑ってしまう
  */
 export function pressL(rs: Reel[], i: number, t: number, target: Sym | null, o: PressOpts): StopResult {
   const r = rs[i], p = posAt(r, t), base = Math.ceil(p - 1e-9);
