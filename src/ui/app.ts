@@ -120,6 +120,8 @@ function fresh(){return {tot:{sum:0,n:0,win:0,lose:0,best:0},halls:{},ach:{},tit
 let S=fresh(),remote=null,saving=false,dirty=false;
 try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.day)S=v}catch(e){}
 function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k];
+  // 家具は1種類1つまで（仕様書 7.2）。前の版で複数持っていたら1つにまとめる（置いてあればそれを残す）
+  {const seen=new Set();S.placed=S.placed.filter(p=>!seen.has(p.id)&&seen.add(p.id));for(const id in S.inv)S.inv[id]=seen.has(id)?0:Math.min(1,S.inv[id]||0)}
   // 通算の収支がない古いセーブは、残っている記録から作る
   if(!S.tot){const h=S.hist||[];S.tot={sum:h.reduce((a,x)=>a+x.v,0),n:h.length,win:h.filter(x=>x.v>0).length,lose:h.filter(x=>x.v<0).length,best:h.length?Math.max(0,...h.map(x=>x.v)):0}}}norm();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}pushRemote()}
@@ -208,7 +210,7 @@ function renderHome(){
       <button class="tile" type="button" data-a="sleep"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M2 19V6h2v8h7V9h7a4 4 0 0 1 4 4v6h-2v-2H4v2zm5-6a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg><b>寝る</b></button>
       <button class="tile" type="button" data-a="goShop" data-id="food"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M3 11h18a9 9 0 0 1-5 8v2H8v-2a9 9 0 0 1-5-8zm4.5-7c.8 1 .8 2 0 3s-.8 2 0 3h-1.5c-.8-1-.8-2 0-3s.8-2 0-3zm4 0c.8 1 .8 2 0 3s-.8 2 0 3h-1.5c-.8-1-.8-2 0-3s.8-2 0-3zm4 0c.8 1 .8 2 0 3s-.8 2 0 3h-1.5c-.8-1-.8-2 0-3s.8-2 0-3z"/></svg><b>ごはん</b></button>
       <button class="tile" type="button" data-a="job" ${S.phase!=='morning'?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M3 8.5 12 4l9 4.5v9L12 22l-9-4.5zm9 2.2 6.6-3.3L12 4.1 5.4 7.4zm-7 6 6 3V12L5 9z"/></svg><b>バイト</b></button>
-      <button class="tile" type="button" data-a="goShop" data-id="furn"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M2 3h3l2.6 11.2a1 1 0 0 0 1 .8h9.6l2-8H7.4l-.5-2H22l-3 12H8.6a3 3 0 0 1-2.9-2.3L3.4 5H2zm7 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm9 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg><b>買い物</b></button>
+      <button class="tile" type="button" data-a="goShop"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M2 3h3l2.6 11.2a1 1 0 0 0 1 .8h9.6l2-8H7.4l-.5-2H22l-3 12H8.6a3 3 0 0 1-2.9-2.3L3.4 5H2zm7 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm9 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg><b>買い物</b></button>
     </div>
     <p class="sub">ごはん・家具・不動産は下の「買い物」、自己投資・収支・実績・設定は「自分」から。</p>
     <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>`;
@@ -394,7 +396,7 @@ function renderFloor(){
   if(F.ev&&!F.ticket){
     $('#view').innerHTML=`<div class="ch">${h.n}　イベント日の朝</div><p class="lead">開店前から長い列。整理券の抽選で入場順が決まる。</p><p class="sub">番号が若いほど先に入れます。後ろの番号だと、良さそうな台から他の客に取られていきます。</p><button class="btn" type="button" data-a="ticket">整理券を引く</button><button class="btn alt" type="button" data-a="home">並ばずに帰る</button>`;return}
   const Hs=hallState(hallIdx);if(Hs.visit!==S.day){Hs.visit=S.day;Hs.friend=Math.min(100,Hs.friend+2);save()}
-  const free=F.ms.filter(x=>!x.taken).length,f=Hs.friend;
+  const f=Hs.friend;
   // 機種を上のタブで選び、台の一覧（表）から1台選んで「この台で遊ぶ」（仕様書 9.4）
   if(!MACH[floorK])floorK='fuku';
   const m=MACH[floorK],rows=F.ms.map((x,i)=>[x,i]).filter(([x])=>x.k===floorK);
@@ -402,8 +404,8 @@ function renderFloor(){
   const showReg=S.upg.data>=1&&m.reg,showDiff=S.upg.data>=2;
   const row=([x,i])=>{const hot=x.since>=CEIL[x.k]*.6,near=has('hyena')&&hot&&!x.taken;
     return `<tr class="${x.taken?'taken':''}${near?' near':''}${i===floorSel?' sel':''}"><td><button type="button" data-a="pick" data-i="${i}" ${x.taken?'disabled':''} aria-pressed="${i===floorSel}">${i===floorSel?'<i class="crown" aria-hidden="true">♛</i>':''}${x.no}${S.upg.data>=3&&x.star?'<i class="star" title="高設定の気配">★</i>':''}</button></td>
-      <td class="${hot?'hot':''}">${x.since}G</td><td>${x.big}</td><td>${x.big?'1/'+Math.round(x.g/x.big):'—'}</td>${showReg?`<td>${x.reg}</td>`:''}${showDiff?`<td class="${x.diff>=0?'pos':'neg'}">${x.diff>0?'+':''}${x.diff}</td>`:''}
-      <td>${x.taken?'<span class="neg">使用中</span>':f>=90?`<span class="tag">${x.reset?'リセット':'据え置き'}</span>`:'<span class="pos">空き</span>'}</td></tr>`};
+      <td class="${hot?'hot':''}">${near?'<i class="aim" title="天井が近い">狙</i>':''}${x.since}G</td><td>${x.big}</td><td>${x.big?'1/'+Math.round(x.g/x.big):'—'}</td>${showReg?`<td>${x.reg}</td>`:''}${showDiff?`<td class="${x.diff>=0?'pos':'neg'}">${x.diff>0?'+':''}${x.diff}</td>`:''}
+      <td>${x.taken?'<span class="neg">使用中</span>':'<span class="pos">空き</span>'}${f>=90?`<br><span class="tag">${x.reset?'リセット':'据え置き'}</span>`:''}</td></tr>`};
   $('#view').innerHTML=`<div class="ch">${h.n}</div>
   <div class="seg" role="tablist">${['fuku','sanj','hachi'].map(k=>`<button type="button" role="tab" data-a="floorK" data-id="${k}" aria-selected="${k===floorK}">${MACH[k].n}</button>`).join('')}</div>
   <div class="banner b-${floorK}"><canvas width="31" height="42" data-mach="${floorK}"></canvas><div><b>${m.n}</b><span>${m.desc}</span><span>天井 ${CEIL[floorK]}G　空き ${rows.filter(([x])=>!x.taken).length}/${rows.length}${F.ticket?`　整理券 ${F.ticket}番`:''}</span></div></div>
@@ -451,12 +453,13 @@ function cue(){
   if(P.spinning&&f==='BL'&&m.kind==='sanj')return ['押し順ベル？　<b>最初に押すリールを選べ</b>',''];
   return ['','']
 }
+function statsHTML(){const b=P.big+(P.reg||0);return `<div class="stats"><div><span>総ゲーム数</span><b>${P.g}</b></div><div class="bb"><span>BIG</span><b>${P.big}</b></div><div class="rb"><span>REG</span><b>${P.reg||0}</b></div><div><span>合成確率</span><b>${b?'1/'+Math.round(P.g/b):'—'}</b></div></div>`}
 function counterHTML(){const out=P.medals*P.rate,net=out-P.inv;return `<div class="counter"><div>時刻<b>${clock(P.g)}</b></div><div>回転<b>${P.g}G</b></div><div>持ちメダル<b>${P.medals}</b></div><div>収支<b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
 function renderPlay(){
   status();tabs(null);const [c,cl]=cue();
   const busyBonus=['big','reg','at','zen','align','door','cont'].includes(P.mode);
   $('#view').innerHTML=`<div class="cab"><div class="cabtop"><b>${P.m.n}</b><span class="sub">${P.hall}${P.boost?'　基盤':''}${S.dropDay===S.day?'　目薬':''}</span></div>
-    <div class="stats"><div><span>総ゲーム数</span><b>${P.g}</b></div><div class="bb"><span>BIG</span><b>${P.big}</b></div><div class="rb"><span>REG</span><b>${P.reg||0}</b></div><div><span>合成確率</span><b>${P.big+(P.reg||0)?'1/'+Math.round(P.g/(P.big+(P.reg||0))):'—'}</b></div></div>
+    ${statsHTML()}
     ${counterHTML()}
     <div class="lamp ${cl}" id="lamp"><span>${c||'&nbsp;'}</span></div>
     <div class="glass" id="glass"><canvas id="reels"></canvas></div><p class="sub" style="text-align:center;font-size:12px;margin-top:-4px">5ライン：上段・中段・下段・斜め2本</p>
@@ -612,7 +615,7 @@ async function autoPlay(games){
     else if(f==='CH'){if(Math.random()<.67){gain(k==='fuku'?PAY.CHf:PAY.CHo);if(Math.random()<P.m.dup){P.mode='align';P.bonus=P.m.reg&&Math.random()<.4?'REG':'BIG';cutin('チェリー重複');SND.fan();break}}}
     else if(f==='WM'&&k==='fuku'){if(Math.random()<.18)gain(PAY.WM)}
     randomStops();
-    $('.counter').outerHTML=counterHTML();status();
+    $('.counter').outerHTML=counterHTML();const st2=$('.stats');if(st2)st2.outerHTML=statsHTML();status();
     await new Promise(z=>setTimeout(z,110));
     if(!P||!P.autoRun)return; // 途中で「やめる」を押した
     if(S.hp<=0){P.autoRun=false;return collapse()}
@@ -683,7 +686,7 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='halls')renderHalls();
   else if(a==='hall'){if(S.phase!=='morning')return renderHalls();hallIdx=i;floorSel=-1;renderFloor()}
   else if(a==='sit')sitDown(i);
-  else if(a==='goShop')renderShop(id);
+  else if(a==='goShop'){selItem=null;renderShop(id||shopTab)}
   else if(a==='floorK'){floorK=id;floorSel=-1;renderFloor()}
   else if(a==='pick'){floorSel=i;renderFloor()}
   else if(a==='auto'){if(P.autoRun)P.autoStop=true;else autoPlay(i)}

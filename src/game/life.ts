@@ -13,5 +13,5 @@ export function dailyEffects(placed: { id: string }[], home: number, houseBonus 
     if (it.sleep) sleep = Math.max(sleep, it.sleep);
     fun += it.fun || 0; hp += it.hp || 0; keep += it.keep || 0;
   }
-  return { sleep: sleep + HOMES[home].sleep + houseBonus, fun, hp, keep: Math.min(20, keep) };
+  return { sleep: sleep + HOMES[home].sleep + houseBonus, fun, hp, keep };
 }
