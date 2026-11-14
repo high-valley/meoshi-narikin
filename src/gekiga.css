@@ -2,6 +2,7 @@
    劇画風のテーマ（仕様書 9.5）。借金と勝負の青年漫画のような、紙と墨の見た目。
    打っている画面（.cab がある画面）だけは、実機のスロット台の見た目のまま残す（下の「台」の節）
    ========================================================================== */
+:root:not(:has(.cab)){background:#16110d}
 :root{
   --g-bg:#16110d; --g-paper:#e6d9bc; --g-paper2:#d6c59f; --g-ink:#17100a; --g-sub:#5b4a37;
   --g-red:#a3191b; --g-red2:#5c0a0b; --g-cream:#f3e8cf;
@@ -20,7 +21,7 @@ body:not(:has(.cab)){
   color:var(--g-cream);
 
   /* 紙の枠：墨の太い縁と、ずらした黒い影 */
-  .status,.cmd,.tile,.island,.res,.friend,.verbox,.strip,.seg,.upd-note,.unit,.log,.tablebox{
+  .status,.cmd,.tile,.res,.friend,.verbox,.strip,.seg,.upd-note,.log,.tablebox,.counter{
     background:var(--g-paper-bg)!important;border:2.5px solid var(--g-ink)!important;border-radius:3px 6px 4px 7px;box-shadow:var(--g-shadow),inset 0 0 22px rgba(90,55,20,.28);color:var(--g-ink)}
 
   /* ロゴ */
@@ -37,7 +38,7 @@ body:not(:has(.cab)){
   .daybox span{color:var(--g-sub)}
   .status .day{color:var(--g-sub)}
   .status .day em,.daybox em{color:var(--g-red)}
-  .mi{background:var(--g-cream);border:2px solid var(--g-ink)}
+  .mi{background:var(--g-ink);border:2px solid var(--g-ink)}
   .mi svg{filter:none}
   .mt .r{color:var(--g-ink)}
   .mt .r span{font-weight:700}
@@ -47,7 +48,8 @@ body:not(:has(.cab)){
   .bar i{border-radius:0;box-shadow:inset 0 2px 0 rgba(255,255,255,.25)}
 
   /* 見出し：墨の帯 */
-  .ch{font-family:var(--brush);font-size:16px;letter-spacing:.14em;color:var(--g-cream);background:var(--g-ink);border:0;border-radius:0;padding:4px 22px;text-shadow:none;box-shadow:3px 3px 0 var(--g-red);clip-path:polygon(2% 0,100% 6%,98% 100%,0 92%)}
+  .ch{font-family:var(--brush);font-size:16px;letter-spacing:.14em;color:var(--g-cream);background:var(--g-ink);border:0;border-radius:0;padding:4px 22px;text-shadow:none;clip-path:polygon(2% 0,100% 6%,98% 100%,0 92%)}
+  .ch{filter:drop-shadow(3px 3px 0 var(--g-red))}
   .ch::before,.ch::after{content:none}
   .lead{color:var(--g-cream);text-shadow:2px 2px 0 #000}
   .sub{color:#cbb894}
@@ -84,7 +86,7 @@ body:not(:has(.cab)){
   .btn{font-family:var(--brush);font-size:20px;color:var(--g-cream);background:var(--g-red-bg);border:2.5px solid var(--g-ink);border-radius:3px 6px 4px 5px;box-shadow:3px 3px 0 #000;text-shadow:2px 2px 0 #000}
   .btn.alt{font-family:var(--body);font-weight:700;font-size:15px;color:var(--g-ink);background:var(--g-paper-bg);border:2.5px solid var(--g-ink);border-radius:3px 6px 4px 5px;text-shadow:none}
   .btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
-  button:focus-visible{outline:3px solid #f0b23a;outline-offset:2px}
+  & button:focus-visible{outline:3px solid #f0b23a;outline-offset:2px}
 
   /* 上のタブ（買い物・自分） */
   .seg{padding:4px;border-radius:3px}
@@ -93,12 +95,17 @@ body:not(:has(.cab)){
 
   /* 下のタブバー：紙の札が並び、今の画面は赤 */
   .tabbar{gap:4px;background:var(--g-noise),#120d0a;box-shadow:0 -3px 0 #000,0 -10px 24px rgba(0,0,0,.6)}
-  .tabbar button{color:var(--g-ink);background:var(--g-paper-bg);border:2px solid var(--g-ink);border-radius:2px 5px 3px 4px;font-weight:700}
-  .tabbar button.on{color:var(--g-cream);background:var(--g-red-bg);border:2px solid var(--g-ink);box-shadow:inset 0 0 0 1.5px rgba(255,220,180,.25)}
+  .tabbar button{--bg:var(--g-paper);color:var(--g-ink);background:var(--g-paper-bg);border:2px solid var(--g-ink);border-radius:2px 5px 3px 4px;font-weight:700}
+  .tabbar button.on{--bg:#6a0e0f;color:var(--g-cream);background:var(--g-red-bg);border:2px solid var(--g-ink);box-shadow:inset 0 0 0 1.5px rgba(255,220,180,.25)}
   .tabbar button.on svg{filter:drop-shadow(1px 1px 0 #000)}
 
   /* 部屋：墨の太い枠 */
   .room.anime{border:3px solid var(--g-ink)!important;border-radius:3px;background:var(--room) center/cover no-repeat!important;box-shadow:4px 4px 0 #000}
+  /* バイトの検品ライン */
+  .room:not(.anime){border:3px solid var(--g-ink)!important;border-radius:3px;background:var(--g-ink)!important;box-shadow:4px 4px 0 #000}
+  .counter div{color:var(--g-sub)}
+  .counter b{font-family:var(--num);font-weight:800;color:var(--g-ink)}
+  .counter b.pos{color:#2f6e22}.counter b.neg{color:var(--g-red)}
 
   /* 持ち物 */
   .chip{background:var(--g-paper-bg);border:2px solid var(--g-ink);border-radius:3px;color:var(--g-ink);font-weight:700;box-shadow:2px 2px 0 #000}
@@ -126,14 +133,13 @@ body:not(:has(.cab)){
   .units-t td.hot,.units-t .crown,.units-t .star{color:var(--g-red)}
   .units-t .tag{color:#2b5f8a}
   .units-t .aim{background:var(--g-red);color:var(--g-cream)}
-  .units-t tr.near td{background:rgba(207,161,42,.3);border-color:var(--g-ink);box-shadow:none}
+  /* 天井が近い台は金色に光らせる（店の説明「金色に光るのは天井が近い台」のとおり） */
+  .units-t tr.near td{background:linear-gradient(180deg,#f6dc7c,#d9a92c);border-color:var(--g-ink);box-shadow:0 0 10px rgba(255,200,60,.75)}
   .units-t tr.near td:first-child{border-left-color:var(--g-ink)}.units-t tr.near td:last-child{border-right-color:var(--g-ink)}
   .units-t tr.sel td{background:var(--g-red);color:var(--g-cream);border-color:var(--g-ink)}
-  .units-t tr.sel td button,.units-t tr.sel .crown,.units-t tr.sel .star,.units-t tr.sel td.hot{color:var(--g-cream)}
+  .units-t tr.sel td button,.units-t tr.sel .crown,.units-t tr.sel .star,.units-t tr.sel td.hot,.units-t tr.sel .pos,.units-t tr.sel .neg,.units-t tr.sel .tag{color:var(--g-cream)}
+  .units-t tr.sel .aim{background:var(--g-cream);color:var(--g-red)}
   .units-t tr.sel td:first-child{border-left-color:var(--g-ink)}.units-t tr.sel td:last-child{border-right-color:var(--g-ink)}
-  .unit b{color:var(--g-ink)}.unit span{color:var(--g-sub)}.unit .tag{color:#2b5f8a}
-  .unit.near{background:var(--g-paper-bg)!important;border-color:var(--g-red)!important;box-shadow:var(--g-shadow),inset 0 0 0 2px var(--g-red)}
-  .ihead b{color:var(--g-ink)}.ihead div{color:var(--g-sub)}
   .friend p{color:var(--g-sub)}
 
   /* 購入の確認 */
@@ -149,10 +155,6 @@ body:not(:has(.cab)){
   /* 知らせ・実績のカットイン */
   .toast{font-weight:700;color:var(--g-cream);background:var(--g-ink);border:2px solid var(--g-cream);border-radius:3px;box-shadow:3px 3px 0 var(--g-red)}
   .cut{font-family:var(--brush);color:var(--g-cream);background:var(--g-red-bg);border-block:4px solid #000;text-shadow:3px 3px 0 #000}
-
-  /* バイト・ルーレットなどの扉 */
-  .door{font-family:var(--brush);color:var(--g-ink);background:var(--g-paper-bg);border:2.5px solid var(--g-ink);border-radius:3px;box-shadow:3px 3px 0 #000}
-  .door.win{color:var(--g-cream);background:var(--g-red-bg)}
 }
 
 /* ==========================================================================
@@ -160,22 +162,20 @@ body:not(:has(.cab)){
    ========================================================================== */
 body:has(.cab){
   background:radial-gradient(90% 40% at 50% 0%,#2a1c4a 0%,rgba(42,28,74,0) 70%),radial-gradient(70% 40% at 50% 100%,#3a0c22 0%,rgba(58,12,34,0) 70%),#07060d;
-  .cab{border:4px solid transparent;border-radius:20px;background:linear-gradient(180deg,#2a0d22 0%,#14081e 45%,#0d0a1c 100%) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 22%,#eef1f4 45%,#5e6670 70%,#dfe3e8 88%,#8b939c) border-box;animation:led 4s linear infinite}
+  .cab{position:relative;border:4px solid transparent;border-radius:20px;background:linear-gradient(180deg,#2a0d22 0%,#14081e 45%,#0d0a1c 100%) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 22%,#eef1f4 45%,#5e6670 70%,#dfe3e8 88%,#8b939c) border-box;box-shadow:0 0 0 2px #000,0 0 22px 4px rgba(255,40,120,.45)}
+  /* 台の上の縁を流れる LED（帯の色をずらすだけなので軽い） */
+  .cab::before{content:"";position:absolute;left:18px;right:18px;top:-4px;height:4px;border-radius:2px;background:linear-gradient(90deg,#ff2878,#3cc8ff,#ffd23c,#ff2878);background-size:200% 100%;box-shadow:0 0 8px rgba(255,120,200,.8);animation:led 3s linear infinite;pointer-events:none}
   .cabtop b{font-size:24px;letter-spacing:.06em}
   .glass{background:linear-gradient(180deg,#d9dde2,#7d858e);box-shadow:inset 0 0 0 2px #fff,0 0 0 2px #000,inset 0 6px 14px rgba(0,0,0,.35)}
   .stats div{background:#030308;border:1.5px solid #5e6670;box-shadow:inset 0 0 8px rgba(255,60,60,.12)}
   .stats b{font-family:var(--dot);color:#ff5b4a;text-shadow:0 0 6px rgba(255,80,60,.8)}
   .stats .rb b{color:#5fb3ff;text-shadow:0 0 6px rgba(80,170,255,.8)}
-  .counter{background:#030308;border:1.5px solid #5e6670!important}
+  .counter{background:#030308!important;border:1.5px solid #5e6670!important}
   .counter b{color:#ffcf4a;text-shadow:0 0 6px rgba(255,200,60,.6)}
-  .lever{background:radial-gradient(circle at 38% 28%,#fff,#ff7a8e 25%,#e0102e 60%,#7a0616) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 40%,#5e6670 75%,#dfe3e8) border-box}
+  .counter b.pos{color:#5dff8a;text-shadow:0 0 6px rgba(80,255,130,.6)}.counter b.neg{color:#ff5b4a;text-shadow:0 0 6px rgba(255,80,60,.7)}
+  .lever{color:#fff;text-shadow:0 1px 2px #000;background:radial-gradient(circle at 38% 28%,#fff,#ff7a8e 25%,#e0102e 60%,#7a0616) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 40%,#5e6670 75%,#dfe3e8) border-box}
   .stop{background:radial-gradient(circle at 50% 30%,#fff 0%,#ff9a8a 18%,#ff2e2e 45%,#a0081a 80%) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 40%,#5e6670 75%,#dfe3e8) border-box;box-shadow:0 5px 0 #000,0 0 16px rgba(255,60,60,.6)}
   .stop:disabled{filter:grayscale(.7) brightness(.5)}
 }
-@keyframes led{
-  0%{box-shadow:0 0 0 2px #000,0 0 22px 4px rgba(255,40,120,.6)}
-  33%{box-shadow:0 0 0 2px #000,0 0 22px 4px rgba(60,200,255,.6)}
-  66%{box-shadow:0 0 0 2px #000,0 0 22px 4px rgba(255,210,60,.6)}
-  100%{box-shadow:0 0 0 2px #000,0 0 22px 4px rgba(255,40,120,.6)}
-}
-@media (prefers-reduced-motion:reduce){body:has(.cab) .cab{animation:none;box-shadow:0 0 0 2px #000,0 0 22px 4px rgba(255,40,120,.5)}}
+@keyframes led{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){body:has(.cab) .cab::before{animation:none}}
