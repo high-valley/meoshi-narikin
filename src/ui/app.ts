@@ -207,7 +207,7 @@ function roomHTML(){
   // 絵のない家具の仮のドット絵は正方形で背が高くなるので、小さめに置いて重なりを避ける
   const pos=(s,k=1)=>`left:${s.x-s.w*k/2}%;bottom:${100-s.y}%;width:${s.w*k}%`;
   const furn=id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(SLOTS[SLOT_OF[id]||id],FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}${FURNITURE_IMAGES.includes(id)?`;aspect-ratio:1/${FURNITURE_ASPECT[id]}`:''}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`;
-  // 主人公も家具と一緒に奥から順に並べ、手前の家具（ソファなど）の後ろに立てるようにする
+  // 主人公も家具と一緒に奥から順に並べ、手前の家具（ソファなど）の後ろに立てるようにする。y が同じ家具とは主人公が手前になる
   const list=[...items.map(id=>({y:SLOTS[SLOT_OF[id]||id].y,h:furn(id)})),{y:PLAYER_SPOT.y,h:`<img class="pc" src="${base}rooms/${PLAYER_IMAGE}" alt="" style="${pos(PLAYER_SPOT)};aspect-ratio:1/${PLAYER_ASPECT}">`}].sort((a,b)=>a.y-b.y);
   return `<div class="room anime" id="room" role="group" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]});aspect-ratio:${ROOM_ASPECT}">
     ${list.map(e=>e.h).join('')}</div>`}
@@ -218,11 +218,12 @@ function alphaOf(img){const k=img.currentSrc||img.src;if(furnAlpha[k]!==undefine
   try{const w=Math.min(HIT_SAMPLE_W,img.naturalWidth),h=Math.round(img.naturalHeight*w/img.naturalWidth),c=document.createElement('canvas');c.width=w;c.height=h;
     const g=c.getContext('2d');g.drawImage(img,0,0,w,h);furnAlpha[k]={w,h,d:g.getImageData(0,0,w,h).data}}catch(e){furnAlpha[k]=null}
   return furnAlpha[k]}
-function furnAt(x,y){const list=[...document.querySelectorAll('#room .furn')].reverse();
+// 手前から順に調べる。主人公の絵に当たったら、その後ろの家具は片付けない（主人公より手前の家具は片付けられる）
+function furnAt(x,y){const list=[...document.querySelectorAll('#room .furn,#room .pc')].reverse();
   for(const el of list){const r=el.getBoundingClientRect();if(x<r.left||x>r.right||y<r.top||y>r.bottom)continue;
-    const img=el.querySelector('img'),a=img&&alphaOf(img);if(!a)return el.dataset.id;
+    const pc=el.classList.contains('pc'),img=pc?el:el.querySelector('img'),a=img&&alphaOf(img);if(!a){if(pc)continue;return el.dataset.id}
     const px=Math.min(a.w-1,Math.floor((x-r.left)/r.width*a.w)),py=Math.min(a.h-1,Math.floor((y-r.top)/r.height*a.h));
-    if(a.d[(py*a.w+px)*4+3]>HIT_ALPHA)return el.dataset.id}
+    if(a.d[(py*a.w+px)*4+3]>HIT_ALPHA)return pc?null:el.dataset.id}
   return null}
 // 家具を置く・片付ける。同じ置き場所の家具（寝具・テレビ）があれば入れ替える
 function putF(id){if(!(S.inv[id]>0))return;const slot=SLOT_OF[id]||id;
