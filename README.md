@@ -15,7 +15,7 @@
 - `src/ui/widgets.ts` … 画面の部品（下のタブバー、上のタブと横スワイプのページ、購入の確認画面）
 - `src/ui/symbols.ts` … リールの図柄の画像とボーナス図柄の光（画像は `public/symbols/`、作ったときのプロンプトは `docs/art-prompts.md`）
 - `src/version.ts` … 版の表示（ビルドの印）と、公開されている最新の版の確かめ方
-- `public/` … 図柄の画像（`symbols/`）、アプリのアイコン（`icons/`・`apple-touch-icon.png`）、`manifest.webmanifest`、家ごとの部屋の背景（`rooms/`）
+- `public/` … 図柄の画像（`symbols/`）、アプリのアイコン（`icons/`・`apple-touch-icon.png`）、`manifest.webmanifest`、家ごとの部屋の背景と主人公（`rooms/`）、家具（`furniture/`）、ロゴ（`ui/`）
 - `tests/` … Vitest の単体テスト（停止制御の約束、抽選、生活）
 - `prototype/narikin.html` … 試作品の単一ファイル（参考用）
 
