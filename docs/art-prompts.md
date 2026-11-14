@@ -126,3 +126,18 @@ Japanese pachislot machine banner art, wide horizontal 3:1 composition, characte
 - fuku 福招き：`a cute white lucky cat holding a gold coin and raising one paw, cherry blossoms and red festive background with gold fans`
 - sanj 三択侍：`a cool young samurai with long black hair drawing a katana, blue night sky with moon and flowing wind, sharp silver light trails`
 - hachi 八門：`a fierce golden eastern dragon coiling and roaring, purple and violet mystic clouds with eight glowing gates in the background`
+
+## 画面デザインの参考画像（スマホ3画面のモックアップ）
+
+画面の作り直しの参考にする画像。今の画面の中身（下のタブ・ボタン）に合わせてある。画像生成AIは日本語の文字が崩れやすいので、文字は雰囲気だけと考える。
+
+```
+Mobile game UI design mockup, three iPhone screens side by side in portrait, a Japanese pachislot life simulation game called "目押し成金", luxurious casino style: deep navy and purple night background, ornate gold beveled frames on every panel and button, glossy red call-to-action button with gold rim, gold gradient Japanese title text, soft neon glow, polished high-end mobile game look.
+Screen 1 (home): gold logo "目押し成金" at top left with a sound toggle at top right; a gold-framed panel showing a coin icon and money amount, a day counter box, and three round-icon gauges (hunger, fun, health) with colored bars; a large anime-style illustration of a small Japanese apartment room with furniture; a big glossy red button "パチ屋へ行く" with a 777 icon; two gold-framed icon tiles "日雇いバイト" and "寝る"; a bottom tab bar with four tabs: home, pachislot hall, shopping bag, person, the active tab framed in gold.
+Screen 2 (hall): a gold plaque header with the hall name; three tabs to choose a machine; a wide machine banner with an anime character on the right (a lucky cat, a samurai, or a golden dragon) and the machine name in gold on the left; a table titled "設置状況" with columns for machine number, current spins, BIG count, probability and status, one row highlighted in gold with a crown; a big gold-framed button "この台で遊ぶ"; the same bottom tab bar.
+Screen 3 (playing): a slot machine cabinet with gold frame; a row of four small counter boxes (total games, BIG, REG, combined probability); a wide LCD screen showing the machine's anime banner art with big glowing text like "BIG" and "+32枚 獲得"; three reels on a cream paper strip showing a red 7, a black-and-gold BAR plate, golden bells, blue replay arrows, watermelon and cherries; a gold lever ball and three glossy red round stop buttons; buttons for "10G", "100G" auto play and quit.
+Original design, no real slot machine names, no real brand logos, no real characters.
+```
+
+- 1画面ずつ作りたいときは、「three iPhone screens side by side」を「a single iPhone screen」にして、Screen 1〜3 のうち1つだけを残す。
+- 参考にした画像を添えられるツールなら、前回の参考画像を添えると雰囲気がそろう。

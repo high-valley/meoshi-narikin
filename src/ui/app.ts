@@ -450,8 +450,10 @@ function cue(){
   if(P.spinning&&f==='BL'&&m.kind==='sanj')return ['押し順ベル？　<b>最初に押すリールを選べ</b>',''];
   return ['','']
 }
-function statsHTML(){const b=P.big+(P.reg||0);return `<div class="stats"><div><span>総ゲーム数</span><b>${P.g}</b></div><div class="bb"><span>BIG</span><b>${P.big}</b></div><div class="rb"><span>REG</span><b>${P.reg||0}</b></div><div><span>合成確率</span><b>${b?'1/'+Math.round(P.g/b):'—'}</b></div></div>`}
-function counterHTML(){const out=P.medals*P.rate,net=out-P.inv;return `<div class="counter"><div>時刻<b>${clock(P.g)}</b></div><div>回転<b>${P.g}G</b></div><div>持ちメダル<b>${P.medals}</b></div><div>収支<b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
+// 台の数字はデータカウンターと同じ考え方（仕様書 9.7）：総ゲーム数はボーナス中も含めた累計、合成確率は通常時のゲーム数で割る。
+// 「現在」（counterHTML）は最後の当たりからの回転数で、ボーナス・ラッシュに入ると0に戻り、ボーナス中は数えない
+function statsHTML(){const b=P.big+(P.reg||0);return `<div class="stats"><div><span>総ゲーム数</span><b>${P.g}</b></div><div class="bb"><span>BIG</span><b>${P.big}</b></div><div class="rb"><span>REG</span><b>${P.reg||0}</b></div><div><span>合成確率</span><b>${b?'1/'+Math.round((P.ng||0)/b):'—'}</b></div></div>`}
+function counterHTML(){const out=P.medals*P.rate,net=out-P.inv;return `<div class="counter"><div>時刻<b>${clock(P.g)}</b></div><div>現在<b>${P.since}G</b></div><div>持ちメダル<b>${P.medals}</b></div><div>収支<b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
 function renderPlay(){
   status();tabs(null);const [c,cl]=cue();
   const busyBonus=['big','reg','at','zen','align','door','cont'].includes(P.mode);
@@ -487,7 +489,7 @@ function lever(){
   if(P.g>=CLOSE_MIN-OPEN_MIN&&P.mode==='normal'){toast('閉店です');return quit(true)}
   P.medals-=3;
   if(P.mode==='normal'){P.since++;if(P.since>=CEIL[P.m.kind]&&!P.post){P.pend='BIG';P.ceilHit=true}}
-  P.g++;P.order=[];P.navi=-1;P.hint=-1;P.res=[];P.wins=null;
+  P.g++;if(P.mode==='normal'||P.mode==='align')P.ng=(P.ng||0)+1;P.order=[];P.navi=-1;P.hint=-1;P.res=[];P.wins=null;
   tick();
   if(P.mode==='normal'){P.flag=P.pend||roll(mach(),P.s,Math.random());P.pend=null;
     if(P.flag==='BIG'||P.flag==='REG'){const b=P.flag;if(Math.random()<.5){P.mode='align';P.bonus=b;SND.fan();P.flag='BONUS';say('ボーナス確定！',P.m.kind==='sanj'?'赤7をそろえよう':'7をそろえよう','hot')}else{P.post=b;P.flag=null}}
@@ -626,7 +628,7 @@ async function autoPlay(games){
     const f=roll(mach(),P.s,Math.random()),k=P.m.kind;
     P.since++;if(P.since>=CEIL[k]){P.pend='BIG';P.ceilHit=true;P.since--;break}
     if(f==='BIG'||f==='REG'){P.pend=f;P.since--;break}
-    P.medals-=3;P.g++;tick();
+    P.medals-=3;P.g++;P.ng=(P.ng||0)+1;tick();
     if(f==='RP')gain(PAY.RP);
     else if(f==='BL'){if(k==='sanj'){const ok=Math.random()<1/3;gain(ok?PAY.BLok:PAY.BLng)}else gain(PAY.BL)}
     else if(f==='CH'){if(Math.random()<.67){gain(k==='fuku'?PAY.CHf:PAY.CHo);if(Math.random()<P.m.dup){P.mode='align';P.bonus=P.m.reg&&Math.random()<.4?'REG':'BIG';say('チェリー重複','ボーナス確定！','hot');SND.fan();break}}}
