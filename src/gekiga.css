@@ -157,6 +157,9 @@ body:not(:has(.cab)){
   .cut{font-family:var(--brush);color:var(--g-cream);background:var(--g-red-bg);border-block:4px solid #000;text-shadow:3px 3px 0 #000}
 }
 
+/* ロゴの画像（劇画風・打つ画面のどちらでも使う） */
+.logo img{display:block;height:46px;width:auto;max-width:100%;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.6))}
+
 /* ==========================================================================
    台（打つ画面）：実機のスロット台。クロームの枠と、縁を流れる LED の光
    ========================================================================== */
