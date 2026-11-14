@@ -170,8 +170,6 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 /* ロゴ */
 .top{align-items:flex-end}
 .logo{display:flex;flex-direction:column;line-height:1}
-.logo span{font-family:var(--disp);font-size:30px;letter-spacing:.04em;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.6px #5a3608;filter:drop-shadow(0 2px 0 #2a1600) drop-shadow(0 0 10px rgba(255,190,60,.35))}
-.logo small{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:11px;letter-spacing:.12em;color:#e8c56a;margin:3px 0 0 4px}
 .mini{border:1.5px solid transparent;background:var(--panel-grad) padding-box,var(--gold-edge) border-box;color:#ffe9a8;font-weight:700;padding:5px 12px}
 
 /* 上の所持金・日付・ゲージ */
