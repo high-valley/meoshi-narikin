@@ -10,6 +10,7 @@ import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
+import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, FURNITURE_IMAGES, PLACEHOLDER_SCALE } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
@@ -121,7 +122,9 @@ let S=fresh(),remote=null,saving=false,dirty=false;
 try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.day)S=v}catch(e){}
 function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k];
   // 家具は1種類1つまで（仕様書 7.2）。前の版で複数持っていたら1つにまとめる（置いてあればそれを残す）
-  {const seen=new Set();S.placed=S.placed.filter(p=>!seen.has(p.id)&&seen.add(p.id));for(const id in S.inv)S.inv[id]=seen.has(id)?0:Math.min(1,S.inv[id]||0)}
+  {const seen=new Set();S.placed=S.placed.filter(p=>!seen.has(p.id)&&seen.add(p.id));for(const id in S.inv)S.inv[id]=seen.has(id)?0:Math.min(1,S.inv[id]||0)
+   // 置き場所が決まる形（仕様書 9.8）になったので、同じ置き場所に2つあれば後のほうを残し、前のほうは持ち物へ。マス目の位置は使わない
+   const slotSeen=new Set(),keep=[];for(const p of S.placed.slice().reverse()){const s=SLOT_OF[p.id]||p.id;if(slotSeen.has(s))S.inv[p.id]=(S.inv[p.id]||0)+1;else{slotSeen.add(s);keep.unshift({id:p.id})}}S.placed=keep}
   // 通算の収支がない古いセーブは、残っている記録から作る
   if(!S.tot){const h=S.hist||[];S.tot={sum:h.reduce((a,x)=>a+x.v,0),n:h.length,win:h.filter(x=>x.v>0).length,lose:h.filter(x=>x.v<0).length,best:h.length?Math.max(0,...h.map(x=>x.v)):0}}}norm();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}pushRemote()}
@@ -165,23 +168,6 @@ function drawItem(c,id,x,y){
   else if(id==='tank'){r(1,3,14,11,'#9cc8e8');r(1,3,14,2,'#e6f4ff');r(4,7,3,2,'#ff9a3c');r(9,10,3,2,'#ffcf4a');r(2,12,12,2,'#c9b37a');r(1,14,14,2,'#3b3460')}
   else if(id==='mchair'){r(3,1,10,14,'#2c2c3a');r(4,2,8,6,'#45425a');r(1,8,3,6,'#2c2c3a');r(12,8,3,6,'#2c2c3a');r(5,9,6,4,'#5a5878')}
 }
-const FLOORS={tatami:['#c9b37a','#b8a066'],wood:['#b98a5a','#a8794b'],wood2:['#d1a878','#c0976a'],wood3:['#a77048','#94603c'],marble:['#e6e1ea','#d3cde0']};
-function drawRoom(c,home,placed,sel,t){
-  const H=HOMES[home],W=H.w*16,Hh=H.h*16+20;
-  const [f1,f2]=FLOORS[H.floor];
-  R(c,0,0,W,20,home===4?'#1b2550':home===0?'#8f8a7a':'#e8e1d0');
-  if(home===0){R(c,0,17,W,3,'#6b6556');R(c,W-30,4,22,10,'#6f8fb0');R(c,W-20,4,1,10,'#6b6556');R(c,8,6,6,8,'#5b5546')}
-  else if(home===4){for(let i=0;i<W;i+=6)R(c,i,3+(i*7%9),2,2,'#ffcf4a');R(c,0,17,W,3,'#c9c3da')}
-  else{R(c,0,17,W,3,'#b9b0a0');R(c,W-34,4,26,10,'#9fd0f0');R(c,W-21,4,1,10,'#ffffff')}
-  for(let y=0;y<H.h;y++)for(let x=0;x<H.w;x++){R(c,x*16,20+y*16,16,16,(x+y)%2?f1:f2);if(H.floor==='tatami')R(c,x*16,20+y*16,16,1,'#a8925a')}
-  if(home===0){R(c,20,30,3,2,'#6b5a3a');R(c,44,58,2,3,'#6b5a3a')}
-  for(const p of placed)drawItem(c,p.id,p.x*16,20+p.y*16);
-  if(sel){R(c,0,20,W,H.h*16,'rgba(63,217,255,.08)');for(let y=0;y<H.h;y++)for(let x=0;x<H.w;x++)if(!placed.some(p=>p.x===x&&p.y===y)){c.strokeStyle='rgba(63,217,255,.7)';c.strokeRect(x*16+1.5,20+y*16+1.5,13,13)}}
-  // the player character stands on the first free tile
-  let fx=-1,fy=-1;for(let y=H.h-1;y>=0&&fx<0;y--)for(let x=H.w-1;x>=0;x--)if(!placed.some(p=>p.x===x&&p.y===y)){fx=x;fy=y;break}
-  if(fx>=0){const px=fx*16+4,py=20+fy*16-6+Math.round(Math.sin(t/400)),sad=S.hun<25||S.hp<25;
-    R(c,px+1,py+16,3,6,'#2b3f78');R(c,px+5,py+16,3,6,'#2b3f78');R(c,px,py+8,9,9,S.home>=3?'#3a3a3a':'#7a8296');R(c,px+1,py+1,7,7,'#f0c9a4');R(c,px,py,9,3,'#2a1f3d');R(c,px+2,py+4,1,1,'#15101f');R(c,px+6,py+4,1,1,'#15101f');R(c,px+3,py+6,3,1,sad?'#15101f':'#b5533c')}
-}
 function drawMachine(c,m){
   R(c,0,0,31,42,'#2a2445');R(c,1,1,29,40,m.col);R(c,3,3,25,5,'#15101f');
   c.fillStyle='#ffcf4a';c.font='5px "DotGothic16",monospace';c.textAlign='center';c.fillText(m.n,15.5,7.5);
@@ -202,8 +188,9 @@ function renderHome(){
   const ev=dailyEffects(S.placed,S.home,has('house')?5:0);
   $('#view').innerHTML=`${updNote()}
     <p class="sub">${isEvent(S.day)?'<b style="color:var(--neon)">今日は7のつく日。</b>どの店も設定が入りやすいが、整理券の抽選がある':`次のイベント日（7のつく日）まで あと${(17-S.day%10)%10||10}日`}</p>
-    <div class="room"><canvas id="room" width="${H.w*16}" height="${H.h*16+20}" aria-label="部屋"></canvas></div>
-    ${inv.length||selItem?`<div class="ch">持ち物（選んでから空いている床をタップ。置いた家具をタップで片付け）</div><div class="inv">${inv.map(([id,n])=>`<button class="chip" type="button" data-a="sel" data-id="${id}" aria-pressed="${selItem===id}"><canvas width="16" height="16" data-icon="${id}"></canvas>${ITEMS[id].n}×${n}</button>`).join('')}</div>`:'<p class="sub">家具をタップすると片付けられます。</p>'}
+    ${roomHTML()}
+    ${inv.length?`<div class="ch">持ち物（タップで部屋に置く）</div><div class="inv">${inv.map(([id])=>`<button class="chip" type="button" data-a="putF" data-id="${id}"><canvas width="16" height="16" data-icon="${id}"></canvas>${ITEMS[id].n}</button>`).join('')}</div>`:''}
+    <p class="sub">${S.placed.length?'置いた家具をタップすると片付けます。':'家具は「買い物」で買えます。'}同じ場所を使う寝具とテレビは1つずつ置けます。</p>
     <p class="sub">寝ると 体調+${ev.sleep}${ev.fun?` 娯楽+${ev.fun}`:''}${ev.hp?` 体調+${ev.hp}`:''}${ev.keep?` お腹の減り−${ev.keep}`:''}${H.rent?`、家賃 ${yen(H.rent)}`:''}</p>
     <button class="cta" type="button" data-a="halls" ${S.phase!=='morning'?'disabled':''}><span class="cta-ic" aria-hidden="true"><b>7</b><b>7</b><b>7</b></span><span class="cta-t"><b>パチ屋へ行く</b><span>${S.phase==='morning'?'閉店まで打てる。1日1回':'今日はもう出かけた'}</span></span><span class="cta-go" aria-hidden="true">»</span></button>
     <div class="grid2">
@@ -214,16 +201,23 @@ function renderHome(){
     <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>`;
   tabs('home');
   document.querySelectorAll('[data-icon]').forEach(cv=>drawItem(cv.getContext('2d'),cv.dataset.icon,0,0));
-  const cv=$('#room'),c=cv.getContext('2d');c.imageSmoothingEnabled=false;cv.style.maxWidth=Math.round(Math.min(window.innerHeight*.36,320)*cv.width/cv.height)+'px';cv.style.margin='0 auto';
-  cancelAnimationFrame(roomRAF);const loop=t=>{if(!document.body.contains(cv))return;drawRoom(c,S.home,S.placed,selItem,t);roomRAF=requestAnimationFrame(loop)};roomRAF=requestAnimationFrame(loop);
-  cv.addEventListener('click',e=>{
-    const r=cv.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*H.w),y=Math.floor(((e.clientY-r.top)/r.height*(H.h*16+20)-20)/16);
-    if(y<0||y>=H.h||x<0||x>=H.w)return;
-    const at=S.placed.findIndex(p=>p.x===x&&p.y===y);
-    if(at>=0&&!selItem){const p=S.placed.splice(at,1)[0];S.inv[p.id]=(S.inv[p.id]||0)+1;save();renderHome();toast(ITEMS[p.id].n+'を片付けた');return}
-    if(at<0&&selItem&&S.inv[selItem]>0){S.inv[selItem]--;S.placed.push({id:selItem,x,y});if(!S.inv[selItem])selItem=null;save();renderHome();SND.coin()}
-  });
+  document.querySelectorAll('[data-pc]').forEach(cv=>drawPlayer(cv.getContext('2d')));
 }
+// 部屋：家ごとの背景の絵に、家具を決まった場所に重ねる（奥から手前の順）
+function roomHTML(){
+  const base=import.meta.env.BASE_URL,items=S.placed.map(p=>p.id).filter(id=>SLOTS[SLOT_OF[id]||id]).sort((a,b)=>SLOTS[SLOT_OF[a]||a].y-SLOTS[SLOT_OF[b]||b].y);
+  // 家具の絵が届くまでの仮のドット絵は正方形で背が高くなるので、小さめに置いて重なりを避ける
+  const pos=(s,k=1)=>`left:${s.x-s.w*k/2}%;bottom:${100-s.y}%;width:${s.w*k}%`;
+  return `<div class="room anime" id="room" role="img" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]})">
+    ${items.map(id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(SLOTS[SLOT_OF[id]||id],FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`).join('')}
+    <canvas class="pc" width="9" height="23" data-pc style="${pos(PLAYER_SPOT)}" aria-hidden="true"></canvas></div>`}
+// 主人公の仮のドット絵（絵ができるまで）
+function drawPlayer(c){const sad=S.hun<25||S.hp<25;c.clearRect(0,0,9,23);R(c,1,16,3,7,'#2b3f78');R(c,5,16,3,7,'#2b3f78');R(c,0,8,9,9,S.home>=3?'#3a3a3a':'#7a8296');R(c,1,1,7,7,'#f0c9a4');R(c,0,0,9,3,'#2a1f3d');R(c,2,4,1,1,'#15101f');R(c,6,4,1,1,'#15101f');R(c,3,6,3,1,sad?'#15101f':'#b5533c')}
+// 家具を置く・片付ける。同じ置き場所の家具（寝具・テレビ）があれば入れ替える
+function putF(id){if(!(S.inv[id]>0))return;const slot=SLOT_OF[id]||id;
+  for(const p of S.placed.filter(q=>(SLOT_OF[q.id]||q.id)===slot)){S.inv[p.id]=(S.inv[p.id]||0)+1}
+  S.placed=S.placed.filter(q=>(SLOT_OF[q.id]||q.id)!==slot);S.inv[id]--;S.placed.push({id});save();SND.coin();renderHome()}
+function takeF(id){const at=S.placed.findIndex(p=>p.id===id);if(at<0)return;S.placed.splice(at,1);S.inv[id]=(S.inv[id]||0)+1;save();renderHome();toast(ITEMS[id].n+'を片付けた')}
 // 買い物と自分の画面は、上のタブと横スワイプでページを切り替える（仕様書 9.4）
 let shopTab='food',meTab='self';
 // 買い物はどれも、押すと「購入しますか？」の確認を出し、買ったら「購入しました」と結果を見せる（仕様書 9.4）
@@ -248,10 +242,10 @@ function effText(e){const N={hun:'お腹',fun:'娯楽',hp:'体調'};return Objec
 function furnPage(){return `<div class="grid2">${Object.entries(ITEMS).filter(([,i])=>i.p>0).map(([id,it])=>buyCard({a:'buyF',data:`data-id="${id}"`,name:it.n,desc:it.d,price:it.p,after:'持ち物に入りました。ホームの部屋に置くと効果が出ます。',disabled:ownF(id),ptext:ownF(id)?'持っている':yen(it.p)})).join('')}</div>
   <p class="sub">家具は1種類1つまで。買った家具は持ち物に入り、ホームの部屋に置くと効果が出ます。寝具は一番良いものだけが効きます。</p>`}
 function estatePage(){return HOMES.map((h,i)=>{const cost=h.buy||h.move,cur=i===S.home,owned=i<S.home;
-    const desc=`${h.d}。広さ ${h.w}×${h.h}マス、睡眠 体調+${h.sleep}`,pt=h.buy?'購入 '+yen(h.buy):i===0?'家賃 '+yen(h.rent)+'/日':'初期費用 '+yen(h.move)+'、家賃 '+yen(h.rent)+'/日';
+    const desc=`${h.d}。睡眠 体調+${h.sleep}`,pt=h.buy?'購入 '+yen(h.buy):i===0?'家賃 '+yen(h.rent)+'/日':'初期費用 '+yen(h.move)+'、家賃 '+yen(h.rent)+'/日';
     if(cur||owned||i===0)return `<div class="cmd card dis"><b>${h.n}${cur?'（今の家）':''}</b><span>${desc}</span><span class="p">${pt}</span></div>`;
-    return buyCard({a:'move',data:`data-i="${i}"`,name:h.n,desc,price:cost,ptext:pt,verb:h.buy?'購入':'引っ越し',doneTitle:h.buy?'購入しました':'引っ越しました',yesText:h.buy?'購入する':'引っ越す',after:'新しい家に移りました。家具は持ち物に戻っています。'})}).join('')+
-  `<p class="sub">引っ越すと家具は持ち物に戻ります。家を買うと家賃がなくなり、高レートの店に入れるようになります。</p>`}
+    return buyCard({a:'move',data:`data-i="${i}"`,name:h.n,desc,price:cost,ptext:pt,verb:h.buy?'購入':'引っ越し',doneTitle:h.buy?'購入しました':'引っ越しました',yesText:h.buy?'購入する':'引っ越す',after:'新しい家に移りました。家具もそのまま持っていきました。'})}).join('')+
+  `<p class="sub">引っ越しても、置いた家具はそのまま新しい家に置かれます。家を買うと家賃がなくなり、高レートの店に入れるようになります。</p>`}
 function blackPage(){if(S.day<3)return '<p class="lead">裏市場は3日目から開きます。</p>';
   return `<p class="lead">「いいのがあるよ」</p>${buyCard({a:'buyKiban',data:'',name:'改造基盤',desc:`台に仕込むと、その日はボーナスが1.4倍当たりやすい。1回使い切り。仕込む時に${bustRate()}%で店員に見つかる。見つかると罰金（所持金の3割、最低5万円）と、その店に5日間出入り禁止。見つかるたびに次から見つかりやすくなる`,price:kibanPrice(),ptext:`${yen(kibanPrice())}　所持 ${S.kiban}`})}
   <p class="sub">ゲームの中だけの話です。現実の不正は犯罪です。</p>`}
@@ -288,7 +282,7 @@ function renderMe(tab){
 }
 function renderSelf(){renderMe('self')}
 function renderAch(){renderMe('ach')}
-function moveTo(i){const h=HOMES[i];if(!spend(h.buy||h.move))return;if(i>=3)grant('house');if(i===4)grant('tower');for(const p of S.placed)S.inv[p.id]=(S.inv[p.id]||0)+1;S.placed=[];S.home=i;apply({fun:20});save();cutin(h.n+'へ');renderHome()}
+function moveTo(i){const h=HOMES[i];if(!spend(h.buy||h.move))return;if(i>=3)grant('house');if(i===4)grant('tower');S.home=i;apply({fun:20});save();cutin(h.n+'へ');renderHome()}
 function sleep(){
   const H=HOMES[S.home],ev=dailyEffects(S.placed,S.home,has('house')?5:0);
   const lines=[];
@@ -684,7 +678,8 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='devHeal'){S.hun=100;S.fun=100;S.hp=100;save();renderDev();toast('お腹・娯楽・体調を満タンにしました')}
   else if(a==='update'){if(!onHomeOrSettings())return;save();reloadToLatest(latestBuild)}
   else if(a==='updClose'){noteClosed=true;const n=$('#updNote');if(n)n.remove()}
-  else if(a==='sel'){selItem=selItem===id?null:id;renderHome()}
+  else if(a==='putF')putF(id);
+  else if(a==='takeF')takeF(id);
   else if(a==='eat'||a==='play'){const x=(a==='eat'?FOODS:PLAYS).find(z=>z.id===id);if(spend(x.p)){apply(x.e);save();SND.coin();toast(x.n+'　'+effText(x.e));renderShop()}}
   else if(a==='furn')renderFurn();
   else if(a==='buyF'){const it=ITEMS[id];if(!ownF(id)&&spend(it.p)){S.inv[id]=(S.inv[id]||0)+1;save();SND.coin();toast(it.n+'を買った。ホームの部屋に置こう');renderShop()}}

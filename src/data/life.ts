@@ -1,15 +1,15 @@
 // 生活のデータ（仕様書 7章）
-export interface Home { n: string; d: string; rent: number; buy: number; move: number; w: number; h: number; sleep: number; floor: string }
+export interface Home { n: string; d: string; rent: number; buy: number; move: number; sleep: number }
 export interface Hall { n: string; d: string; reset: number; gift: number; rate: number; need: string; open?: (s: { peak: number; home: number }) => boolean }
 export interface Shop { id: string; n: string; p: number; e: Partial<Record<'hun' | 'fun' | 'hp', number>> }
 export interface Item { n: string; p: number; d: string; sleep?: number; fun?: number; hp?: number; keep?: number }
 
 export const HOMES: Home[]=[
-  {n:'ボロアパート',d:'築52年、6畳一間。隙間風が入る',rent:1000,buy:0,move:0,w:4,h:3,sleep:0,floor:'tatami'},
-  {n:'1Kアパート',d:'駅から徒歩12分。普通に住める',rent:3000,buy:0,move:50000,w:5,h:4,sleep:5,floor:'wood'},
-  {n:'分譲マンション',d:'3LDK。家賃がいらなくなる',rent:0,buy:8000000,move:0,w:6,h:5,sleep:10,floor:'wood2'},
-  {n:'一戸建て',d:'庭つき。広いリビング',rent:0,buy:30000000,move:0,w:7,h:5,sleep:15,floor:'wood3'},
-  {n:'タワマン最上階',d:'夜景が一望できる',rent:0,buy:150000000,move:0,w:8,h:6,sleep:20,floor:'marble'}
+  {n:'ボロアパート',d:'築52年、6畳一間。隙間風が入る',rent:1000,buy:0,move:0,sleep:0},
+  {n:'1Kアパート',d:'駅から徒歩12分。普通に住める',rent:3000,buy:0,move:50000,sleep:5},
+  {n:'分譲マンション',d:'3LDK。家賃がいらなくなる',rent:0,buy:8000000,move:0,sleep:10},
+  {n:'一戸建て',d:'庭つき。広いリビング',rent:0,buy:30000000,move:0,sleep:15},
+  {n:'タワマン最上階',d:'夜景が一望できる',rent:0,buy:150000000,move:0,sleep:20}
 ];
 /** reset：朝にハマりがリセットされる割合。gift：差し入れの値段 */
 export const HALLS: Hall[]=[
