@@ -598,7 +598,7 @@ function settle(){
   if(S.hp<=0)return collapse();
   renderPlay();
 }
-function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');say('天井','ボーナス確定','hot')}else if(P.startSince>=400)grant('hyena'); // 天井より前に当てたP.since=0;P.ceilHit=false;P.startSince=0}
+function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');say('天井','ボーナス確定','hot')}else if(P.startSince>=400)grant('hyena');/* 天井より前に当てた */P.since=0;P.ceilHit=false;P.startSince=0}
 function payHTML(){
   const k=P.m.kind,rows=[['ベル（1ライン）',k==='sanj'?'押し順正解9枚／不正解1枚':'8枚'],['リプレイ','もう1回無料'],['チェリー（左リールのどこでも）',(k==='fuku'?'4枚':'2枚')+`。${Math.round(P.m.dup*100)}%でボーナスも同時に当たっている`],...(k==='fuku'?[['スイカ（1ライン）','12枚']]:[]),
     ['7・7・7',k==='fuku'?`BIG ${BIG_G}G。毎ゲーム左リールを滑らせずに、上から7・リプレイ・7の形で止める（中段がリプレイ）。成功${BITA_OK}枚、失敗${BITA_NG}枚`:k==='sanj'?`侍ラッシュ ${AT_G}G（押し順ナビ）`:`扉チャンス。前兆${ZEN_G}Gの間、中リールに赤7を止めると扉-1、中段に滑りなしで止めると扉-2。最後に8択`],...(P.m.reg?[['7・7・BAR',`REG ${REG_G}G。毎ゲーム${REG_PAY}枚`]]:[])];
