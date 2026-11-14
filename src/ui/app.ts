@@ -10,7 +10,7 @@ import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { AUTO_GAMES, HIST_MAX, LCD_MS } from '../data/ui';
+import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
 export function startApp(){
@@ -416,7 +416,6 @@ function renderFloor(){
   <div class="friend"><div class="r"><span>店員さんとの仲</span><b>${f}</b></div><div class="bar"><i style="width:${f}%;background:var(--cyan)"></i></div><p>${friendInfo()}</p>
   <button class="btn alt" type="button" data-a="gift" ${Hs.gift===S.day||S.money<HALLS[hallIdx].gift?'disabled':''}>${Hs.gift===S.day?'今日は差し入れ済み':`差し入れをする ${yen(HALLS[hallIdx].gift)}（仲+8）`}</button></div>
   <button class="btn alt" type="button" data-a="home">やっぱり帰る</button>`;
-  document.querySelectorAll('[data-mach]').forEach(cv=>{const c=cv.getContext('2d');c.imageSmoothingEnabled=false;drawMachine(c,MACH[cv.dataset.mach])});
 }
 
 /* ---------- playing ---------- */
@@ -493,7 +492,7 @@ function lever(){
   P.g++;P.order=[];P.navi=-1;P.hint=-1;P.res=[];P.wins=null;
   tick();
   if(P.mode==='normal'){P.flag=P.pend||roll(mach(),P.s,Math.random());P.pend=null;
-    if(P.flag==='BIG'||P.flag==='REG'){const b=P.flag;if(Math.random()<.5){P.mode='align';P.bonus=b;SND.fan();P.flag='BONUS'}else{P.post=b;P.flag=null}}
+    if(P.flag==='BIG'||P.flag==='REG'){const b=P.flag;if(Math.random()<.5){P.mode='align';P.bonus=b;SND.fan();P.flag='BONUS';say('ボーナス確定！',P.m.kind==='sanj'?'赤7をそろえよう':'7をそろえよう','hot')}else{P.post=b;P.flag=null}}
     else if(P.flag==='CH'&&Math.random()<P.m.dup){P.post=P.m.reg&&Math.random()<.4?'REG':'BIG';P.dupCH=true}
     if(P.flag==='BL'&&P.m.kind==='sanj'){P.navCorrect=Math.floor(Math.random()*3);if(Math.random()<.3)P.hint=P.navCorrect}
   }else if(P.mode==='at'){P.flag=atRoll(Math.random());if(P.flag==='BL'){P.navCorrect=Math.floor(Math.random()*3);P.navi=P.navCorrect}}
@@ -545,45 +544,60 @@ function landed(i,res){
 }
 function popAt(i,text,cls){const g=$('#glass');if(!g)return;const x=PAD+i*(RW+GAP)+RW/2,el=document.createElement('div');el.className='pop '+cls;el.textContent=text;el.style.left=((g.clientWidth-cv.clientWidth)/2+x)+'px';g.appendChild(el);setTimeout(()=>el.remove(),950)}
 function offText(res){if(res.off>0)return res.off+'コマ早い';if(res.off<0)return(-res.off)+'コマ遅い';return 'ハズレ'}
-// 打っている間の知らせは、リールの上の液晶に大きく出す（仕様書 9.6）。下の文字だと見ないため
-const BONUS_MODES=['big','reg','at','zen'];
-function gain(n,why){if(n>0){P.medals+=n;SND.pay();if(BONUS_MODES.includes(P.mode))P.bonusGot=(P.bonusGot||0)+n}if(why)say(n>0?why.replace(/\s*\d+枚$/,''):why,n>0?`+${n}枚 獲得`:'',n>=30?'gold':'')}
-function logMsg(t){P.log.push(t);let sub='';if(/終了$/.test(t)&&P.bonusGot){sub=`合計 ${P.bonusGot}枚 獲得`;P.bonusGot=0}say(t,sub,/終了$/.test(t)?'gold':/こぼし|外した|そろわず/.test(t)?'miss':'')}
-let lcdT;function say(text,sub='',cls=''){if(!P)return;P.lcd={text,sub,cls,until:Date.now()+LCD_MS};const el=$('#lcdMsg');if(el)el.outerHTML=lcdMsgHTML();clearTimeout(lcdT);lcdT=setTimeout(()=>{const e2=$('#lcdMsg');if(e2&&P)e2.outerHTML=lcdMsgHTML()},LCD_MS+30)}
-function lcdMsgHTML(){const L=P.lcd&&P.lcd.until>Date.now()?P.lcd:null;return `<div class="lcd-msg${L?' on '+L.cls:''}" id="lcdMsg" aria-live="polite">${L?`<b>${L.text}</b>${L.sub?`<small>${L.sub}</small>`:''}`:''}</div>`}
+// 打っている間の知らせは、リールの上の液晶に大きく出す（仕様書 9.6）。下の文字だと見ないため。
+// 知らせは順番待ちにして、前の知らせを消さずに1つずつ出す
+const BONUS_MODES=['big','reg','at','zen','door'];
+// 払い出し。why は液晶に出す役の名前。replay は「獲得」に数えない（ボーナスの合計はリプレイを除いた払い出しの合計）
+function gain(n,why,replay=false){if(n>0){P.medals+=n;SND.pay();if(!replay&&BONUS_MODES.includes(P.mode))P.bonusGot=(P.bonusGot||0)+n}
+  if(why)say(why,n>0&&!replay?`+${n}枚 獲得`:'',n<=0?'miss':n>=LCD_GOLD?'gold':'',n>0&&n<LCD_GOLD?'small':'')}
+// kind：'end' はボーナス終了（合計の獲得枚数を添える）、'miss' は取りこぼし
+function logMsg(t,kind=''){P.log.push(t);let sub='';if(kind==='end'&&P.bonusGot){sub=`合計 ${P.bonusGot}枚 獲得`;P.bonusGot=0}say(t,sub,kind==='end'?'gold':kind)}
+let lcdT;
+// prio が 'small' の知らせ（ふつうの払い出し）は、順番待ちが長くならないよう、待っている small を置き換える
+function say(text,sub='',cls='',prio=''){if(!P)return;P.lcdQ=P.lcdQ||[];
+  if(prio==='small')P.lcdQ=P.lcdQ.filter(m=>m.prio!=='small');
+  P.lcdQ.push({text,sub,cls,prio});if(!(P.lcd&&P.lcd.until>Date.now()))lcdNext()}
+function lcdNext(){clearTimeout(lcdT);if(!P)return;const m=(P.lcdQ||[]).shift();
+  if(!m){P.lcd=null;const e=$('#lcdMsg');if(e)e.outerHTML=lcdMsgHTML();return}
+  const ms=m.prio==='small'?LCD_SMALL_MS:P.lcdQ.length?LCD_BUSY_MS:LCD_MS;P.lcd={...m,until:Date.now()+ms};
+  const e=$('#lcdMsg');if(e)e.outerHTML=lcdMsgHTML(false);lcdT=setTimeout(lcdNext,ms)}
+// still：画面を作り直したときは、出ている知らせを動かさずにそのまま出す
+function lcdMsgHTML(still=true){const L=P.lcd&&P.lcd.until>Date.now()?P.lcd:null;return `<div class="lcd-msg${L?' on '+L.cls+(still?' still':''):''}" id="lcdMsg" aria-live="polite">${L?`<b>${L.text}</b>${L.sub?`<small>${L.sub}</small>`:''}`:''}</div>`}
 function settle(){
   const f=P.flag,k=P.m.kind,res=P.res,all=f==='BONUS'?(P.wins||[]).some(w=>w.sym===P.bonus):!!f&&(P.wins||[]).some(w=>w.sym===f);
   if(P.mode==='normal'){
     const on=x=>(P.wins||[]).some(w=>w.sym===x);
-    if(f==='RP'){if(on('RP'))gain(PAY.RP);else logMsg('リプレイこぼし')}
-    else if(f==='BL'){if(k==='sanj'){const ok=P.order[0]===P.navCorrect&&on('BL');gain(ok?PAY.BLok:PAY.BLng,ok?'3択正解 ベル9枚':'押し順ミス 1枚')}else if(on('BL'))gain(PAY.BL);else logMsg('ベルこぼし（変則押し）')}
-    if(f!=='BL'&&on('BL'))gain(k==='sanj'?PAY.BLok:PAY.BL);if(f!=='RP'&&on('RP'))gain(PAY.RP);
-    else if(f==='CH'){if(k==='fuku')gain(res[0].hit?PAY.CHf:0,res[0].hit?'チェリー 4枚':'チェリーこぼし');else gain(PAY.CHo)}
-    else if(f==='WM'){gain(all?PAY.WM:0,all?'スイカ 12枚':'スイカこぼし')}
+    if(f==='RP'){if(on('RP'))gain(PAY.RP,'リプレイ',true);else logMsg('リプレイこぼし','miss')}
+    else if(f==='BL'){if(k==='sanj'){const ok=P.order[0]===P.navCorrect&&on('BL');gain(ok?PAY.BLok:PAY.BLng,ok?'3択正解 ベル':'押し順ミス')}else if(on('BL'))gain(PAY.BL,'ベル');else logMsg('ベルこぼし（変則押し）','miss')}
+    else if(f==='CH'){if(k==='fuku')gain(res[0].hit?PAY.CHf:0,res[0].hit?'チェリー':'チェリーこぼし');else gain(PAY.CHo,'チェリー')}
+    else if(f==='WM'){gain(all?PAY.WM:0,all?'スイカ':'スイカこぼし')}
+    // 当たっていない役が画面にそろったときも、画面どおりに払い出す（変則押しのとき）
+    if(f!=='BL'&&on('BL'))gain(k==='sanj'?PAY.BLok:PAY.BL,'ベル');
+    if(f!=='RP'&&on('RP'))gain(PAY.RP,'リプレイ',true);
   }else if(P.mode==='align'){
     if(all){
       bonusStarted();
-      if(P.bonus==='REG'){P.reg=(P.reg||0)+1;P.mode='reg';P.left=REG_G;cutin('REG');logMsg('7・7・BAR REG')}
-      else{P.big++;if(k==='fuku'){P.mode='big';P.left=BIG_G;cutin('BIG');logMsg('7・7・7 BIG')}else if(k==='sanj'){P.mode='at';P.left=AT_G;cutin('侍ラッシュ')}else{P.mode='zen';P.left=ZEN_G;P.doors=[0,1,2,3,4,5,6,7];P.winDoor=Math.floor(Math.random()*8);cutin('扉チャンス')}}
+      if(P.bonus==='REG'){P.reg=(P.reg||0)+1;P.mode='reg';P.left=REG_G;say('REG','7・7・BAR','hot')}
+      else{P.big++;if(k==='fuku'){P.mode='big';P.left=BIG_G;say('BIG','7・7・7','hot')}else if(k==='sanj'){P.mode='at';P.left=AT_G;say('侍ラッシュ','7・7・7','hot')}else{P.mode='zen';P.left=ZEN_G;P.doors=[0,1,2,3,4,5,6,7];P.winDoor=Math.floor(Math.random()*8);say('扉チャンス','中リールの赤7で扉を減らせ','hot')}}
       SND.fan();P.post=null;
-    }else logMsg('そろわず。もう一度');
+    }else logMsg('そろわず。もう一度','miss');
   }else if(P.mode==='big'){
-    const ok=res[0].bita,okPay=BITA_OK+(has('bita10')?2:0);gain(ok?okPay:BITA_NG,ok?'ビタ成功 '+okPay+'枚':'ビタ失敗 '+BITA_NG+'枚');S.bitaRun=ok?S.bitaRun+1:0;if(S.bitaRun>=10)grant('bita10');P.bitaN=(P.bitaN||0)+(ok?1:0);P.left--;if(P.left<=0){P.mode='normal';logMsg('BIG終了');S.fun=clamp(S.fun+6)}
+    const ok=res[0].bita,okPay=BITA_OK+(has('bita10')?2:0);gain(ok?okPay:BITA_NG,ok?'ビタ成功':'ビタ失敗');S.bitaRun=ok?S.bitaRun+1:0;if(S.bitaRun>=10)grant('bita10');P.bitaN=(P.bitaN||0)+(ok?1:0);P.left--;if(P.left<=0){P.mode='normal';logMsg('BIG終了','end');S.fun=clamp(S.fun+6)}
   }else if(P.mode==='reg'){
-    gain(REG_PAY);P.left--;if(P.left<=0){P.mode='normal';logMsg('REG終了');S.fun=clamp(S.fun+3)}
+    gain(REG_PAY,'REG');P.left--;if(P.left<=0){P.mode='normal';logMsg('REG終了','end');S.fun=clamp(S.fun+3)}
   }else if(P.mode==='at'){
-    if(f==='BL')gain(P.order[0]===P.navi?PAY.BLok:PAY.BLng);else if(f==='RP')gain(PAY.RP);
+    if(f==='BL'){const ok=P.order[0]===P.navi;gain(ok?PAY.BLok:PAY.BLng,ok?'ナビどおり ベル':'押し順ミス')}else if(f==='RP')gain(PAY.RP,'リプレイ',true);
     P.left--;if(P.left<=0){P.mode='cont';P.contWin=Math.floor(Math.random()*3)}
   }else if(P.mode==='zen'){
-    const n=res[1].bita?2:res[1].hit?1:0;if(n){const wrong=P.doors.filter(d=>d!==P.winDoor).sort(()=>Math.random()-.5).slice(0,n);P.doors=P.doors.filter(d=>!wrong.includes(d));logMsg(n===2?'中段ビタ 扉が2つ消えた':'赤7 扉が1つ消えた')}else logMsg('赤7を外した')
+    const n=res[1].bita?2:res[1].hit?1:0;if(n){const wrong=P.doors.filter(d=>d!==P.winDoor).sort(()=>Math.random()-.5).slice(0,n);P.doors=P.doors.filter(d=>!wrong.includes(d));logMsg(n===2?'中段ビタ 扉が2つ消えた':'赤7 扉が1つ消えた')}else logMsg('赤7を外した','miss')
     P.left--;if(P.left<=0)P.mode='door';
   }
-  if(P.post&&P.mode==='normal'){P.mode='align';P.bonus=P.post;P.post=null;SND.fan();if(P.dupCH){cutin('チェリー重複');P.dupCH=false}else say('ボーナス確定！',P.m.kind==='sanj'?'赤7をそろえよう':'7をそろえよう','hot')}
+  if(P.post&&P.mode==='normal'){P.mode='align';P.bonus=P.post;P.post=null;SND.fan();if(P.dupCH){say('チェリー重複','ボーナス確定！','hot');P.dupCH=false}else say('ボーナス確定！',P.m.kind==='sanj'?'赤7をそろえよう':'7をそろえよう','hot')}
   P.flag=null;S.play.medals=P.medals;S.play.inv=P.inv;save();
   if(S.hp<=0)return collapse();
   renderPlay();
 }
-function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');cutin('天井')}else if(P.startSince>=400&&P.g<=CEIL[P.m.kind]-P.startSince)grant('hyena');P.since=0;P.ceilHit=false;P.startSince=0}
+function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');say('天井','ボーナス確定','hot')}else if(P.startSince>=400&&P.g<=CEIL[P.m.kind]-P.startSince)grant('hyena');P.since=0;P.ceilHit=false;P.startSince=0}
 function payHTML(){
   const k=P.m.kind,rows=[['ベル（1ライン）',k==='sanj'?'押し順正解9枚／不正解1枚':'8枚'],['リプレイ','もう1回無料'],['チェリー（左リールのどこでも）',(k==='fuku'?'4枚':'2枚')+`。${Math.round(P.m.dup*100)}%でボーナスも同時に当たっている`],...(k==='fuku'?[['スイカ（1ライン）','12枚']]:[]),
     ['7・7・7',k==='fuku'?`BIG ${BIG_G}G。毎ゲーム左リールを滑らせずに、上から7・リプレイ・7の形で止める（中段がリプレイ）。成功${BITA_OK}枚、失敗${BITA_NG}枚`:k==='sanj'?`侍ラッシュ ${AT_G}G（押し順ナビ）`:`扉チャンス。前兆${ZEN_G}Gの間、中リールに赤7を止めると扉-1、中段に滑りなしで止めると扉-2。最後に8択`],...(P.m.reg?[['7・7・BAR',`REG ${REG_G}G。毎ゲーム${REG_PAY}枚`]]:[])];
@@ -594,19 +608,19 @@ function tick(){const sk=Math.random()<.1*S.upg.body;if(P.g%12===0&&!sk)S.hun=cl
 function doorHTML(){return `<p class="lead" style="text-align:center;font-size:18px">8つの扉から1つ選べ（残り${P.doors.length}）</p><div class="picks p8">${[0,1,2,3,4,5,6,7].map(d=>`<button class="door ${P.doors.includes(d)?'':'gone'}" type="button" data-a="door" data-d="${d}" ${P.doors.includes(d)?'':'disabled'}>${d+1}</button>`).join('')}</div><p class="sub">当たりなら ${DOOR_WIN}枚、外れでも ${DOOR_LOSE}枚</p>`}
 function contHTML(){return `<p class="lead" style="text-align:center;font-size:18px">継続をかけた3択。正解なら +${AT_ADD}G</p><div class="picks p3">${['左','中','右'].map((n,i)=>`<button class="door" type="button" data-a="cont" data-d="${i}">${n}</button>`).join('')}</div>`}
 function pickDoor(d){
-  const win=d===P.winDoor;gain(win?DOOR_WIN:DOOR_LOSE,win?'扉 大当たり '+DOOR_WIN+'枚':'扉 外れ '+DOOR_LOSE+'枚');
-  if(win){cutin('大当たり');SND.fan();S.fun=clamp(S.fun+12)}else S.fun=clamp(S.fun+4);
-  P.mode='normal';P.doors=null;save();renderPlay();
+  const win=d===P.winDoor;gain(win?DOOR_WIN:DOOR_LOSE,win?'扉 大当たり':'扉 外れ');
+  if(win){SND.fan();S.fun=clamp(S.fun+12)}else S.fun=clamp(S.fun+4);
+  P.mode='normal';P.doors=null;logMsg('扉チャンス終了','end');save();renderPlay();
 }
 function pickCont(d){
-  if(d===P.contWin){P.mode='at';P.left=AT_ADD;cutin('継続');SND.fan();logMsg('3択正解 ラッシュ継続')}else{P.mode='normal';logMsg('ラッシュ終了');S.fun=clamp(S.fun+6)}
+  if(d===P.contWin){P.mode='at';P.left=AT_ADD;SND.fan();say('ラッシュ継続',`3択正解 +${AT_ADD}G`,'hot')}else{P.mode='normal';logMsg('ラッシュ終了','end');S.fun=clamp(S.fun+6)}
   save();renderPlay();
 }
 function randomStops(){for(let t=0;t<60;t++){reels.forEach(r=>{r.pos=Math.floor(Math.random()*N);r.final=r.pos;r.state='stop'});const fs=reels.map(r=>r.pos);if(!lineWins(fs,reels).length&&!bonusLines(fs,reels,'R7').length&&!bonusLines(fs,reels,'BAR').length&&![0,1,2].some(row=>['CH','WM'].includes(symAt(reels[0],fs[0],row))))break}if(P)P.wins=null}
 // オートで n ゲーム回す。回している間は、どのオートのボタンも「止める」になる
 async function autoPlay(games){
   if(P.spinning||P.autoRun)return;
-  if(P.pend||P.mode==='align'){toast('当たりの気配。ここからは手で打とう');return}
+  if(P.pend||P.mode==='align'){say('当たりの気配','ここからは手で打とう','hot');return}
   P.autoRun=true;P.autoStop=false;sync();
   for(let n=0;n<games&&!P.autoStop;n++){
     if(P.g>=CLOSE_MIN-OPEN_MIN){P.autoRun=false;return quit(true)}
@@ -617,7 +631,7 @@ async function autoPlay(games){
     P.medals-=3;P.g++;tick();
     if(f==='RP')gain(PAY.RP);
     else if(f==='BL'){if(k==='sanj'){const ok=Math.random()<1/3;gain(ok?PAY.BLok:PAY.BLng)}else gain(PAY.BL)}
-    else if(f==='CH'){if(Math.random()<.67){gain(k==='fuku'?PAY.CHf:PAY.CHo);if(Math.random()<P.m.dup){P.mode='align';P.bonus=P.m.reg&&Math.random()<.4?'REG':'BIG';cutin('チェリー重複');SND.fan();break}}}
+    else if(f==='CH'){if(Math.random()<.67){gain(k==='fuku'?PAY.CHf:PAY.CHo);if(Math.random()<P.m.dup){P.mode='align';P.bonus=P.m.reg&&Math.random()<.4?'REG':'BIG';say('チェリー重複','ボーナス確定！','hot');SND.fan();break}}}
     else if(f==='WM'&&k==='fuku'){if(Math.random()<.18)gain(PAY.WM)}
     randomStops();
     $('.counter').outerHTML=counterHTML();const st2=$('.stats');if(st2)st2.outerHTML=statsHTML();status();
@@ -626,7 +640,7 @@ async function autoPlay(games){
     if(S.hp<=0){P.autoRun=false;return collapse()}
   }
   P.autoRun=false;P.autoStop=false;sync();S.play.medals=P.medals;S.play.inv=P.inv;save();
-  if(P.pend||P.mode==='align')toast('当たりの気配。ここからは手で打とう');
+  if(P.pend||P.mode==='align')say('当たりの気配','ここからは手で打とう','hot');
   renderPlay();
 }
 function quit(closed){

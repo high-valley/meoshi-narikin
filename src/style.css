@@ -316,7 +316,6 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 .grid4 .tile b{font-size:14px}
 /* 機種のバナー（台の絵ができるまでは色と文字だけ） */
 .banner{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;border:2px solid transparent;box-shadow:var(--frame-shadow)}
-.banner canvas{width:46px;height:62px;image-rendering:pixelated;filter:drop-shadow(0 2px 0 #000)}
 .banner div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .banner b{font-family:var(--disp);font-weight:400;font-size:30px;line-height:1.1;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #2a0a0a)}
 .banner span{font-size:12px;color:#f3e6ff;text-shadow:0 1px 0 #000}
@@ -356,12 +355,11 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 .units-t .aim{font-style:normal;display:inline-block;margin-right:3px;padding:0 3px;border-radius:4px;background:#ffd25a;color:#3a2200;font-size:10px;font-weight:700;vertical-align:1px}
 
 /* ---------- 台の液晶（仕様書 9.6）：台のバナーの絵を背景に、知らせを大きく出す ---------- */
-.lcd{position:relative;aspect-ratio:3/1;max-width:100%;border-radius:10px;overflow:hidden;border:2px solid #000;box-shadow:0 0 0 2px #c88a1e,inset 0 0 18px rgba(0,0,0,.6);background:var(--bn) center/cover,#120c2c}
+.lcd{position:relative;display:flex;flex-direction:column;aspect-ratio:5/2;max-width:100%;border-radius:10px;overflow:hidden;border:2px solid #000;box-shadow:0 0 0 2px #c88a1e,inset 0 0 18px rgba(0,0,0,.6);background:var(--bn) center/cover,#120c2c}
 .lcd::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(0,0,0,0) 60%),repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px)}
-.lcd .lamp{position:absolute;left:0;right:0;bottom:0;z-index:2;min-height:0;border:0!important;border-radius:0;padding:4px 8px;font-size:12px;background:linear-gradient(0deg,rgba(5,4,15,.92),rgba(5,4,15,.6));box-shadow:none}
+.lcd .lamp{position:relative;flex:none;z-index:2;min-height:0;border:0!important;border-radius:0;padding:3px 8px;font-size:11px;line-height:1.35;background:linear-gradient(0deg,rgba(5,4,15,.92),rgba(5,4,15,.6));box-shadow:none}
 .lcd .lamp.empty{display:none}
-.lcd:has(.lamp:not(.empty)) .lcd-msg{bottom:24px}
-.lcd-msg{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:0 10px;opacity:0;transition:opacity .2s}
+.lcd-msg{position:relative;flex:1;min-height:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:0 10px;opacity:0;transition:opacity .2s}
 .lcd-msg.on{opacity:1;background:radial-gradient(ellipse at center,rgba(0,0,0,.72) 0%,rgba(0,0,0,.35) 70%,rgba(0,0,0,0) 100%);animation:lcdIn .35s cubic-bezier(.2,1.4,.4,1)}
 .lcd-msg b{font-family:var(--disp);font-weight:400;font-size:clamp(22px,7.5vw,32px);line-height:1.15;color:#fff;-webkit-text-stroke:1px #000;text-shadow:0 3px 0 #000,0 0 14px rgba(255,255,255,.5)}
 .lcd-msg small{font-family:var(--disp);font-size:18px;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #000)}
@@ -375,3 +373,6 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 .banner{grid-template-columns:1fr;min-height:120px;align-items:end;background-image:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,0) 65%),var(--bn)!important;background-size:cover!important;background-position:center!important}
 .banner div{max-width:62%}
 .banner{border:2px solid #e2a92e!important}
+.lcd-msg.still,.lcd-msg.still.hot{animation:none}
+.lcd-msg.small b{font-size:clamp(18px,6vw,24px)}
+.lcd-msg.small small{font-size:15px}
