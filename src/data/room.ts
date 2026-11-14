@@ -2,8 +2,10 @@
 /** 家ごとの部屋の背景（public/rooms/） */
 export const ROOM_IMAGES = ['room0.webp', 'room1.webp', 'room2.webp', 'room3.webp', 'room4.webp'];
 
-/** 同じ置き場所を使う家具（寝具は1つ、テレビは1つだけ置ける） */
-export const SLOT_OF: Record<string, string> = { futon: 'bed', bed: 'bed', lbed: 'bed', tv: 'tv', bigtv: 'tv' };
+/** 同じ置き場所を使う家具（寝具は効果も一番良いものだけなので、置き場所も1つ）。ほかは家具ごとに置き場所がある */
+export const SLOT_OF: Record<string, string> = { futon: 'bed', bed: 'bed', lbed: 'bed' };
+/** 部屋の絵の縦横比（横 / 縦）。SLOTS の % はこの比の絵に合わせてある */
+export const ROOM_ASPECT = 4 / 3;
 
 /**
  * 置き場所。x は家具の横の中心、y は家具の下の端（床に接するところ）、w は家具の幅。どれも部屋の絵に対する %。
@@ -12,7 +14,8 @@ export const SLOT_OF: Record<string, string> = { futon: 'bed', bed: 'bed', lbed:
 export const SLOTS: Record<string, { x: number; y: number; w: number }> = {
   shelf: { x: 11, y: 74, w: 13 },
   fridge: { x: 24, y: 72, w: 9 },
-  tv: { x: 50, y: 76, w: 17 },
+  tv: { x: 36, y: 75, w: 10 },
+  bigtv: { x: 50, y: 76, w: 17 },
   tank: { x: 76, y: 74, w: 14 },
   plant: { x: 92, y: 76, w: 8 },
   game: { x: 34, y: 86, w: 10 },

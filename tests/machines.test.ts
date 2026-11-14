@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { MACH, CEIL } from '../src/data/machines';
 import { roll, pickSetting, isEvent, atRoll } from '../src/game/machines';
-import { dailyEffects } from '../src/game/life';
+import { dailyEffects, arrangePlaced } from '../src/game/life';
+import { SLOT_OF } from '../src/data/room';
 import { rng } from './helpers';
 
 describe('抽選', () => {
@@ -42,5 +43,13 @@ describe('生活', () => {
     expect(e.keep).toBe(10);
     expect(e.fun).toBe(6);
     expect(e.hp).toBe(3);
+  });
+
+  it('古い保存データの家具を置き場所に整えると、一番良い寝具が残り、効果は下がらない', () => {
+    const old = [{ id: 'lbed' }, { id: 'tv' }, { id: 'futon' }, { id: 'bigtv' }, { id: 'tv' }, { id: 'bed' }];
+    const r = arrangePlaced(old, SLOT_OF);
+    expect(r.placed.map(p => p.id)).toEqual(['lbed', 'tv', 'bigtv']);
+    expect(r.back.sort()).toEqual(['bed', 'futon']);
+    expect(dailyEffects(r.placed, 0)).toEqual(dailyEffects(old, 0));
   });
 });

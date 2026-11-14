@@ -6,11 +6,11 @@ import { mod, makeReel, posAt, symAt, lineWins, bonusLines, pressL, atFullSpeed 
 import { MACH, PAY, BITA_OK, BITA_NG, REG_G, REG_PAY, BIG_G, AT_G, AT_ADD, DOOR_WIN, DOOR_LOSE, ZEN_G, CEIL } from '../data/machines';
 import { roll, atRoll, pickSetting, isEvent } from '../game/machines';
 import { HOMES, HALLS, FOODS, PLAYS, ITEMS } from '../data/life';
-import { dailyEffects } from '../game/life';
+import { dailyEffects, arrangePlaced } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, FURNITURE_IMAGES, PLACEHOLDER_SCALE } from '../data/room';
+import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, FURNITURE_IMAGES, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
@@ -117,14 +117,14 @@ const $=s=>document.querySelector(s);
 const yen=n=>(n<0?'−':'')+'¥'+Math.abs(Math.round(n)).toLocaleString('ja-JP');
 const clamp=v=>Math.max(0,Math.min(100,Math.round(v)));
 const KEY='meoshi-narikin-v1';
-function fresh(){return {tot:{sum:0,n:0,win:0,lose:0,best:0},halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:30000,hun:70,fun:50,hp:80,home:0,inv:{},placed:[{id:'futon',x:0,y:1}],phase:'morning',peak:30000,hist:[],floor:null,play:null}}
+function fresh(){return {tot:{sum:0,n:0,win:0,lose:0,best:0},halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:30000,hun:70,fun:50,hp:80,home:0,inv:{},placed:[{id:'futon'}],phase:'morning',peak:30000,hist:[],play:null}}
 let S=fresh(),remote=null,saving=false,dirty=false;
 try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.day)S=v}catch(e){}
-function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k];
+function norm(){const f=fresh();delete S.floor;if(!Array.isArray(S.placed))S.placed=f.placed;if(!S.inv||typeof S.inv!=='object')S.inv={};for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k];
   // 家具は1種類1つまで（仕様書 7.2）。前の版で複数持っていたら1つにまとめる（置いてあればそれを残す）
-  {const seen=new Set();S.placed=S.placed.filter(p=>!seen.has(p.id)&&seen.add(p.id));for(const id in S.inv)S.inv[id]=seen.has(id)?0:Math.min(1,S.inv[id]||0)
-   // 置き場所が決まる形（仕様書 9.8）になったので、同じ置き場所に2つあれば後のほうを残し、前のほうは持ち物へ。マス目の位置は使わない
-   const slotSeen=new Set(),keep=[];for(const p of S.placed.slice().reverse()){const s=SLOT_OF[p.id]||p.id;if(slotSeen.has(s))S.inv[p.id]=(S.inv[p.id]||0)+1;else{slotSeen.add(s);keep.unshift({id:p.id})}}S.placed=keep}
+  // 置き場所が決まる形（仕様書 9.8）なので、同じ置き場所の寝具は一番良いものを残し、ほかは持ち物へ。マス目の位置は使わない
+  {const r=arrangePlaced(S.placed.filter(p=>p&&ITEMS[p.id]),SLOT_OF),on=new Set(r.placed.map(p=>p.id));S.placed=r.placed;
+   for(const id in S.inv)S.inv[id]=on.has(id)?0:Math.min(1,S.inv[id]||0);for(const id of r.back)S.inv[id]=1}
   // 通算の収支がない古いセーブは、残っている記録から作る
   if(!S.tot){const h=S.hist||[];S.tot={sum:h.reduce((a,x)=>a+x.v,0),n:h.length,win:h.filter(x=>x.v>0).length,lose:h.filter(x=>x.v<0).length,best:h.length?Math.max(0,...h.map(x=>x.v)):0}}}norm();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}pushRemote()}
@@ -178,7 +178,6 @@ function drawMachine(c,m){
 }
 
 /* ---------- room ---------- */
-let selItem=null,roomRAF=0;
 function placedCount(id){return S.placed.filter(p=>p.id===id).length}
 // 家具は1種類1つまで（仕様書 7.2）
 function ownF(id){return placedCount(id)+(S.inv[id]||0)>0}
@@ -189,7 +188,7 @@ function renderHome(){
   $('#view').innerHTML=`${updNote()}
     <p class="sub">${isEvent(S.day)?'<b style="color:var(--neon)">今日は7のつく日。</b>どの店も設定が入りやすいが、整理券の抽選がある':`次のイベント日（7のつく日）まで あと${(17-S.day%10)%10||10}日`}</p>
     ${roomHTML()}
-    ${inv.length?`<div class="ch">持ち物（タップで部屋に置く）</div><div class="inv">${inv.map(([id])=>`<button class="chip" type="button" data-a="putF" data-id="${id}"><canvas width="16" height="16" data-icon="${id}"></canvas>${ITEMS[id].n}</button>`).join('')}</div>`:''}
+    ${inv.length?`<div class="ch">持ち物（タップで部屋に置く）</div><div class="inv">${inv.map(([id])=>{const sw=S.placed.find(p=>p.id!==id&&(SLOT_OF[p.id]||p.id)===(SLOT_OF[id]||id));return `<button class="chip" type="button" data-a="putF" data-id="${id}"${sw?` aria-label="${ITEMS[id].n}（${ITEMS[sw.id].n}と入れ替え）"`:''}><canvas width="16" height="16" data-icon="${id}"></canvas>${ITEMS[id].n}</button>`}).join('')}</div>`:''}
     <p class="sub">${S.placed.length?'置いた家具をタップすると片付けます。':'家具は「買い物」で買えます。'}同じ場所を使う寝具とテレビは1つずつ置けます。</p>
     <p class="sub">寝ると 体調+${ev.sleep}${ev.fun?` 娯楽+${ev.fun}`:''}${ev.hp?` 体調+${ev.hp}`:''}${ev.keep?` お腹の減り−${ev.keep}`:''}${H.rent?`、家賃 ${yen(H.rent)}`:''}</p>
     <button class="cta" type="button" data-a="halls" ${S.phase!=='morning'?'disabled':''}><span class="cta-ic" aria-hidden="true"><b>7</b><b>7</b><b>7</b></span><span class="cta-t"><b>パチ屋へ行く</b><span>${S.phase==='morning'?'閉店まで打てる。1日1回':'今日はもう出かけた'}</span></span><span class="cta-go" aria-hidden="true">»</span></button>
@@ -208,7 +207,7 @@ function roomHTML(){
   const base=import.meta.env.BASE_URL,items=S.placed.map(p=>p.id).filter(id=>SLOTS[SLOT_OF[id]||id]).sort((a,b)=>SLOTS[SLOT_OF[a]||a].y-SLOTS[SLOT_OF[b]||b].y);
   // 家具の絵が届くまでの仮のドット絵は正方形で背が高くなるので、小さめに置いて重なりを避ける
   const pos=(s,k=1)=>`left:${s.x-s.w*k/2}%;bottom:${100-s.y}%;width:${s.w*k}%`;
-  return `<div class="room anime" id="room" role="img" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]})">
+  return `<div class="room anime" id="room" role="group" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]});aspect-ratio:${ROOM_ASPECT}">
     ${items.map(id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(SLOTS[SLOT_OF[id]||id],FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`).join('')}
     <canvas class="pc" width="9" height="23" data-pc style="${pos(PLAYER_SPOT)}" aria-hidden="true"></canvas></div>`}
 // 主人公の仮のドット絵（絵ができるまで）
@@ -665,12 +664,12 @@ function stopReelsLoop(){cancelAnimationFrame(reelRAF)}
 /* ---------- routing ---------- */
 function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
 // 下のタブバー。打っている最中・バイト・ルーレットの途中は隠す（その画面で tabs(null)）
-function tabs(t){setTabbar(t,go=>{selItem=null;if(go==='home')renderHome();else if(go==='halls')renderHalls();else if(go==='shop')renderShop(shopTab);else renderMe(meTab);window.scrollTo(0,0)})}
+function tabs(t){setTabbar(t,go=>{if(go==='home')renderHome();else if(go==='halls')renderHalls();else if(go==='shop')renderShop(shopTab);else renderMe(meTab);window.scrollTo(0,0)})}
 $('#view').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;act(b.dataset.a,b)});
 // ボタン（data-a）と購入の確認画面から呼ぶ
 function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
-  if(a==='home'){selItem=null;renderHome()}
+  if(a==='home'){renderHome()}
   else if(a==='ask')askBuy(b.dataset.k);
   else if(a==='verTap'){const n=Date.now();devTaps=n-devTapAt<DEV_TAP_MS?devTaps+1:1;devTapAt=n;if(devTaps>=DEV_TAPS&&!$('#devPw')){devTaps=0;showDevLogin()}}
   else if(a==='devMoney'){S.money=DEV_MAX_MONEY;S.peak=Math.max(S.peak,DEV_MAX_MONEY);save();renderDev();toast('お金を最大にしました')}
