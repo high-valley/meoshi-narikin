@@ -12,21 +12,32 @@ export const ROOM_ASPECT = 4 / 3;
  * 奥（y が小さい）から順に描くので、手前の家具が奥の家具に重なる
  */
 export const SLOTS: Record<string, { x: number; y: number; w: number }> = {
-  shelf: { x: 11, y: 74, w: 13 },
-  fridge: { x: 24, y: 72, w: 9 },
-  tv: { x: 36, y: 75, w: 10 },
-  bigtv: { x: 50, y: 76, w: 17 },
-  tank: { x: 76, y: 74, w: 14 },
-  plant: { x: 92, y: 76, w: 8 },
-  game: { x: 34, y: 86, w: 10 },
-  sofa: { x: 50, y: 96, w: 24 },
-  bed: { x: 83, y: 99, w: 26 },
-  mchair: { x: 15, y: 99, w: 15 },
+  shelf: { x: 12, y: 72, w: 13 },
+  fridge: { x: 25, y: 71, w: 9 },
+  tv: { x: 38, y: 72, w: 12 },
+  bigtv: { x: 56, y: 73, w: 26 },
+  tank: { x: 79, y: 73, w: 15 },
+  plant: { x: 93, y: 74, w: 9 },
+  game: { x: 27, y: 87, w: 11 },
+  sofa: { x: 50, y: 97, w: 30 },
+  bed: { x: 84, y: 99, w: 29 },
+  mchair: { x: 11, y: 99, w: 17 },
 };
 /** 主人公の立つ場所（同じく %） */
-export const PLAYER_SPOT = { x: 66, y: 88, w: 5 };
+export const PLAYER_SPOT = { x: 66, y: 84, w: 5 };
 
-/** 家具の絵（public/furniture/<id>.webp）があるもの。ないものは仮のドット絵を置く */
-export const FURNITURE_IMAGES: string[] = [];
-/** 家具の絵がまだないとき、仮のドット絵を置き場所の幅のこの割合で描く */
+/**
+ * 家具の絵（public/furniture/<id>.webp）の縦横比（縦 / 横）。絵の読み込み前でも、置き場所の大きさと押せる範囲が決まるように持っておく。
+ * ここにない家具は仮のドット絵を置く
+ */
+export const FURNITURE_ASPECT: Record<string, number> = {
+  futon: 455 / 640, bed: 528 / 640, lbed: 472 / 640, tv: 640 / 582, bigtv: 428 / 640, game: 460 / 640,
+  shelf: 640 / 477, plant: 640 / 391, fridge: 640 / 336, sofa: 297 / 640, tank: 640 / 579, mchair: 640 / 582,
+};
+export const FURNITURE_IMAGES = Object.keys(FURNITURE_ASPECT);
+/** 押した点に絵があるか調べるとき、絵をこの幅まで縮めて透明度を読む（px） */
+export const HIT_SAMPLE_W = 160;
+/** 透明度（0〜255）がこれより大きければ、絵が描かれているとみなす */
+export const HIT_ALPHA = 40;
+/** 絵のない家具を足したとき、仮のドット絵を置き場所の幅のこの割合で描く */
 export const PLACEHOLDER_SCALE = 0.55;
