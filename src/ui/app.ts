@@ -10,7 +10,7 @@ import { dailyEffects } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { AUTO_GAMES, HIST_MAX } from '../data/ui';
+import { AUTO_GAMES, HIST_MAX, LCD_MS } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
 export function startApp(){
@@ -127,7 +127,7 @@ function norm(){const f=fresh();delete S.floor;for(const k of ['halls','upg','dr
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}pushRemote()}
 async function pushRemote(){if(!remote)return;if(saving){dirty=true;return}saving=true;try{await remote.set(JSON.parse(JSON.stringify(S)))}catch(e){}saving=false;if(dirty){dirty=false;pushRemote()}}
 let toastT,quietBuy=false;function toast(m){if(quietBuy)return;const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1900)}
-function cutin(t){if(quietBuy)return;const el=document.createElement('div');el.className='cut';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),1050)}
+function cutin(t){if(quietBuy)return;if(P&&$('#lcdMsg')){say(t,'','hot');return}const el=document.createElement('div');el.className='cut';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),1050)}
 
 /* ---------- sound ---------- */
 let ac=null,soundOn=false;
@@ -408,7 +408,7 @@ function renderFloor(){
       <td>${x.taken?'<span class="neg">使用中</span>':'<span class="pos">空き</span>'}${f>=90?`<br><span class="tag">${x.reset?'リセット':'据え置き'}</span>`:''}</td></tr>`};
   $('#view').innerHTML=`<div class="ch">${h.n}</div>
   <div class="seg" role="tablist">${['fuku','sanj','hachi'].map(k=>`<button type="button" role="tab" data-a="floorK" data-id="${k}" aria-selected="${k===floorK}">${MACH[k].n}</button>`).join('')}</div>
-  <div class="banner b-${floorK}"><canvas width="31" height="42" data-mach="${floorK}"></canvas><div><b>${m.n}</b><span>${m.desc}</span><span>天井 ${CEIL[floorK]}G　空き ${rows.filter(([x])=>!x.taken).length}/${rows.length}${F.ticket?`　整理券 ${F.ticket}番`:''}</span></div></div>
+  <div class="banner b-${floorK}" style="--bn:url(${import.meta.env.BASE_URL}banners/${floorK}.webp)"><div><b>${m.n}</b><span>${m.desc}</span><span>天井 ${CEIL[floorK]}G　空き ${rows.filter(([x])=>!x.taken).length}/${rows.length}${F.ticket?`　整理券 ${F.ticket}番`:''}</span></div></div>
   <div class="tablebox"><div class="tb-head"><b>設置状況（${m.n}）</b><span>前日のデータ</span></div>
   <table class="units-t"><thead><tr><th>台番</th><th>ハマり</th><th>BIG</th><th>確率</th>${showReg?'<th>REG</th>':''}${showDiff?'<th>差枚</th>':''}<th>状態</th></tr></thead><tbody>${rows.map(row).join('')}</tbody></table></div>
   <p class="sub">ハマりは今の回転数（最後の当たりから何回転したか）。台番を押して選びます。金色に光るのは天井が近い台。</p>
@@ -461,7 +461,7 @@ function renderPlay(){
   $('#view').innerHTML=`<div class="cab"><div class="cabtop"><b>${P.m.n}</b><span class="sub">${P.hall}${P.boost?'　基盤':''}${S.dropDay===S.day?'　目薬':''}</span></div>
     ${statsHTML()}
     ${counterHTML()}
-    <div class="lamp ${cl}" id="lamp"><span>${c||'&nbsp;'}</span></div>
+    <div class="lcd lcd-${P.m.kind}" style="--bn:url(${import.meta.env.BASE_URL}banners/${P.m.kind}.webp)">${lcdMsgHTML()}<div class="lamp ${cl}${c?'':' empty'}" id="lamp"><span>${c||'&nbsp;'}</span></div></div>
     <div class="glass" id="glass"><canvas id="reels"></canvas></div><p class="sub" style="text-align:center;font-size:12px;margin-top:-4px">5ライン：上段・中段・下段・斜め2本</p>
     ${P.mode==='door'?doorHTML():P.mode==='cont'?contHTML():`<div class="ctrl"><button class="lever" id="lever" type="button">レバー</button><div class="stops" id="stops">${[0,1,2].map(i=>`<button class="stop" type="button" data-i="${i}" disabled>${['左','中','右'][i]}${P.navi>=0&&navOrder()[0]===i&&P.order.length===0?'<span class="nv">1</span>':''}</button>`).join('')}</div></div>`}
   </div>
@@ -469,7 +469,7 @@ function renderPlay(){
   <button class="cmd" type="button" data-a="quit" ${busyBonus||P.spinning?'disabled':''}><b>やめる</b><span>換金して帰る</span></button></div>
   <details class="strip"><summary>配当表と遊び方</summary>${payHTML()}</details>
   <details class="strip"><summary>リール配列表（上から下へ流れる）</summary><p class="sub">左リールのチェリーはBARの真下、スイカは左でBARの3コマ上、中でBARの2コマ上、右はBARの2コマ上ともう1か所にあります。赤7は左に2つ、中に1つ、右は「7・リプレイ・BAR」の1か所だけ。左リールの「7・リプレイ・7」の並びがBIG中のビタ押しポイントです。BARが上段に来るタイミング（枠の上から入ってきた瞬間）で押せば、どちらも取りこぼしません。</p><canvas id="stripT" aria-label="リール配列表"></canvas></details>
-  <p class="sub">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}${P.log.slice(-2).join('　')}</p>`;
+  <p class="sub">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>`;
   bindCabinet();sync();const st=$('#stripT');if(st){drawStripTable(st);st.style.width=(st.width/2)+'px'}
 }
 function bindCabinet(){
@@ -481,7 +481,7 @@ function sync(){
   const lv=$('#lever');if(lv)lv.disabled=!!P.spinning||P.autoRun;
   document.querySelectorAll('.stop').forEach((b,i)=>b.disabled=!reels[i]||reels[i].state!=='spin'||P.autoRun||(P.mode==='big'&&i>0&&reels[0].state==='spin'));
   document.querySelectorAll('[data-a=auto]').forEach(b=>{b.querySelector('b').textContent=P.autoRun?'止める':b.dataset.i+'G 回す';b.classList.toggle('on',!!P.autoRun)});
-  const l=$('#lamp');if(l){const [c,cl]=cue();l.innerHTML='<span>'+(c||'&nbsp;')+'</span>';l.className='lamp '+cl}
+  const l=$('#lamp');if(l){const [c,cl]=cue();l.innerHTML='<span>'+(c||'&nbsp;')+'</span>';l.className='lamp '+cl+(c?'':' empty')}
 }
 function navOrder(){const n=P.navi;return [n,(n+1)%3,(n+2)%3]}
 function lever(){
@@ -545,40 +545,45 @@ function landed(i,res){
 }
 function popAt(i,text,cls){const g=$('#glass');if(!g)return;const x=PAD+i*(RW+GAP)+RW/2,el=document.createElement('div');el.className='pop '+cls;el.textContent=text;el.style.left=((g.clientWidth-cv.clientWidth)/2+x)+'px';g.appendChild(el);setTimeout(()=>el.remove(),950)}
 function offText(res){if(res.off>0)return res.off+'コマ早い';if(res.off<0)return(-res.off)+'コマ遅い';return 'ハズレ'}
-function gain(n,why){if(n>0){P.medals+=n;SND.pay()}if(why)P.log.push(why)}
+// 打っている間の知らせは、リールの上の液晶に大きく出す（仕様書 9.6）。下の文字だと見ないため
+const BONUS_MODES=['big','reg','at','zen'];
+function gain(n,why){if(n>0){P.medals+=n;SND.pay();if(BONUS_MODES.includes(P.mode))P.bonusGot=(P.bonusGot||0)+n}if(why)say(n>0?why.replace(/\s*\d+枚$/,''):why,n>0?`+${n}枚 獲得`:'',n>=30?'gold':'')}
+function logMsg(t){P.log.push(t);let sub='';if(/終了$/.test(t)&&P.bonusGot){sub=`合計 ${P.bonusGot}枚 獲得`;P.bonusGot=0}say(t,sub,/終了$/.test(t)?'gold':/こぼし|外した|そろわず/.test(t)?'miss':'')}
+let lcdT;function say(text,sub='',cls=''){if(!P)return;P.lcd={text,sub,cls,until:Date.now()+LCD_MS};const el=$('#lcdMsg');if(el)el.outerHTML=lcdMsgHTML();clearTimeout(lcdT);lcdT=setTimeout(()=>{const e2=$('#lcdMsg');if(e2&&P)e2.outerHTML=lcdMsgHTML()},LCD_MS+30)}
+function lcdMsgHTML(){const L=P.lcd&&P.lcd.until>Date.now()?P.lcd:null;return `<div class="lcd-msg${L?' on '+L.cls:''}" id="lcdMsg" aria-live="polite">${L?`<b>${L.text}</b>${L.sub?`<small>${L.sub}</small>`:''}`:''}</div>`}
 function settle(){
   const f=P.flag,k=P.m.kind,res=P.res,all=f==='BONUS'?(P.wins||[]).some(w=>w.sym===P.bonus):!!f&&(P.wins||[]).some(w=>w.sym===f);
   if(P.mode==='normal'){
     const on=x=>(P.wins||[]).some(w=>w.sym===x);
-    if(f==='RP'){if(on('RP'))gain(PAY.RP);else P.log.push('リプレイこぼし')}
-    else if(f==='BL'){if(k==='sanj'){const ok=P.order[0]===P.navCorrect&&on('BL');gain(ok?PAY.BLok:PAY.BLng,ok?'3択正解 ベル9枚':'押し順ミス 1枚')}else if(on('BL'))gain(PAY.BL);else P.log.push('ベルこぼし（変則押し）')}
+    if(f==='RP'){if(on('RP'))gain(PAY.RP);else logMsg('リプレイこぼし')}
+    else if(f==='BL'){if(k==='sanj'){const ok=P.order[0]===P.navCorrect&&on('BL');gain(ok?PAY.BLok:PAY.BLng,ok?'3択正解 ベル9枚':'押し順ミス 1枚')}else if(on('BL'))gain(PAY.BL);else logMsg('ベルこぼし（変則押し）')}
     if(f!=='BL'&&on('BL'))gain(k==='sanj'?PAY.BLok:PAY.BL);if(f!=='RP'&&on('RP'))gain(PAY.RP);
     else if(f==='CH'){if(k==='fuku')gain(res[0].hit?PAY.CHf:0,res[0].hit?'チェリー 4枚':'チェリーこぼし');else gain(PAY.CHo)}
     else if(f==='WM'){gain(all?PAY.WM:0,all?'スイカ 12枚':'スイカこぼし')}
   }else if(P.mode==='align'){
     if(all){
       bonusStarted();
-      if(P.bonus==='REG'){P.reg=(P.reg||0)+1;P.mode='reg';P.left=REG_G;cutin('REG');P.log.push('7・7・BAR REG')}
-      else{P.big++;if(k==='fuku'){P.mode='big';P.left=BIG_G;cutin('BIG');P.log.push('7・7・7 BIG')}else if(k==='sanj'){P.mode='at';P.left=AT_G;cutin('侍ラッシュ')}else{P.mode='zen';P.left=ZEN_G;P.doors=[0,1,2,3,4,5,6,7];P.winDoor=Math.floor(Math.random()*8);cutin('扉チャンス')}}
+      if(P.bonus==='REG'){P.reg=(P.reg||0)+1;P.mode='reg';P.left=REG_G;cutin('REG');logMsg('7・7・BAR REG')}
+      else{P.big++;if(k==='fuku'){P.mode='big';P.left=BIG_G;cutin('BIG');logMsg('7・7・7 BIG')}else if(k==='sanj'){P.mode='at';P.left=AT_G;cutin('侍ラッシュ')}else{P.mode='zen';P.left=ZEN_G;P.doors=[0,1,2,3,4,5,6,7];P.winDoor=Math.floor(Math.random()*8);cutin('扉チャンス')}}
       SND.fan();P.post=null;
-    }else P.log.push('そろわず。もう一度');
+    }else logMsg('そろわず。もう一度');
   }else if(P.mode==='big'){
-    const ok=res[0].bita,okPay=BITA_OK+(has('bita10')?2:0);gain(ok?okPay:BITA_NG,ok?'ビタ成功 '+okPay+'枚':'ビタ失敗 '+BITA_NG+'枚');S.bitaRun=ok?S.bitaRun+1:0;if(S.bitaRun>=10)grant('bita10');P.bitaN=(P.bitaN||0)+(ok?1:0);P.left--;if(P.left<=0){P.mode='normal';P.log.push('BIG終了');S.fun=clamp(S.fun+6)}
+    const ok=res[0].bita,okPay=BITA_OK+(has('bita10')?2:0);gain(ok?okPay:BITA_NG,ok?'ビタ成功 '+okPay+'枚':'ビタ失敗 '+BITA_NG+'枚');S.bitaRun=ok?S.bitaRun+1:0;if(S.bitaRun>=10)grant('bita10');P.bitaN=(P.bitaN||0)+(ok?1:0);P.left--;if(P.left<=0){P.mode='normal';logMsg('BIG終了');S.fun=clamp(S.fun+6)}
   }else if(P.mode==='reg'){
-    gain(REG_PAY);P.left--;if(P.left<=0){P.mode='normal';P.log.push('REG終了');S.fun=clamp(S.fun+3)}
+    gain(REG_PAY);P.left--;if(P.left<=0){P.mode='normal';logMsg('REG終了');S.fun=clamp(S.fun+3)}
   }else if(P.mode==='at'){
     if(f==='BL')gain(P.order[0]===P.navi?PAY.BLok:PAY.BLng);else if(f==='RP')gain(PAY.RP);
     P.left--;if(P.left<=0){P.mode='cont';P.contWin=Math.floor(Math.random()*3)}
   }else if(P.mode==='zen'){
-    const n=res[1].bita?2:res[1].hit?1:0;if(n){const wrong=P.doors.filter(d=>d!==P.winDoor).sort(()=>Math.random()-.5).slice(0,n);P.doors=P.doors.filter(d=>!wrong.includes(d));P.log.push(n===2?'中段ビタ 扉が2つ消えた':'赤7 扉が1つ消えた')}else P.log.push('赤7を外した')
+    const n=res[1].bita?2:res[1].hit?1:0;if(n){const wrong=P.doors.filter(d=>d!==P.winDoor).sort(()=>Math.random()-.5).slice(0,n);P.doors=P.doors.filter(d=>!wrong.includes(d));logMsg(n===2?'中段ビタ 扉が2つ消えた':'赤7 扉が1つ消えた')}else logMsg('赤7を外した')
     P.left--;if(P.left<=0)P.mode='door';
   }
-  if(P.post&&P.mode==='normal'){P.mode='align';P.bonus=P.post;P.post=null;SND.fan();if(P.dupCH){cutin('チェリー重複');P.dupCH=false}else toast('ボーナス確定！')}
+  if(P.post&&P.mode==='normal'){P.mode='align';P.bonus=P.post;P.post=null;SND.fan();if(P.dupCH){cutin('チェリー重複');P.dupCH=false}else say('ボーナス確定！',P.m.kind==='sanj'?'赤7をそろえよう':'7をそろえよう','hot')}
   P.flag=null;S.play.medals=P.medals;S.play.inv=P.inv;save();
   if(S.hp<=0)return collapse();
   renderPlay();
 }
-function bonusStarted(){grant('first');if(P.ceilHit){grant('ceil');cutin('天井')}else if(P.startSince>=400&&P.g<=CEIL[P.m.kind]-P.startSince)grant('hyena');P.since=0;P.ceilHit=false;P.startSince=0}
+function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');cutin('天井')}else if(P.startSince>=400&&P.g<=CEIL[P.m.kind]-P.startSince)grant('hyena');P.since=0;P.ceilHit=false;P.startSince=0}
 function payHTML(){
   const k=P.m.kind,rows=[['ベル（1ライン）',k==='sanj'?'押し順正解9枚／不正解1枚':'8枚'],['リプレイ','もう1回無料'],['チェリー（左リールのどこでも）',(k==='fuku'?'4枚':'2枚')+`。${Math.round(P.m.dup*100)}%でボーナスも同時に当たっている`],...(k==='fuku'?[['スイカ（1ライン）','12枚']]:[]),
     ['7・7・7',k==='fuku'?`BIG ${BIG_G}G。毎ゲーム左リールを滑らせずに、上から7・リプレイ・7の形で止める（中段がリプレイ）。成功${BITA_OK}枚、失敗${BITA_NG}枚`:k==='sanj'?`侍ラッシュ ${AT_G}G（押し順ナビ）`:`扉チャンス。前兆${ZEN_G}Gの間、中リールに赤7を止めると扉-1、中段に滑りなしで止めると扉-2。最後に8択`],...(P.m.reg?[['7・7・BAR',`REG ${REG_G}G。毎ゲーム${REG_PAY}枚`]]:[])];
@@ -594,7 +599,7 @@ function pickDoor(d){
   P.mode='normal';P.doors=null;save();renderPlay();
 }
 function pickCont(d){
-  if(d===P.contWin){P.mode='at';P.left=AT_ADD;cutin('継続');SND.fan();P.log.push('3択正解 ラッシュ継続')}else{P.mode='normal';P.log.push('ラッシュ終了');S.fun=clamp(S.fun+6)}
+  if(d===P.contWin){P.mode='at';P.left=AT_ADD;cutin('継続');SND.fan();logMsg('3択正解 ラッシュ継続')}else{P.mode='normal';logMsg('ラッシュ終了');S.fun=clamp(S.fun+6)}
   save();renderPlay();
 }
 function randomStops(){for(let t=0;t<60;t++){reels.forEach(r=>{r.pos=Math.floor(Math.random()*N);r.final=r.pos;r.state='stop'});const fs=reels.map(r=>r.pos);if(!lineWins(fs,reels).length&&!bonusLines(fs,reels,'R7').length&&!bonusLines(fs,reels,'BAR').length&&![0,1,2].some(row=>['CH','WM'].includes(symAt(reels[0],fs[0],row))))break}if(P)P.wins=null}
