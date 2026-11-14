@@ -115,3 +115,14 @@ Japanese anime style game item, single isolated piece of furniture, clean line a
 ```
 Japanese anime style game character, a young man in his twenties with messy dark hair, wearing a plain gray hoodie and jeans, slightly tired but hopeful expression, standing pose, full body, front view, clean line art with soft cel shading, transparent background, no text, original character
 ```
+
+## 機種のバナー（banners/fuku・sanj・hachi）
+
+横長 3:1。右にキャラクター、左は文字を重ねるために空ける。台選びのバナーと、打つ画面の液晶の背景に使う。
+
+```
+Japanese pachislot machine banner art, wide horizontal 3:1 composition, character on the right side, left half kept simple for title text added later, glossy vivid anime illustration, dramatic lighting, gold sparkles, no text, no letters, no logo, original character not resembling any existing game
+```
+- fuku 福招き：`a cute white lucky cat holding a gold coin and raising one paw, cherry blossoms and red festive background with gold fans`
+- sanj 三択侍：`a cool young samurai with long black hair drawing a katana, blue night sky with moon and flowing wind, sharp silver light trails`
+- hachi 八門：`a fierce golden eastern dragon coiling and roaring, purple and violet mystic clouds with eight glowing gates in the background`
