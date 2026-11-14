@@ -12,21 +12,21 @@ export const ROOM_ASPECT = 4 / 3;
  * 奥（y が小さい）から順に描くので、手前の家具が奥の家具に重なる
  */
 export const SLOTS: Record<string, { x: number; y: number; w: number }> = {
-  shelf: { x: 11, y: 74, w: 13 },
-  fridge: { x: 24, y: 72, w: 9 },
-  tv: { x: 36, y: 75, w: 10 },
-  bigtv: { x: 50, y: 76, w: 17 },
-  tank: { x: 76, y: 74, w: 14 },
-  plant: { x: 92, y: 76, w: 8 },
-  game: { x: 34, y: 86, w: 10 },
-  sofa: { x: 50, y: 96, w: 24 },
-  bed: { x: 83, y: 99, w: 26 },
-  mchair: { x: 15, y: 99, w: 15 },
+  shelf: { x: 12, y: 72, w: 13 },
+  fridge: { x: 25, y: 71, w: 9 },
+  tv: { x: 38, y: 72, w: 12 },
+  bigtv: { x: 56, y: 73, w: 26 },
+  tank: { x: 79, y: 73, w: 15 },
+  plant: { x: 93, y: 74, w: 9 },
+  game: { x: 27, y: 87, w: 11 },
+  sofa: { x: 50, y: 97, w: 30 },
+  bed: { x: 84, y: 99, w: 29 },
+  mchair: { x: 11, y: 99, w: 17 },
 };
 /** 主人公の立つ場所（同じく %） */
-export const PLAYER_SPOT = { x: 66, y: 88, w: 5 };
+export const PLAYER_SPOT = { x: 66, y: 84, w: 5 };
 
 /** 家具の絵（public/furniture/<id>.webp）があるもの。ないものは仮のドット絵を置く */
-export const FURNITURE_IMAGES: string[] = [];
+export const FURNITURE_IMAGES: string[] = ['futon', 'bed', 'lbed', 'tv', 'bigtv', 'game', 'shelf', 'plant', 'fridge', 'sofa', 'tank', 'mchair'];
 /** 家具の絵がまだないとき、仮のドット絵を置き場所の幅のこの割合で描く */
 export const PLACEHOLDER_SCALE = 0.55;
