@@ -206,11 +206,9 @@ function renderHome(){
     ${inv.length||selItem?`<div class="ch">持ち物（選んでから空いている床をタップ。置いた家具をタップで片付け）</div><div class="inv">${inv.map(([id,n])=>`<button class="chip" type="button" data-a="sel" data-id="${id}" aria-pressed="${selItem===id}"><canvas width="16" height="16" data-icon="${id}"></canvas>${ITEMS[id].n}×${n}</button>`).join('')}</div>`:'<p class="sub">家具をタップすると片付けられます。</p>'}
     <p class="sub">寝ると 体調+${ev.sleep}${ev.fun?` 娯楽+${ev.fun}`:''}${ev.hp?` 体調+${ev.hp}`:''}${ev.keep?` お腹の減り−${ev.keep}`:''}${H.rent?`、家賃 ${yen(H.rent)}`:''}</p>
     <button class="cta" type="button" data-a="halls" ${S.phase!=='morning'?'disabled':''}><span class="cta-ic" aria-hidden="true"><b>7</b><b>7</b><b>7</b></span><span class="cta-t"><b>パチ屋へ行く</b><span>${S.phase==='morning'?'閉店まで打てる。1日1回':'今日はもう出かけた'}</span></span><span class="cta-go" aria-hidden="true">»</span></button>
-    <div class="grid4">
+    <div class="grid2">
+      <button class="tile" type="button" data-a="job" ${S.phase!=='morning'?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M3 8.5 12 4l9 4.5v9L12 22l-9-4.5zm9 2.2 6.6-3.3L12 4.1 5.4 7.4zm-7 6 6 3V12L5 9z"/></svg><b>日雇いバイト</b></button>
       <button class="tile" type="button" data-a="sleep"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M2 19V6h2v8h7V9h7a4 4 0 0 1 4 4v6h-2v-2H4v2zm5-6a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg><b>寝る</b></button>
-      <button class="tile" type="button" data-a="goShop" data-id="food"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M3 11h18a9 9 0 0 1-5 8v2H8v-2a9 9 0 0 1-5-8zm4.5-7c.8 1 .8 2 0 3s-.8 2 0 3h-1.5c-.8-1-.8-2 0-3s.8-2 0-3zm4 0c.8 1 .8 2 0 3s-.8 2 0 3h-1.5c-.8-1-.8-2 0-3s.8-2 0-3zm4 0c.8 1 .8 2 0 3s-.8 2 0 3h-1.5c-.8-1-.8-2 0-3s.8-2 0-3z"/></svg><b>ごはん</b></button>
-      <button class="tile" type="button" data-a="job" ${S.phase!=='morning'?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M3 8.5 12 4l9 4.5v9L12 22l-9-4.5zm9 2.2 6.6-3.3L12 4.1 5.4 7.4zm-7 6 6 3V12L5 9z"/></svg><b>バイト</b></button>
-      <button class="tile" type="button" data-a="goShop"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M2 3h3l2.6 11.2a1 1 0 0 0 1 .8h9.6l2-8H7.4l-.5-2H22l-3 12H8.6a3 3 0 0 1-2.9-2.3L3.4 5H2zm7 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm9 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg><b>買い物</b></button>
     </div>
     <p class="sub">ごはん・家具・不動産は下の「買い物」、自己投資・収支・実績・設定は「自分」から。</p>
     <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>`;
@@ -705,7 +703,6 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='halls')renderHalls();
   else if(a==='hall'){if(S.phase!=='morning')return renderHalls();hallIdx=i;floorSel=-1;renderFloor()}
   else if(a==='sit')sitDown(i);
-  else if(a==='goShop'){selItem=null;renderShop(id||shopTab)}
   else if(a==='floorK'){floorK=id;floorSel=-1;renderFloor()}
   else if(a==='pick'){floorSel=i;renderFloor()}
   else if(a==='auto'){if(P.autoRun)P.autoStop=true;else autoPlay(i)}
