@@ -308,3 +308,49 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 /* 実績のカットインとトーストは確認の画面より前に出す */
 .cut{z-index:50}
 .toast{z-index:50}
+
+/* ---------- 参考画像に寄せた画面（仕様書 9.5） ---------- */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.grid4 .tile{padding:10px 2px 8px}
+.grid4 .tile svg{width:28px;height:28px}
+.grid4 .tile b{font-size:14px}
+/* 機種のバナー（台の絵ができるまでは色と文字だけ） */
+.banner{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;border:2px solid transparent;box-shadow:var(--frame-shadow)}
+.banner canvas{width:46px;height:62px;image-rendering:pixelated;filter:drop-shadow(0 2px 0 #000)}
+.banner div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.banner b{font-family:var(--disp);font-weight:400;font-size:30px;line-height:1.1;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #2a0a0a)}
+.banner span{font-size:12px;color:#f3e6ff;text-shadow:0 1px 0 #000}
+.b-fuku{background:radial-gradient(90% 120% at 85% 20%,#ff7aa8 0%,rgba(255,122,168,0) 55%),linear-gradient(135deg,#7a0f2a,#c2203a 55%,#4a0818) padding-box,var(--gold-edge) border-box}
+.b-sanj{background:radial-gradient(90% 120% at 85% 20%,#7fa8ff 0%,rgba(127,168,255,0) 55%),linear-gradient(135deg,#0f1a4a,#24357a 55%,#0a0f2a) padding-box,var(--gold-edge) border-box}
+.b-hachi{background:radial-gradient(90% 120% at 85% 20%,#c27aff 0%,rgba(194,122,255,0) 55%),linear-gradient(135deg,#2a0f4a,#5a1f8a 55%,#16082a) padding-box,var(--gold-edge) border-box}
+/* 設置状況の表 */
+.tablebox{border-radius:14px;border:2px solid transparent;background:var(--panel-grad) padding-box,var(--gold-edge) border-box;box-shadow:var(--frame-shadow);overflow:hidden}
+.tb-head{display:flex;justify-content:space-between;align-items:baseline;padding:9px 12px 6px}
+.tb-head b{font-family:var(--disp);font-weight:400;font-size:15px;color:#fff1c4}
+.tb-head span{font-size:11px;color:var(--dim)}
+.units-t{width:100%;border-collapse:separate;border-spacing:0 4px;padding:0 6px 6px;font-size:13px;font-variant-numeric:tabular-nums}
+.units-t th{font-size:11px;font-weight:400;color:#b5acd6;padding:2px 4px;text-align:center}
+.units-t td{padding:6px 4px;text-align:center;background:#100e28;border-block:1px solid rgba(255,210,90,.18);white-space:nowrap}
+.units-t td:first-child{border-left:1px solid rgba(255,210,90,.18);border-radius:8px 0 0 8px;padding:0}
+.units-t td:last-child{border-right:1px solid rgba(255,210,90,.18);border-radius:0 8px 8px 0}
+.units-t td button{font:inherit;font-family:var(--disp);font-size:15px;color:#fff3cf;background:none;border:0;width:100%;min-height:36px;padding:0 4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px}
+.units-t td.hot{color:var(--gold);font-weight:700}
+.units-t tr.taken td{opacity:.45}
+.units-t tr.taken td button{cursor:default}
+.units-t tr.near td{background:#2a2110}
+.units-t tr.sel td{background:linear-gradient(180deg,#4a3a10,#2a200a);border-color:#ffd25a}
+.units-t tr.sel td:first-child{border-left-color:#ffd25a}.units-t tr.sel td:last-child{border-right-color:#ffd25a}
+.units-t .crown{font-style:normal;color:#ffd25a;font-size:13px}
+.units-t .star{font-style:normal;color:#ffd25a;font-size:11px}
+.units-t .tag{color:var(--cyan);font-size:11px}
+.cta.small{min-height:62px}
+.cta.small .cta-t b{font-size:22px}
+/* 打つ画面の上の数字 */
+.stats{display:grid;grid-template-columns:1.2fr .8fr .8fr 1.1fr;gap:4px}
+.stats div{display:flex;flex-direction:column;align-items:center;padding:4px 2px;border-radius:8px;background:#0a0918;border:1.5px solid #8a5a10;box-shadow:inset 0 0 0 1px rgba(255,210,90,.15)}
+.stats span{font-size:10px;color:#cfc6ea}
+.stats b{font-family:var(--disp);font-weight:400;font-size:17px;color:#fff3cf;line-height:1.2}
+.stats .bb span{color:#ff8a8a}.stats .rb span{color:#8ab4ff}
+.units-t tr.near td{background:linear-gradient(180deg,#3a2a0a,#221808);border-color:#ffd25a;box-shadow:inset 0 0 10px rgba(255,200,60,.25)}
+.units-t tr.near td:first-child{border-left-color:#ffd25a}.units-t tr.near td:last-child{border-right-color:#ffd25a}
+.units-t .aim{font-style:normal;display:inline-block;margin-right:3px;padding:0 3px;border-radius:4px;background:#ffd25a;color:#3a2200;font-size:10px;font-weight:700;vertical-align:1px}
