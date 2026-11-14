@@ -26,7 +26,18 @@ export const SLOTS: Record<string, { x: number; y: number; w: number }> = {
 /** 主人公の立つ場所（同じく %） */
 export const PLAYER_SPOT = { x: 66, y: 84, w: 5 };
 
-/** 家具の絵（public/furniture/<id>.webp）があるもの。ないものは仮のドット絵を置く */
-export const FURNITURE_IMAGES: string[] = ['futon', 'bed', 'lbed', 'tv', 'bigtv', 'game', 'shelf', 'plant', 'fridge', 'sofa', 'tank', 'mchair'];
-/** 家具の絵がまだないとき、仮のドット絵を置き場所の幅のこの割合で描く */
+/**
+ * 家具の絵（public/furniture/<id>.webp）の縦横比（縦 / 横）。絵の読み込み前でも、置き場所の大きさと押せる範囲が決まるように持っておく。
+ * ここにない家具は仮のドット絵を置く
+ */
+export const FURNITURE_ASPECT: Record<string, number> = {
+  futon: 455 / 640, bed: 528 / 640, lbed: 472 / 640, tv: 640 / 582, bigtv: 428 / 640, game: 460 / 640,
+  shelf: 640 / 477, plant: 640 / 391, fridge: 640 / 336, sofa: 297 / 640, tank: 640 / 579, mchair: 640 / 582,
+};
+export const FURNITURE_IMAGES = Object.keys(FURNITURE_ASPECT);
+/** 押した点に絵があるか調べるとき、絵をこの幅まで縮めて透明度を読む（px） */
+export const HIT_SAMPLE_W = 160;
+/** 透明度（0〜255）がこれより大きければ、絵が描かれているとみなす */
+export const HIT_ALPHA = 40;
+/** 絵のない家具を足したとき、仮のドット絵を置き場所の幅のこの割合で描く */
 export const PLACEHOLDER_SCALE = 0.55;

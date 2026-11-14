@@ -10,7 +10,7 @@ import { dailyEffects, arrangePlaced } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, FURNITURE_IMAGES, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
+import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, FURNITURE_IMAGES, FURNITURE_ASPECT, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
@@ -205,23 +205,23 @@ function renderHome(){
 // 部屋：家ごとの背景の絵に、家具を決まった場所に重ねる（奥から手前の順）
 function roomHTML(){
   const base=import.meta.env.BASE_URL,items=S.placed.map(p=>p.id).filter(id=>SLOTS[SLOT_OF[id]||id]).sort((a,b)=>SLOTS[SLOT_OF[a]||a].y-SLOTS[SLOT_OF[b]||b].y);
-  // 家具の絵が届くまでの仮のドット絵は正方形で背が高くなるので、小さめに置いて重なりを避ける
+  // 絵のない家具の仮のドット絵は正方形で背が高くなるので、小さめに置いて重なりを避ける
   const pos=(s,k=1)=>`left:${s.x-s.w*k/2}%;bottom:${100-s.y}%;width:${s.w*k}%`;
   return `<div class="room anime" id="room" role="group" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]});aspect-ratio:${ROOM_ASPECT}">
-    ${items.map(id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(SLOTS[SLOT_OF[id]||id],FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`).join('')}
+    ${items.map(id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(SLOTS[SLOT_OF[id]||id],FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}${FURNITURE_IMAGES.includes(id)?`;aspect-ratio:1/${FURNITURE_ASPECT[id]}`:''}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`).join('')}
     <canvas class="pc" width="9" height="23" data-pc style="${pos(PLAYER_SPOT)}" aria-hidden="true"></canvas></div>`}
 // 家具の絵の透明度（押したところに絵があるか調べる用）。読み込めていない絵は四角の範囲で判定する
 const furnAlpha={};
 function alphaOf(img){const k=img.currentSrc||img.src;if(furnAlpha[k]!==undefined)return furnAlpha[k];
   if(!img.complete||!img.naturalWidth)return null;
-  try{const w=Math.min(160,img.naturalWidth),h=Math.round(img.naturalHeight*w/img.naturalWidth),c=document.createElement('canvas');c.width=w;c.height=h;
+  try{const w=Math.min(HIT_SAMPLE_W,img.naturalWidth),h=Math.round(img.naturalHeight*w/img.naturalWidth),c=document.createElement('canvas');c.width=w;c.height=h;
     const g=c.getContext('2d');g.drawImage(img,0,0,w,h);furnAlpha[k]={w,h,d:g.getImageData(0,0,w,h).data}}catch(e){furnAlpha[k]=null}
   return furnAlpha[k]}
 function furnAt(x,y){const list=[...document.querySelectorAll('#room .furn')].reverse();
   for(const el of list){const r=el.getBoundingClientRect();if(x<r.left||x>r.right||y<r.top||y>r.bottom)continue;
     const img=el.querySelector('img'),a=img&&alphaOf(img);if(!a)return el.dataset.id;
     const px=Math.min(a.w-1,Math.floor((x-r.left)/r.width*a.w)),py=Math.min(a.h-1,Math.floor((y-r.top)/r.height*a.h));
-    if(a.d[(py*a.w+px)*4+3]>40)return el.dataset.id}
+    if(a.d[(py*a.w+px)*4+3]>HIT_ALPHA)return el.dataset.id}
   return null}
 // 主人公の仮のドット絵（絵ができるまで）
 function drawPlayer(c){const sad=S.hun<25||S.hp<25;c.clearRect(0,0,9,23);R(c,1,16,3,7,'#2b3f78');R(c,5,16,3,7,'#2b3f78');R(c,0,8,9,9,S.home>=3?'#3a3a3a':'#7a8296');R(c,1,1,7,7,'#f0c9a4');R(c,0,0,9,3,'#2a1f3d');R(c,2,4,1,1,'#15101f');R(c,6,4,1,1,'#15101f');R(c,3,6,3,1,sad?'#15101f':'#b5533c')}
@@ -680,7 +680,7 @@ function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
 function tabs(t){setTabbar(t,go=>{if(go==='home')renderHome();else if(go==='halls')renderHalls();else if(go==='shop')renderShop(shopTab);else renderMe(meTab);window.scrollTo(0,0)})}
 $('#view').addEventListener('click',e=>{
   // 部屋の家具は絵の透けたところでは押せない。指の下で絵が描かれている一番手前の家具を探す（キーボードの操作はボタンのまま）
-  if(e.target.id==='room'){const id=furnAt(e.clientX,e.clientY);if(id)takeF(id);return}
+  if(e.target.id==='room'){const id=furnAt(e.clientX,e.clientY);if(id)act('takeF',{dataset:{id}});return}
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;act(b.dataset.a,b)});
 // ボタン（data-a）と購入の確認画面から呼ぶ
 function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
