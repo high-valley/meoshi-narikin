@@ -143,3 +143,28 @@ Original design, no real slot machine names, no real brand logos, no real charac
 
 - 1画面ずつ作りたいときは、「three iPhone screens side by side」を「a single iPhone screen」にして、Screen 1〜3 のうち1つだけを残す。
 - 参考にした画像を添えられるツールなら、前回の参考画像を添えると雰囲気がそろう。
+
+## 劇画風（ユーザーの希望で画面を作り替えるときの絵）
+
+借金と勝負の青年漫画全般にある荒い劇画タッチ。特定の作品のキャラクター・効果音の文字・決まった場面には寄せない。打っている画面だけは実機のスロット台風。
+
+### ロゴ（透過）
+```
+Japanese title logo "目押し成金", rough brush calligraphy lettering, the characters "目押し" in cream white and "成金" in blood red, thick black ink outline, splattered ink and dry brush texture, gritty seinen gambling manga style, horizontal layout, transparent background, no other text, original design
+```
+
+### 部屋の背景の共通スタイル（劇画）
+```
+Gritty Japanese seinen gambling manga style background art, thick rough ink outlines, heavy cross-hatching shadows, muted desaturated colors with harsh contrast, stained and worn textures, front-facing view of an empty room interior showing the back wall and the floor, camera at standing eye level looking slightly down, symmetrical composition, the room is completely empty with no furniture, no people, no text, no logos, aspect ratio 4:3, original illustration.
+```
+家ごとの部分は「部屋（アニメ調）」の表と同じ（劇画に合わせて gloomy・stained などの言葉を足してよい）。
+
+### 家具の共通スタイル（劇画）
+```
+Original game item art, single isolated piece of furniture: （家具ごとの部分）. Gritty Japanese seinen gambling manga style, thick rough ink outlines, heavy cross-hatching shadows, muted desaturated colors, slightly worn and used look, warm lighting from the upper left, three-quarter front view facing the camera, seen slightly from above, transparent background, no text, original design
+```
+
+### 打っている画面（実機のスロット台風の参考画像）
+```
+Mobile game UI design mockup, a single iPhone screen in portrait, a Japanese pachislot game screen that looks like a real modern pachislot cabinet seen from the front, original design: glossy plastic and chrome cabinet frame with colorful LED light strips along the edges, a top lamp section glowing, a wide bright LCD screen showing an anime-style banner with big glowing text "BIG" and "+32枚 獲得", a row of four small digital counter boxes (total games, BIG, REG, combined probability) like a hall data counter, three reels behind a glass window on a cream paper strip showing a red 7, a black-and-gold BAR plate, bells, replay arrows, watermelon and cherries with the bonus symbols lit, a chrome lever on the left and three round stop buttons that light up, a medal tray at the bottom, buttons for "10G", "100G" auto play and quit. No real slot machine names, no real brand logos, no real characters, no notice lamps resembling real machines.
+```
