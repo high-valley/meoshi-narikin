@@ -1,0 +1,181 @@
+/* ==========================================================================
+   劇画風のテーマ（仕様書 9.5）。借金と勝負の青年漫画のような、紙と墨の見た目。
+   打っている画面（.cab がある画面）だけは、実機のスロット台の見た目のまま残す（下の「台」の節）
+   ========================================================================== */
+:root:not(:has(.cab)){background:#16110d}
+:root{
+  --g-bg:#16110d; --g-paper:#e6d9bc; --g-paper2:#d6c59f; --g-ink:#17100a; --g-sub:#5b4a37;
+  --g-red:#a3191b; --g-red2:#5c0a0b; --g-cream:#f3e8cf;
+  --brush:"Yuji Boku","Yuji Syuku","Hiragino Mincho ProN","Yu Mincho",serif;
+  --num:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  /* 紙のざらつき（SVG のノイズ）としみ */
+  --g-noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .22 0 0 0 0 .12 0 0 0 .28 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --g-paper-bg:var(--g-noise),radial-gradient(60% 50% at 85% 15%,rgba(120,80,30,.18),rgba(120,80,30,0) 70%),radial-gradient(50% 60% at 10% 90%,rgba(110,70,30,.16),rgba(110,70,30,0) 70%),linear-gradient(180deg,#ece1c6,#dccba6);
+  --g-red-bg:var(--g-noise),radial-gradient(70% 90% at 30% 20%,#c62a24,rgba(198,42,36,0) 70%),linear-gradient(180deg,#a3191b,#6a0e0f);
+  --g-shadow:3px 3px 0 #000;
+}
+
+body:not(:has(.cab)){
+  --hun:#b8322a; --fun:#cfa12a; --hp:#4b9638;
+  background:var(--g-noise),radial-gradient(120% 70% at 50% 0%,#3a2a1c 0%,rgba(58,42,28,0) 60%),radial-gradient(100% 60% at 50% 110%,#2a1208 0%,rgba(42,18,8,0) 70%),var(--g-bg);
+  color:var(--g-cream);
+
+  /* 紙の枠：墨の太い縁と、ずらした黒い影 */
+  .status,.cmd,.tile,.res,.friend,.verbox,.strip,.seg,.upd-note,.log,.tablebox,.counter{
+    background:var(--g-paper-bg)!important;border:2.5px solid var(--g-ink)!important;border-radius:3px 6px 4px 7px;box-shadow:var(--g-shadow),inset 0 0 22px rgba(90,55,20,.28);color:var(--g-ink)}
+
+  /* ロゴ */
+  .logo span{font-family:var(--brush);font-size:34px;letter-spacing:.02em;background:none;color:var(--g-cream);-webkit-text-stroke:1.2px #000;filter:none;text-shadow:3px 3px 0 #000,0 0 18px rgba(163,25,27,.55)}
+  .logo small{font-family:var(--body);font-style:normal;font-weight:700;color:#c9a77a;letter-spacing:.2em}
+  .mini{background:var(--g-paper-bg);border:2px solid var(--g-ink);border-radius:3px;color:var(--g-ink);box-shadow:2px 2px 0 #000}
+
+  /* 所持金・日付・ゲージ */
+  .moneybox,.daybox{background:rgba(255,250,235,.35);border:2px solid var(--g-ink);border-radius:2px 5px 3px 4px}
+  .moneybox .lbl{color:var(--g-sub)}
+  .status .cash{font-family:var(--num);font-weight:800;background:none;color:var(--g-ink);filter:none;text-shadow:1px 1px 0 rgba(255,255,255,.5)}
+  .coin{box-shadow:inset 0 0 0 2px rgba(255,240,180,.5),0 0 0 1.5px #000}
+  .daybox b{font-family:var(--num);font-weight:800;font-size:17px;color:var(--g-ink)}
+  .daybox span{color:var(--g-sub)}
+  .status .day{color:var(--g-sub)}
+  .status .day em,.daybox em{color:var(--g-red)}
+  .mi{background:var(--g-ink);border:2px solid var(--g-ink)}
+  .mi svg{filter:none}
+  .mt .r{color:var(--g-ink)}
+  .mt .r span{font-weight:700}
+  .mt .r b{font-family:var(--num);font-weight:800;font-size:13px;color:var(--g-ink)}
+  .mt.low .r b{color:var(--g-red)}
+  .bar{height:10px;border-radius:1px;background:#2a2019;box-shadow:none;border:1.5px solid var(--g-ink)}
+  .bar i{border-radius:0;box-shadow:inset 0 2px 0 rgba(255,255,255,.25)}
+
+  /* 見出し：墨の帯 */
+  .ch{font-family:var(--brush);font-size:16px;letter-spacing:.14em;color:var(--g-cream);background:var(--g-ink);border:0;border-radius:0;padding:4px 22px;text-shadow:none;clip-path:polygon(2% 0,100% 6%,98% 100%,0 92%)}
+  .ch{filter:drop-shadow(3px 3px 0 var(--g-red))}
+  .ch::before,.ch::after{content:none}
+  .lead{color:var(--g-cream);text-shadow:2px 2px 0 #000}
+  .sub{color:#cbb894}
+  .res .sub,.cmd .sub,.sheet .sub{color:var(--g-sub)}
+
+  /* カード状のボタン */
+  .cmd b{color:var(--g-ink);text-shadow:none}
+  .cmd span{color:var(--g-sub)}
+  .cmd .p{font-family:var(--num);font-weight:800;color:var(--g-red);text-shadow:none}
+  .cmd .short{color:var(--g-red);font-weight:700}
+  .cmd:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+  .cmd.on{background:var(--g-paper-bg)!important;border-color:var(--g-red)!important;box-shadow:var(--g-shadow),inset 0 0 0 2px var(--g-red)}
+  .cmd.main{background:var(--g-red-bg)!important}
+  .cmd.main b,.cmd.main span,.cmd.main .p{color:var(--g-cream)}
+  .cmd.ach.got{box-shadow:var(--g-shadow),inset 0 0 0 3px var(--g-red)}
+
+  /* 大きい赤いボタン（パチ屋へ行く）：集中線のある赤い札 */
+  .cta{border-radius:3px 8px 4px 6px;border:3px solid var(--g-ink);background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,230,200,.07) 0 2deg,rgba(0,0,0,0) 2deg 7deg),var(--g-red-bg);box-shadow:4px 4px 0 #000;transform:rotate(-.6deg)}
+  .cta::before{content:none}
+  .cta-ic{background:var(--g-cream);border:2px solid var(--g-ink);border-radius:3px;box-shadow:2px 2px 0 #000}
+  .cta-ic b{font-family:var(--num);font-weight:800;color:var(--g-red);text-shadow:none}
+  .cta-t b{font-family:var(--brush);font-size:30px;background:none;color:var(--g-cream);-webkit-text-stroke:1px #000;filter:none;text-shadow:3px 3px 0 #000}
+  .cta-t span{color:#f1d5c0;text-shadow:1px 1px 0 #000}
+  .cta-go{color:var(--g-cream);text-shadow:2px 2px 0 #000}
+  .cta:active:not(:disabled){transform:rotate(-.6deg) translate(3px,3px);box-shadow:1px 1px 0 #000}
+
+  /* アイコン付きのタイル */
+  .tile svg{color:var(--g-ink);filter:none}
+  .tile b{font-family:var(--brush);font-size:19px;color:var(--g-ink);text-shadow:none}
+  .tile span{color:var(--g-sub)}
+  .tile:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+
+  /* ボタン：赤い判子 */
+  .btn{font-family:var(--brush);font-size:20px;color:var(--g-cream);background:var(--g-red-bg);border:2.5px solid var(--g-ink);border-radius:3px 6px 4px 5px;box-shadow:3px 3px 0 #000;text-shadow:2px 2px 0 #000}
+  .btn.alt{font-family:var(--body);font-weight:700;font-size:15px;color:var(--g-ink);background:var(--g-paper-bg);border:2.5px solid var(--g-ink);border-radius:3px 6px 4px 5px;text-shadow:none}
+  .btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+  & button:focus-visible{outline:3px solid #f0b23a;outline-offset:2px}
+
+  /* 上のタブ（買い物・自分） */
+  .seg{padding:4px;border-radius:3px}
+  .seg button{border-radius:2px;color:var(--g-sub);font-weight:700}
+  .seg button[aria-selected="true"]{background:var(--g-ink);color:var(--g-cream);box-shadow:2px 2px 0 var(--g-red);text-shadow:none}
+
+  /* 下のタブバー：紙の札が並び、今の画面は赤 */
+  .tabbar{gap:4px;background:var(--g-noise),#120d0a;box-shadow:0 -3px 0 #000,0 -10px 24px rgba(0,0,0,.6)}
+  .tabbar button{--bg:var(--g-paper);color:var(--g-ink);background:var(--g-paper-bg);border:2px solid var(--g-ink);border-radius:2px 5px 3px 4px;font-weight:700}
+  .tabbar button.on{--bg:#6a0e0f;color:var(--g-cream);background:var(--g-red-bg);border:2px solid var(--g-ink);box-shadow:inset 0 0 0 1.5px rgba(255,220,180,.25)}
+  .tabbar button.on svg{filter:drop-shadow(1px 1px 0 #000)}
+
+  /* 部屋：墨の太い枠 */
+  .room.anime{border:3px solid var(--g-ink)!important;border-radius:3px;background:var(--room) center/cover no-repeat!important;box-shadow:4px 4px 0 #000}
+  /* バイトの検品ライン */
+  .room:not(.anime){border:3px solid var(--g-ink)!important;border-radius:3px;background:var(--g-ink)!important;box-shadow:4px 4px 0 #000}
+  .counter div{color:var(--g-sub)}
+  .counter b{font-family:var(--num);font-weight:800;color:var(--g-ink)}
+  .counter b.pos{color:#2f6e22}.counter b.neg{color:var(--g-red)}
+
+  /* 持ち物 */
+  .chip{background:var(--g-paper-bg);border:2px solid var(--g-ink);border-radius:3px;color:var(--g-ink);font-weight:700;box-shadow:2px 2px 0 #000}
+
+  /* 結果・収支などの表 */
+  .res b{color:var(--g-ink)}
+  .res .big.pos{background:none;color:var(--g-ink)}
+  .pos{color:#2f6e22}.neg,.res .big.neg{color:var(--g-red)}
+  .hrow{border-bottom:1px dashed rgba(23,16,10,.35)}
+  .log{color:var(--g-sub)}
+  .verbox .newer{color:var(--g-red)}
+  .upd-note button{border:2px solid var(--g-ink);color:var(--g-ink);background:var(--g-cream);border-radius:3px}
+  .upd-note .u-close{color:var(--g-sub)}
+  .devpw input{background:var(--g-cream);color:var(--g-ink);border:2px solid var(--g-ink);border-radius:3px}
+
+  /* パチ屋：機種のバナーと設置状況 */
+  .banner{border:3px solid var(--g-ink)!important;border-radius:3px;box-shadow:4px 4px 0 #000}
+  .banner b{font-family:var(--brush);background:none;color:var(--g-cream);-webkit-text-stroke:1px #000;filter:none;text-shadow:3px 3px 0 #000}
+  .tb-head b{font-family:var(--brush);font-size:17px;color:var(--g-ink)}
+  .tb-head span{color:var(--g-sub)}
+  .units-t th{color:var(--g-sub);font-weight:700}
+  .units-t td{background:rgba(255,250,235,.45);border-color:rgba(23,16,10,.35);color:var(--g-ink)}
+  .units-t td:first-child{border-left-color:rgba(23,16,10,.35)}.units-t td:last-child{border-right-color:rgba(23,16,10,.35)}
+  .units-t td button{font-family:var(--num);font-weight:800;color:var(--g-ink)}
+  .units-t td.hot,.units-t .crown,.units-t .star{color:var(--g-red)}
+  .units-t .tag{color:#2b5f8a}
+  .units-t .aim{background:var(--g-red);color:var(--g-cream)}
+  /* 天井が近い台は金色に光らせる（店の説明「金色に光るのは天井が近い台」のとおり） */
+  .units-t tr.near td{background:linear-gradient(180deg,#f6dc7c,#d9a92c);border-color:var(--g-ink);box-shadow:0 0 10px rgba(255,200,60,.75)}
+  .units-t tr.near td:first-child{border-left-color:var(--g-ink)}.units-t tr.near td:last-child{border-right-color:var(--g-ink)}
+  .units-t tr.sel td{background:var(--g-red);color:var(--g-cream);border-color:var(--g-ink)}
+  .units-t tr.sel td button,.units-t tr.sel .crown,.units-t tr.sel .star,.units-t tr.sel td.hot,.units-t tr.sel .pos,.units-t tr.sel .neg,.units-t tr.sel .tag{color:var(--g-cream)}
+  .units-t tr.sel .aim{background:var(--g-cream);color:var(--g-red)}
+  .units-t tr.sel td:first-child{border-left-color:var(--g-ink)}.units-t tr.sel td:last-child{border-right-color:var(--g-ink)}
+  .friend p{color:var(--g-sub)}
+
+  /* 購入の確認 */
+  .sheet-back{background:rgba(10,6,3,.7)}
+  .sheet{background:var(--g-paper-bg);border:3px solid var(--g-ink);border-bottom:0;border-radius:6px 6px 0 0;box-shadow:0 -6px 0 #000,0 -12px 30px rgba(0,0,0,.6)}
+  .sheet h2{font-family:var(--brush);font-size:26px;background:none;color:var(--g-ink);text-shadow:2px 2px 0 rgba(163,25,27,.35)}
+  .sheet-body{color:var(--g-ink)}
+  .sheet .res{background:rgba(255,250,235,.45)!important;box-shadow:none}
+  .sheet .cond{color:var(--g-red)}
+  .done-name{font-family:var(--brush);font-size:20px;color:var(--g-ink)}
+  .sheet.ok .sheet-check{color:var(--g-cream);background:var(--g-red);border:3px solid var(--g-ink);box-shadow:3px 3px 0 #000}
+
+  /* 知らせ・実績のカットイン */
+  .toast{font-weight:700;color:var(--g-cream);background:var(--g-ink);border:2px solid var(--g-cream);border-radius:3px;box-shadow:3px 3px 0 var(--g-red)}
+  .cut{font-family:var(--brush);color:var(--g-cream);background:var(--g-red-bg);border-block:4px solid #000;text-shadow:3px 3px 0 #000}
+}
+
+/* ==========================================================================
+   台（打つ画面）：実機のスロット台。クロームの枠と、縁を流れる LED の光
+   ========================================================================== */
+body:has(.cab){
+  background:radial-gradient(90% 40% at 50% 0%,#2a1c4a 0%,rgba(42,28,74,0) 70%),radial-gradient(70% 40% at 50% 100%,#3a0c22 0%,rgba(58,12,34,0) 70%),#07060d;
+  .cab{position:relative;border:4px solid transparent;border-radius:20px;background:linear-gradient(180deg,#2a0d22 0%,#14081e 45%,#0d0a1c 100%) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 22%,#eef1f4 45%,#5e6670 70%,#dfe3e8 88%,#8b939c) border-box;box-shadow:0 0 0 2px #000,0 0 22px 4px rgba(255,40,120,.45)}
+  /* 台の上の縁を流れる LED（帯の色をずらすだけなので軽い） */
+  .cab::before{content:"";position:absolute;left:18px;right:18px;top:-4px;height:4px;border-radius:2px;background:linear-gradient(90deg,#ff2878,#3cc8ff,#ffd23c,#ff2878);background-size:200% 100%;box-shadow:0 0 8px rgba(255,120,200,.8);animation:led 3s linear infinite;pointer-events:none}
+  .cabtop b{font-size:24px;letter-spacing:.06em}
+  .glass{background:linear-gradient(180deg,#d9dde2,#7d858e);box-shadow:inset 0 0 0 2px #fff,0 0 0 2px #000,inset 0 6px 14px rgba(0,0,0,.35)}
+  .stats div{background:#030308;border:1.5px solid #5e6670;box-shadow:inset 0 0 8px rgba(255,60,60,.12)}
+  .stats b{font-family:var(--dot);color:#ff5b4a;text-shadow:0 0 6px rgba(255,80,60,.8)}
+  .stats .rb b{color:#5fb3ff;text-shadow:0 0 6px rgba(80,170,255,.8)}
+  .counter{background:#030308!important;border:1.5px solid #5e6670!important}
+  .counter b{color:#ffcf4a;text-shadow:0 0 6px rgba(255,200,60,.6)}
+  .counter b.pos{color:#5dff8a;text-shadow:0 0 6px rgba(80,255,130,.6)}.counter b.neg{color:#ff5b4a;text-shadow:0 0 6px rgba(255,80,60,.7)}
+  .lever{color:#fff;text-shadow:0 1px 2px #000;background:radial-gradient(circle at 38% 28%,#fff,#ff7a8e 25%,#e0102e 60%,#7a0616) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 40%,#5e6670 75%,#dfe3e8) border-box}
+  .stop{background:radial-gradient(circle at 50% 30%,#fff 0%,#ff9a8a 18%,#ff2e2e 45%,#a0081a 80%) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 40%,#5e6670 75%,#dfe3e8) border-box;box-shadow:0 5px 0 #000,0 0 16px rgba(255,60,60,.6)}
+  .stop:disabled{filter:grayscale(.7) brightness(.5)}
+}
+@keyframes led{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){body:has(.cab) .cab::before{animation:none}}
