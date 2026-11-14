@@ -430,7 +430,7 @@ function bustRate(){return Math.min(60,20+S.conv*10)}
 function sitDown2(i,boost){
   if(S.phase!=='morning'){toast('今日はもう出かけた。寝ると次の日');return renderHalls()}
   const x=FL().ms[i];
-  P={unit:i,since:x.since,startSince:x.since,ceilHit:false,ev:FL().ev,boost,m:MACH[x.k],s:x.s,rate:HALLS[hallIdx].rate,hall:HALLS[hallIdx].n,medals:0,inv:0,g:0,big:0,mode:'normal',flag:null,pend:null,order:[],navi:-1,hint:-1,left:0,doors:null,zen:0,log:[],auto:false,big8:0,res:[]};
+  P={unit:i,since:x.since,startSince:x.since,ceilHit:false,ev:FL().ev,boost,m:MACH[x.k],s:x.s,rate:HALLS[hallIdx].rate,hall:HALLS[hallIdx].n,medals:0,inv:0,g:0,ng:0,big:0,mode:'normal',flag:null,pend:null,order:[],navi:-1,hint:-1,left:0,doors:null,zen:0,log:[],auto:false,big8:0,res:[]};
   S.phase='hall';S.play={hall:P.hall,rate:P.rate,m:P.m.n,medals:0,inv:0};save();
   setupReels();renderPlay();
 }
@@ -456,7 +456,7 @@ function statsHTML(){const b=P.big+(P.reg||0);return `<div class="stats"><div><s
 function counterHTML(){const out=P.medals*P.rate,net=out-P.inv;return `<div class="counter"><div>時刻<b>${clock(P.g)}</b></div><div>現在<b>${P.since}G</b></div><div>持ちメダル<b>${P.medals}</b></div><div>収支<b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
 function renderPlay(){
   status();tabs(null);const [c,cl]=cue();
-  const busyBonus=['big','reg','at','zen','align','door','cont'].includes(P.mode);
+  const busyBonus=['big','reg','at','zen','align','door','cont'].includes(P.mode)||!!P.pend;
   $('#view').innerHTML=`<div class="cab"><div class="cabtop"><b>${P.m.n}</b><span class="sub">${P.hall}${P.boost?'　基盤':''}${S.dropDay===S.day?'　目薬':''}</span></div>
     ${statsHTML()}
     ${counterHTML()}
@@ -489,6 +489,7 @@ function lever(){
   if(P.g>=CLOSE_MIN-OPEN_MIN&&P.mode==='normal'){toast('閉店です');return quit(true)}
   P.medals-=3;
   if(P.mode==='normal'){P.since++;if(P.since>=CEIL[P.m.kind]&&!P.post){P.pend='BIG';P.ceilHit=true}}
+  else if(P.mode==='align')P.since++; // 揃えるゲームも、ボーナスが始まるまでは「現在」に数える（天井はもう関係ない）
   P.g++;if(P.mode==='normal'||P.mode==='align')P.ng=(P.ng||0)+1;P.order=[];P.navi=-1;P.hint=-1;P.res=[];P.wins=null;
   tick();
   if(P.mode==='normal'){P.flag=P.pend||roll(mach(),P.s,Math.random());P.pend=null;
@@ -597,7 +598,7 @@ function settle(){
   if(S.hp<=0)return collapse();
   renderPlay();
 }
-function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');say('天井','ボーナス確定','hot')}else if(P.startSince>=400&&P.g<=CEIL[P.m.kind]-P.startSince)grant('hyena');P.since=0;P.ceilHit=false;P.startSince=0}
+function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');say('天井','ボーナス確定','hot')}else if(P.startSince>=400)grant('hyena'); // 天井より前に当てたP.since=0;P.ceilHit=false;P.startSince=0}
 function payHTML(){
   const k=P.m.kind,rows=[['ベル（1ライン）',k==='sanj'?'押し順正解9枚／不正解1枚':'8枚'],['リプレイ','もう1回無料'],['チェリー（左リールのどこでも）',(k==='fuku'?'4枚':'2枚')+`。${Math.round(P.m.dup*100)}%でボーナスも同時に当たっている`],...(k==='fuku'?[['スイカ（1ライン）','12枚']]:[]),
     ['7・7・7',k==='fuku'?`BIG ${BIG_G}G。毎ゲーム左リールを滑らせずに、上から7・リプレイ・7の形で止める（中段がリプレイ）。成功${BITA_OK}枚、失敗${BITA_NG}枚`:k==='sanj'?`侍ラッシュ ${AT_G}G（押し順ナビ）`:`扉チャンス。前兆${ZEN_G}Gの間、中リールに赤7を止めると扉-1、中段に滑りなしで止めると扉-2。最後に8択`],...(P.m.reg?[['7・7・BAR',`REG ${REG_G}G。毎ゲーム${REG_PAY}枚`]]:[])];
