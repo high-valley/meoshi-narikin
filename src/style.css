@@ -383,6 +383,6 @@ body{background:radial-gradient(120% 60% at 50% -10%,#3a1f6b 0%,rgba(58,31,107,0
 .room.anime .furn canvas,.room.anime .furn img{display:block;width:100%;height:auto;image-rendering:pixelated}
 .room.anime .furn img{height:100%;object-fit:contain;image-rendering:auto}
 .room.anime:has(.furn){cursor:pointer}
-.room.anime .pc{position:absolute;pointer-events:none;height:auto;image-rendering:pixelated;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35));animation:bob 1.6s ease-in-out infinite}
-@keyframes bob{50%{transform:translateY(-3%)}}
+.room.anime .pc{position:absolute;pointer-events:none;height:auto;object-fit:contain;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35));transform-origin:50% 100%;animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{50%{transform:scaleY(1.012)}}
 @media (prefers-reduced-motion:reduce){.room.anime .pc{animation:none}}
