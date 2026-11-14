@@ -36,10 +36,11 @@ describe('抽選', () => {
 });
 
 describe('生活', () => {
-  it('寝具は一番良いものだけ、冷蔵庫は最大20', () => {
-    const e = dailyEffects([{ id: 'futon' }, { id: 'bed' }, { id: 'fridge' }, { id: 'fridge' }, { id: 'fridge' }, { id: 'tv' }], 1, 5);
+  it('寝具は一番良いものだけ、同じ家具を複数置いても効果は1つ分', () => {
+    const e = dailyEffects([{ id: 'futon' }, { id: 'bed' }, { id: 'fridge' }, { id: 'fridge' }, { id: 'fridge' }, { id: 'tv' }, { id: 'plant' }, { id: 'plant' }], 1, 5);
     expect(e.sleep).toBe(15 + 5 + 5);
-    expect(e.keep).toBe(20);
+    expect(e.keep).toBe(10);
     expect(e.fun).toBe(6);
+    expect(e.hp).toBe(3);
   });
 });
