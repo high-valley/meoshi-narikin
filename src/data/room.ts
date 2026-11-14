@@ -24,7 +24,10 @@ export const SLOTS: Record<string, { x: number; y: number; w: number }> = {
   mchair: { x: 11, y: 99, w: 17 },
 };
 /** 主人公の立つ場所（同じく %） */
-export const PLAYER_SPOT = { x: 66, y: 84, w: 5 };
+export const PLAYER_SPOT = { x: 67, y: 88, w: 8 };
+/** 主人公の絵（public/rooms/）と、その縦横比（縦 / 横） */
+export const PLAYER_IMAGE = 'hero.webp';
+export const PLAYER_ASPECT = 900 / 296;
 
 /**
  * 家具の絵（public/furniture/<id>.webp）の縦横比（縦 / 横）。絵の読み込み前でも、置き場所の大きさと押せる範囲が決まるように持っておく。

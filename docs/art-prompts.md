@@ -112,8 +112,10 @@ Japanese anime style game item, single isolated piece of furniture, clean line a
 
 ### 主人公
 
+借金を抱えて勝負に出る、追い詰められたギャンブラーの雰囲気。青年漫画のギャンブルもの全般にある荒い劇画タッチにし、特定の作品のキャラクターには寄せない（ユーザーの希望）。
+
 ```
-Japanese anime style game character, a young man in his twenties with messy dark hair, wearing a plain gray hoodie and jeans, slightly tired but hopeful expression, standing pose, full body, front view, clean line art with soft cel shading, transparent background, no text, original character
+Original character, gritty Japanese seinen gambling manga style, thick rough ink outlines with heavy cross-hatching shadows and muted colors, a lanky young man in his twenties down on his luck, angular face with tired eyes, a cold sweat on his forehead but a determined, defiant expression, short unkempt dark hair, wearing a wrinkled cheap navy windbreaker over a faded T-shirt and worn jeans, hands in pockets, slightly hunched standing pose, full body, front view, warm lighting from the upper left, transparent background, no text, no sound-effect lettering, original design not resembling any existing character
 ```
 
 ## 機種のバナー（banners/fuku・sanj・hachi）

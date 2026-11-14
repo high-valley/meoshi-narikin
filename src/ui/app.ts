@@ -10,7 +10,7 @@ import { dailyEffects, arrangePlaced } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, FURNITURE_IMAGES, FURNITURE_ASPECT, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
+import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
@@ -200,16 +200,17 @@ function renderHome(){
     <p class="sub">ゲーム内のお金だけを扱います。現実のお金や景品には換わりません。</p>`;
   tabs('home');
   document.querySelectorAll('[data-icon]').forEach(cv=>drawItem(cv.getContext('2d'),cv.dataset.icon,0,0));
-  document.querySelectorAll('[data-pc]').forEach(cv=>drawPlayer(cv.getContext('2d')));
 }
 // 部屋：家ごとの背景の絵に、家具を決まった場所に重ねる（奥から手前の順）
 function roomHTML(){
-  const base=import.meta.env.BASE_URL,items=S.placed.map(p=>p.id).filter(id=>SLOTS[SLOT_OF[id]||id]).sort((a,b)=>SLOTS[SLOT_OF[a]||a].y-SLOTS[SLOT_OF[b]||b].y);
+  const base=import.meta.env.BASE_URL,items=S.placed.map(p=>p.id).filter(id=>SLOTS[SLOT_OF[id]||id]);
   // 絵のない家具の仮のドット絵は正方形で背が高くなるので、小さめに置いて重なりを避ける
   const pos=(s,k=1)=>`left:${s.x-s.w*k/2}%;bottom:${100-s.y}%;width:${s.w*k}%`;
+  const furn=id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(SLOTS[SLOT_OF[id]||id],FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}${FURNITURE_IMAGES.includes(id)?`;aspect-ratio:1/${FURNITURE_ASPECT[id]}`:''}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`;
+  // 主人公も家具と一緒に奥から順に並べ、手前の家具（ソファなど）の後ろに立てるようにする。y が同じ家具とは主人公が手前になる
+  const list=[...items.map(id=>({y:SLOTS[SLOT_OF[id]||id].y,h:furn(id)})),{y:PLAYER_SPOT.y,h:`<img class="pc" src="${base}rooms/${PLAYER_IMAGE}" alt="" style="${pos(PLAYER_SPOT)};aspect-ratio:1/${PLAYER_ASPECT}">`}].sort((a,b)=>a.y-b.y);
   return `<div class="room anime" id="room" role="group" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]});aspect-ratio:${ROOM_ASPECT}">
-    ${items.map(id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(SLOTS[SLOT_OF[id]||id],FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}${FURNITURE_IMAGES.includes(id)?`;aspect-ratio:1/${FURNITURE_ASPECT[id]}`:''}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`).join('')}
-    <canvas class="pc" width="9" height="23" data-pc style="${pos(PLAYER_SPOT)}" aria-hidden="true"></canvas></div>`}
+    ${list.map(e=>e.h).join('')}</div>`}
 // 家具の絵の透明度（押したところに絵があるか調べる用）。読み込めていない絵は四角の範囲で判定する
 const furnAlpha={};
 function alphaOf(img){const k=img.currentSrc||img.src;if(furnAlpha[k]!==undefined)return furnAlpha[k];
@@ -217,14 +218,13 @@ function alphaOf(img){const k=img.currentSrc||img.src;if(furnAlpha[k]!==undefine
   try{const w=Math.min(HIT_SAMPLE_W,img.naturalWidth),h=Math.round(img.naturalHeight*w/img.naturalWidth),c=document.createElement('canvas');c.width=w;c.height=h;
     const g=c.getContext('2d');g.drawImage(img,0,0,w,h);furnAlpha[k]={w,h,d:g.getImageData(0,0,w,h).data}}catch(e){furnAlpha[k]=null}
   return furnAlpha[k]}
-function furnAt(x,y){const list=[...document.querySelectorAll('#room .furn')].reverse();
+// 手前から順に調べる。主人公の絵に当たったら、その後ろの家具は片付けない（主人公より手前の家具は片付けられる）
+function furnAt(x,y){const list=[...document.querySelectorAll('#room .furn,#room .pc')].reverse();
   for(const el of list){const r=el.getBoundingClientRect();if(x<r.left||x>r.right||y<r.top||y>r.bottom)continue;
-    const img=el.querySelector('img'),a=img&&alphaOf(img);if(!a)return el.dataset.id;
+    const pc=el.classList.contains('pc'),img=pc?el:el.querySelector('img'),a=img&&alphaOf(img);if(!a){if(pc)continue;return el.dataset.id}
     const px=Math.min(a.w-1,Math.floor((x-r.left)/r.width*a.w)),py=Math.min(a.h-1,Math.floor((y-r.top)/r.height*a.h));
-    if(a.d[(py*a.w+px)*4+3]>HIT_ALPHA)return el.dataset.id}
+    if(a.d[(py*a.w+px)*4+3]>HIT_ALPHA)return pc?null:el.dataset.id}
   return null}
-// 主人公の仮のドット絵（絵ができるまで）
-function drawPlayer(c){const sad=S.hun<25||S.hp<25;c.clearRect(0,0,9,23);R(c,1,16,3,7,'#2b3f78');R(c,5,16,3,7,'#2b3f78');R(c,0,8,9,9,S.home>=3?'#3a3a3a':'#7a8296');R(c,1,1,7,7,'#f0c9a4');R(c,0,0,9,3,'#2a1f3d');R(c,2,4,1,1,'#15101f');R(c,6,4,1,1,'#15101f');R(c,3,6,3,1,sad?'#15101f':'#b5533c')}
 // 家具を置く・片付ける。同じ置き場所の家具（寝具・テレビ）があれば入れ替える
 function putF(id){if(!(S.inv[id]>0))return;const slot=SLOT_OF[id]||id;
   for(const p of S.placed.filter(q=>(SLOT_OF[q.id]||q.id)===slot)){S.inv[p.id]=(S.inv[p.id]||0)+1}
