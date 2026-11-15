@@ -1,4 +1,4 @@
-// 部屋（仕様書 7.2・9.8）。家ごとのアニメ調の背景と、家具ごとに決まった置き場所
+// 部屋（仕様書 7.2・9.8）。家ごとの劇画風の背景と、家具ごとに決まった置き場所
 /** 家ごとの部屋の背景（public/rooms/） */
 export const ROOM_IMAGES = ['room0.webp', 'room1.webp', 'room2.webp', 'room3.webp', 'room4.webp'];
 
@@ -35,7 +35,7 @@ export const PLAYER_ASPECT = 900 / 296;
  */
 export const FURNITURE_ASPECT: Record<string, number> = {
   futon: 435 / 640, bed: 640 / 582, lbed: 451 / 640, tv: 607 / 640, bigtv: 423 / 640, game: 439 / 640,
-  shelf: 640 / 359, plant: 640 / 391, fridge: 640 / 330, sofa: 287 / 640, tank: 640 / 545, mchair: 640 / 591,
+  shelf: 640 / 359, plant: 640 / 361, fridge: 640 / 330, sofa: 287 / 640, tank: 640 / 545, mchair: 640 / 591,
 };
 /** 置き場所の幅（SLOTS の w）と違う幅で置く家具（寝具は同じ置き場所でも絵の形が違うため） */
 export const FURNITURE_W: Record<string, number> = { futon: 27, bed: 24, lbed: 30 };
