@@ -179,7 +179,7 @@ body:has(.cab){
     box-shadow:0 0 0 2px #000,0 0 26px 4px rgba(255,40,80,.45)}
   /* 両脇の LED の柱と、上の縁の LED（帯の色をずらすだけなので軽い） */
   .cab::after{content:"";position:absolute;top:26px;bottom:110px;left:-10px;right:-10px;border-radius:4px;pointer-events:none;
-    background:var(--led) 0 0/6px 100% no-repeat,var(--led) 100% 0/6px 100% no-repeat;filter:drop-shadow(0 0 4px rgba(255,120,200,.9));animation:ledv 2.4s linear infinite}
+    background:var(--led) 0 0/6px 48px repeat-y,var(--led) 100% 0/6px 48px repeat-y;filter:drop-shadow(0 0 4px rgba(255,120,200,.9));animation:ledv 2.4s linear infinite}
   .cab::before{content:"";position:absolute;left:18px;right:18px;top:-5px;height:5px;border-radius:2px;background:linear-gradient(90deg,#ff2878,#3cc8ff,#ffd23c,#ff2878);background-size:200% 100%;box-shadow:0 0 8px rgba(255,120,200,.8);animation:led 3s linear infinite;pointer-events:none}
 
   /* 機種名：金の筆文字 */
@@ -189,7 +189,7 @@ body:has(.cab){
 
   /* データカウンター：金の枠に黒い窓、光る数字 */
   .stats div,.counter div{border:2px solid transparent;border-radius:6px;background:linear-gradient(#050306,#050306) padding-box,var(--goldframe) border-box;box-shadow:inset 0 0 8px rgba(0,0,0,.9)}
-  .stats span,.counter div{color:#f3e6c8}
+  .counter div,.stats div:not(.bb):not(.rb) span{color:#f3e6c8}
   .stats b{font-family:var(--dot);color:#4dff7a;text-shadow:0 0 6px rgba(80,255,120,.8)}
   .stats .bb b{color:#ff4a4a;text-shadow:0 0 6px rgba(255,70,70,.8)}
   .stats .rb b{color:#4ab4ff;text-shadow:0 0 6px rgba(80,170,255,.8)}
@@ -203,7 +203,7 @@ body:has(.cab){
   .lcd{border:3px solid transparent!important;border-radius:8px;background-clip:padding-box;box-shadow:0 0 0 3px #c9ced4,0 0 0 5px #000,0 0 16px rgba(255,200,120,.35)}
 
   /* リール：クロームの枠と金の内枠 */
-  .glass{border-radius:10px;padding:5px;background:var(--chrome);box-shadow:inset 0 0 0 2px #d4a032,0 0 0 2px #000,inset 0 8px 14px rgba(0,0,0,.35),0 0 18px rgba(255,190,90,.35)}
+  .glass{border-radius:10px;padding:4px;background:var(--chrome);box-shadow:inset 0 0 0 2px #d4a032,0 0 0 2px #000,inset 0 8px 14px rgba(0,0,0,.35),0 0 18px rgba(255,190,90,.35)}
   .glass + .sub{color:#f3d7a8!important}
 
   /* レバーとストップボタン：クロームの受け皿 */
