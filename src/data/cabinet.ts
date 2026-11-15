@@ -15,13 +15,13 @@ export const CAB_BOXES: { name: Box; stats: Box; lcd: Box; reels: Box; over: Box
   stats: { x: 14.1, y: 15.3, w: 71.8, h: 3.9 },
   lcd: { x: 12.5, y: 22.8, w: 74.9, h: 19.6 },
   /** リールの3つの窓をまとめた範囲 */
-  reels: { x: 16.2, y: 48.3, w: 67.6, h: 13.6 },
+  reels: { x: 15.9, y: 48.3, w: 68.2, h: 13.6 },
   /** 扉・3択を出す場所（レバーとストップボタンの代わり） */
   over: { x: 4, y: 64, w: 92, h: 32 },
 };
 /** カウンターの窓どうし・リールの窓どうしのすき間（台の幅に対する %） */
 export const STATS_GAP = 4.1;
-export const REELS_GAP = 3.0;
+export const REELS_GAP = 2.6;
 /** ストップボタンの丸の中心（x・y）と直径（d、台の幅に対する %） */
 export const CAB_STOPS: { x: number; y: number; d: number }[] = [
   { x: 37.5, y: 74, d: 11.5 },

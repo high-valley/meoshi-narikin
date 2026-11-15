@@ -28,11 +28,12 @@ function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);
 let cv=null,rc=null,reels=[],RW=90,RH=54,PAD=8,GAP=8,dpr=1;
 function layout(){
   if(!cv||!document.body.contains(cv))return;
+  PAD=8;GAP=8;
   const n=reels.length||1,cw=Math.min(428,(cv.parentElement&&cv.parentElement.clientWidth)||360);
   RW=Math.min(n===1?130:999,(cw-2*PAD-(n-1)*GAP)/n);RH=Math.max(44,Math.round(RW*.6));
   // 台の窓に合わせるとき（data-fit）は、窓の高さに3コマが収まるようにする
   // リールの窓が台の絵で3つに分かれているときは、窓のすき間に合わせて余白なしで並べる
-  const box=cv.parentElement;PAD=8;GAP=8;if(box&&box.dataset.fit!==undefined&&box.clientHeight){const pw=box.clientWidth;PAD=0;GAP=pw*(+box.dataset.gap||0);RW=(pw-(n-1)*GAP)/n;RH=Math.max(16,Math.min(RW*.8,box.clientHeight/3))}
+  const box=cv.parentElement;if(box&&box.dataset.fit!==undefined&&box.clientHeight){const pw=box.clientWidth;PAD=0;GAP=pw*(+box.dataset.gap||0);RW=(pw-(n-1)*GAP)/n;RH=Math.max(16,Math.min(RW*.8,box.clientHeight/3))}
   const W=n*RW+(n-1)*GAP+2*PAD,H=3*RH+2*PAD;dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
 }
@@ -104,12 +105,13 @@ function drawReels(now){
     c.fillStyle=g;c.fillRect(x,y0,RW,3*RH);c.restore();
     if(r.noSlip){c.strokeStyle='#ff3b6b';c.lineWidth=3;rr(c,x-1,y0-1,RW+2,3*RH+2,7);c.stroke()}
   });
-  if(P&&P.mode==='big'){const x=PAD;c.fillStyle='rgba(21,16,31,.55)';for(const n of [1,2])c.fillRect(PAD+n*(RW+GAP),PAD,RW,3*RH);c.strokeStyle='#ffcf4a';c.lineWidth=3;rr(c,x-1,PAD-1,RW+2,3*RH+2,7);c.stroke();
+  if(P&&P.mode==='big'){const x=PAD;c.fillStyle='rgba(21,16,31,.55)';for(const n of [1,2])c.fillRect(PAD+n*(RW+GAP),PAD,RW,3*RH);const m=PAD>0?-1:1.5;c.strokeStyle='#ffcf4a';c.lineWidth=3;rr(c,x+m,PAD+m,RW-2*m,3*RH-2*m,7);c.stroke();
     c.strokeStyle='rgba(255,207,74,.9)';c.lineWidth=2;c.strokeRect(x+2,PAD+1,RW-4,3*RH-2);c.fillStyle='#ffcf4a';c.font='bold 9px sans-serif';c.textAlign='left';c.fillText('7',x+4,PAD+10);c.fillText('R',x+4,PAD+RH+10);c.fillText('7',x+4,PAD+2*RH+10);
     const fl=P.flashT?1-(now-P.flashT)/450:0;if(fl>0){c.fillStyle=`rgba(255,250,220,${fl*.85})`;c.fillRect(x,PAD,RW,3*RH)}}
   const rowY=row=>PAD+(row+.5)*RH,colX=n=>PAD+n*(RW+GAP)+RW/2;
   c.fillStyle='#ff3b6b';c.font='bold 9px sans-serif';c.textAlign='center';c.textBaseline='middle';
-  [[0,'1'],[1,'2'],[2,'3']].forEach(([row,t])=>{c.fillText(t,PAD/2,rowY(row));c.fillText(t,W-PAD/2,rowY(row))});
+  // 行番号はリールの外の余白に描く（台の窓に合わせて余白がないときは描かない）
+  if(PAD>=6)[[0,'1'],[1,'2'],[2,'3']].forEach(([row,t])=>{c.fillText(t,PAD/2,rowY(row));c.fillText(t,W-PAD/2,rowY(row))});
   if(P&&P.wins&&P.wins.length){c.lineWidth=4;c.lineCap='round';
     for(const w of P.wins){const L=LINES[w.n];c.strokeStyle='rgba(255,207,74,.85)';c.beginPath();L.forEach((row,n)=>{const X=colX(n),Y=rowY(row);n?c.lineTo(X,Y):c.moveTo(X-RW/2,Y)});c.lineTo(colX(2)+RW/2,rowY(L[2]));c.stroke()}}
 }
@@ -509,7 +511,7 @@ function leverHTML(){const w=CAB_LEVER.d*LEVER_HIT;return `<button class="lever"
 function leverHit(){const lv=$('#lever');if(!lv||lv.disabled)return;lv.classList.remove('hit');void lv.offsetWidth;lv.classList.add('hit')}
 function bindCabinet(){
   const cvNew=$('#reels');if(cvNew){cv=cvNew;rc=cv.getContext('2d');layout()}
-  const lv=$('#lever');if(lv){lv.addEventListener('pointerdown',e=>{e.preventDefault();leverHit();lever()});lv.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();leverHit();lever()}})}
+  const lv=$('#lever');if(lv){lv.addEventListener('pointerdown',e=>{e.preventDefault();lever()});lv.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();lever()}})}
   const st=$('#stops');if(st){st.addEventListener('pointerdown',e=>{const b=e.target.closest('.stop');if(!b||b.disabled)return;e.preventDefault();stopAt(+b.dataset.i,e)});st.addEventListener('keydown',e=>{const b=e.target.closest('.stop');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();stopAt(+b.dataset.i,e)}})}
 }
 function sync(){
@@ -525,7 +527,7 @@ function lever(){
   if(P.spinning||P.autoRun)return;
   if(P.medals<3){if(!borrow()){toast('お金が足りません');return}}
   if(P.g>=CLOSE_MIN-OPEN_MIN&&P.mode==='normal'){toast('閉店です');return quit(true)}
-  P.medals-=3;
+  leverHit();P.medals-=3;
   if(P.mode==='normal'){P.since++;if(P.since>=CEIL[P.m.kind]&&!P.post){P.pend='BIG';P.ceilHit=true}}
   else if(P.mode==='align')P.since++; // 揃えるゲームも、ボーナスが始まるまでは「現在」に数える（天井はもう関係ない）
   P.g++;if(P.mode==='normal'||P.mode==='align')P.ng=(P.ng||0)+1;P.order=[];P.navi=-1;P.hint=-1;P.res=[];P.wins=null;
@@ -757,7 +759,7 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
 }
 document.addEventListener('keydown',e=>{
   if(!P||e.repeat||drawerOpen())return;
-  if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();leverHit();lever()}
+  if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();lever()}
   const k={KeyJ:0,KeyK:1,KeyL:2}[e.code];if(k!==undefined)stopAt(k,e);
 });
 // 開発者画面（仕様書 9.3）。「今の版」を続けて押すとパスワード欄が出る

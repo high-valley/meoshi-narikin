@@ -259,7 +259,7 @@ body:has(.cab){
 .drawer-tab.auto{background:linear-gradient(180deg,#d9a432,#7a4e10);color:#2a1400;border-color:#fff3b0}
 .drawer-tab.open{transform:translate(calc(-1 * var(--dw)),-50%);background:linear-gradient(180deg,#5c0a0b,#2a0506);color:#fff1e0}
 .drawer-tab.open .arw{transform:rotate(180deg)}
-.drawer-back{position:fixed;inset:0;z-index:31;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity var(--d-ms) var(--d-ease)}
+.drawer-back{position:fixed;inset:0;z-index:31;touch-action:pan-y;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity var(--d-ms) var(--d-ease)}
 .drawer-back.open{opacity:1;pointer-events:auto}
 .drawer{position:fixed;z-index:32;top:0;bottom:0;right:0;width:var(--dw);overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;
   padding:calc(env(safe-area-inset-top,0px) + 14px) calc(env(safe-area-inset-right,0px) + 14px) calc(env(safe-area-inset-bottom,0px) + 18px) 14px;

@@ -240,7 +240,8 @@ export function bindDrawer(drawer: HTMLElement, tab: HTMLElement, back: HTMLElem
     // 速く払ったら向きで決め、ゆっくりなら半分を越えたかで決める
     const open = cancel ? startOpen : Math.abs(vx) > 0.4 ? vx < 0 : off < w / 2;
     d.set(open, false);
-    swiped = true; setTimeout(() => { swiped = false; }, 350);
+    // 指を離したあとに来る click だけを止める（割り込まれたときは click が来ないので止めない）
+    if (!cancel) { swiped = true; setTimeout(() => { swiped = false; }, 350); }
   };
   document.addEventListener('pointerup', e => end(e, false));
   document.addEventListener('pointercancel', e => end(e, true));
