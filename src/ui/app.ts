@@ -12,7 +12,7 @@ import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
 import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
-import { setTabbar, pagesHTML, bindPages, openSheet, bindDrawer } from './widgets';
+import { setTabbar, pagesHTML, bindPages, openSheet, bindDrawer, closeDrawer, drawerOpen } from './widgets';
 import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT } from '../data/cabinet';
 
 // 台の部品の絵（public/cabinet/）の場所を CSS の --c-* に入れる（base のパスを付けるため JS で渡す）
@@ -471,17 +471,20 @@ function cue(){
 function statsHTML(){const b=P.big+(P.reg||0);return `<div class="stats"><div><span>総ゲーム数</span><b>${P.g}</b></div><div class="bb"><span>BIG</span><b>${P.big}</b></div><div class="rb"><span>REG</span><b>${P.reg||0}</b></div><div><span>合成確率</span><b>${b?'1/'+Math.round((P.ng||0)/b):'—'}</b></div></div>`}
 function counterHTML(){const out=P.medals*P.rate,net=out-P.inv;return `<div class="counter"><div>時刻<b>${clock(P.g)}</b></div><div>現在<b>${P.since}G</b></div><div>持ちメダル<b>${P.medals}</b></div><div>収支<b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
 function renderPlay(){
+  // 打っている間の作り直し（オートの終わりなど）では、開いていた引き出しをそのままにする。オート中は台を見せる
+  const keepOpen=drawerOpen()&&!P.autoRun;
   status();tabs(null);const [c,cl]=cue();
   const busyBonus=['big','reg','at','zen','align','door','cont'].includes(P.mode)||!!P.pend;
   // 台は画面いっぱいに出し、液晶・リール・カウンター・ボタンを台の絵の上に重ねる（仕様書 9.9）。ほかは右の引き出しへ
   const pos=b=>`left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%`;
   const stop=(s,i)=>{const w=s.d*STOP_HIT;return `<button class="stop" type="button" data-i="${i}" disabled aria-label="${['左','中','右'][i]}のストップ" style="left:${s.x-w/2}%;top:${s.y-w*CAB_ASPECT/2}%;width:${w}%;aspect-ratio:1">${P.navi>=0&&navOrder()[0]===i&&P.order.length===0?'<span class="nv">1</span>':''}</button>`};
   const art=CAB_ART?`--cab-art:url(${import.meta.env.BASE_URL}cabinet/${CAB_ART});`:'';
-  $('#view').innerHTML=`<div class="stage"><div class="cab${CAB_ART?' art':''}" style="${art}aspect-ratio:${CAB_ASPECT}">
+  $('#view').innerHTML=`<div class="stage" id="stage"><div class="cab${CAB_ART?' art':''}" style="${art}aspect-ratio:${CAB_ASPECT};--ar:${CAB_ASPECT}">
     <div class="cabtop" style="${pos(CAB_BOXES.name)}"><b>${P.m.n}</b></div>
     <div class="cab-stats" style="${pos(CAB_BOXES.stats)}">${statsHTML()}</div>
     <div class="lcd lcd-${P.m.kind}" style="${pos(CAB_BOXES.lcd)};--bn:url(${import.meta.env.BASE_URL}banners/${P.m.kind}.webp)">${lcdMsgHTML()}<div class="lamp ${cl}${c?'':' empty'}" id="lamp"><span>${c||'&nbsp;'}</span></div></div>
     <div class="glass" id="glass" data-fit style="${pos(CAB_BOXES.reels)}"><canvas id="reels" aria-label="リール（5ライン：上段・中段・下段・斜め2本）" role="img"></canvas></div>
+    ${(S.hun<25||S.hp<25)?`<p class="cab-warn" style="left:${CAB_BOXES.reels.x}%;top:${CAB_BOXES.reels.y+CAB_BOXES.reels.h+.3}%;width:${CAB_BOXES.reels.w}%">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>`:''}
     ${P.mode==='door'||P.mode==='cont'?`<div class="cab-over" style="${pos(CAB_BOXES.over)}">${P.mode==='door'?doorHTML():contHTML()}</div>`:`<button class="lever" id="lever" type="button" aria-label="レバー" style="${pos(CAB_BOXES.lever)}"></button><div class="stops" id="stops">${CAB_STOPS.map(stop).join('')}</div>`}
   </div></div>
   <button class="drawer-tab" id="drawerTab" type="button" aria-controls="drawer" aria-expanded="false"><span aria-hidden="true">◀</span><b>メニュー</b></button>
@@ -497,7 +500,7 @@ function renderPlay(){
     <details class="strip"><summary>配当表と遊び方</summary>${payHTML()}</details>
     <details class="strip"><summary>リール配列表（上から下へ流れる）</summary><p class="sub">左リールのチェリーはBARの真下、スイカは左でBARの3コマ上、中でBARの2コマ上、右はBARの2コマ上ともう1か所にあります。赤7は左に2つ、中に1つ、右は「7・リプレイ・BAR」の1か所だけ。左リールの「7・リプレイ・7」の並びがBIG中のビタ押しポイントです。BARが上段に来るタイミング（枠の上から入ってきた瞬間）で押せば、どちらも取りこぼしません。</p><canvas id="stripT" aria-label="リール配列表"></canvas></details>
   </aside>`;
-  status();bindDrawer($('#drawer'),$('#drawerTab'),$('#drawerBack'));
+  status();bindDrawer($('#drawer'),$('#drawerTab'),$('#drawerBack'),$('#stage'),keepOpen);
   bindCabinet();sync();const st=$('#stripT');if(st){drawStripTable(st);st.style.width=(st.width/2)+'px'}
 }
 function bindCabinet(){
@@ -743,13 +746,13 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='sit')sitDown(i);
   else if(a==='floorK'){floorK=id;floorSel=-1;renderFloor()}
   else if(a==='pick'){floorSel=i;renderFloor()}
-  else if(a==='auto'){if(P.autoRun)P.autoStop=true;else autoPlay(i)}
+  else if(a==='auto'){if(P.autoRun)P.autoStop=true;else{closeDrawer();autoPlay(i)}}
   else if(a==='quit')quit(false);
   else if(a==='door')pickDoor(+b.dataset.d);
   else if(a==='cont')pickCont(+b.dataset.d);
 }
 document.addEventListener('keydown',e=>{
-  if(!P||e.repeat)return;
+  if(!P||e.repeat||drawerOpen())return;
   if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();lever()}
   const k={KeyJ:0,KeyK:1,KeyL:2}[e.code];if(k!==undefined)stopAt(k,e);
 });

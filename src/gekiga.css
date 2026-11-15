@@ -176,10 +176,10 @@ body:has(.cab){
   #app{padding:0;max-width:none}
 }
 /* 台を置く舞台：画面の高さと幅に収まる一番大きな大きさで、真ん中に置く */
-.stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+.stage{position:fixed;inset:0;touch-action:pan-y;display:flex;align-items:center;justify-content:center;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
   background:radial-gradient(90% 50% at 50% 0%,#4a0d12 0%,rgba(74,13,18,0) 70%),radial-gradient(70% 40% at 50% 100%,#2a0a20 0%,rgba(42,10,32,0) 70%),#050203}
-.stage .cab{position:relative;height:min(100%,calc(100vw / var(--ar,0.5625)));max-width:100%;width:auto;container-type:size;border:0;border-radius:0;padding:0;
+.stage .cab{position:relative;height:min(100%,calc((100vw - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)) / var(--ar,0.5625)));max-width:100%;width:auto;container-type:size;border:0;border-radius:0;padding:0;
   box-shadow:0 0 30px rgba(255,40,80,.35)}
 .stage .cab>*{position:absolute;margin:0}
 /* 台全体の絵がまだないとき：赤い漆に青海波の地、クロームの縁、両脇の LED の柱 */
@@ -229,6 +229,10 @@ body:has(.cab){
 .stage .stop:active:not(:disabled){transform:translateY(.8cqw)}
 .stage .stop .nv{top:4%;font-size:3.4cqw}
 .stage .cab:not(.art) .stops::before{content:none}
+/* 体調・空腹の知らせ（引き込みに効くので台の上にも出す） */
+.stage .cab-warn{z-index:4;margin:0;padding:.4cqw 1cqw;font-size:max(10px,2.8cqw);line-height:1.3;text-align:center;color:#fff1e0;background:rgba(120,0,10,.85);border-radius:1cqw}
+/* 縦画面向けなので、横向きで台が小さくなるときは縦にするよう知らせる */
+@media (orientation:landscape) and (max-height:520px){.stage::after{content:"スマホを縦にして遊んでください";position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:5;padding:4px 12px;border-radius:999px;font-size:12px;color:#f3e6c8;background:rgba(0,0,0,.75)}}
 /* 扉・3択 */
 .stage .cab-over{z-index:4;display:flex;flex-direction:column;justify-content:center;gap:1.5cqw;padding:2cqw;border-radius:2cqw;background:rgba(10,3,4,.82);box-shadow:0 0 0 .6cqw #b8862a}
 .stage .cab-over .lead{font-size:4.4cqw!important;margin:0;color:#f3e6c8}
@@ -245,7 +249,7 @@ body:has(.cab){
 .drawer{position:fixed;z-index:32;top:0;bottom:0;right:0;width:min(88vw,380px);overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;
   padding:calc(env(safe-area-inset-top,0px) + 14px) calc(env(safe-area-inset-right,0px) + 14px) calc(env(safe-area-inset-bottom,0px) + 18px) 14px;
   background:linear-gradient(180deg,#1d0a0c,#0b0405);border-left:2px solid #b8862a;box-shadow:-8px 0 30px rgba(0,0,0,.7);
-  transform:translateX(105%);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  touch-action:pan-y;transform:translateX(105%);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
 .drawer.open{transform:none}
 @media (prefers-reduced-motion:reduce){.drawer,.drawer-back{transition:none}}
 .drawer .status{background:linear-gradient(180deg,#2a0d10,#120506)!important;border:2px solid #b8862a!important;box-shadow:none;color:#f3e6c8}

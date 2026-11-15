@@ -24,4 +24,4 @@ export const CAB_STOPS: { x: number; y: number; d: number }[] = [
   { x: 69, y: 76, d: 14 },
 ];
 /** ストップボタンの押せる範囲（丸の直径に対する倍率）。押しやすさのため丸より広くとる */
-export const STOP_HIT = 1.45;
+export const STOP_HIT = 1.25; // 隣のボタンと重ならないよう、丸の間隔÷直径（18÷14）より小さく
