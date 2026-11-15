@@ -174,18 +174,19 @@ body:has(.cab){
   /* 上の所持金・ゲージも黒い漆に金の縁 */
   .status{background:linear-gradient(180deg,#1d0a0c,#0e0506)!important;border:2px solid transparent!important;background-clip:padding-box!important;box-shadow:0 0 0 2px #b8862a,0 4px 10px rgba(0,0,0,.5)}
 
+  /* 台の部品はユーザーが作った絵（public/cabinet/）。URL は app.ts の setCabinetArt() が --c-* に入れる */
   .cab{position:relative;border:5px solid transparent;border-radius:22px;padding:14px 14px 16px;
-    background:var(--wave) 0 0/32px 16px,radial-gradient(120% 60% at 50% 0%,#c3191f,#7a0a10 60%,#3a0407) padding-box,var(--chrome) border-box;
+    background:linear-gradient(rgba(40,0,4,.45),rgba(20,0,2,.6)) padding-box,var(--c-wave,none) 0 0/96px 96px padding-box,radial-gradient(120% 60% at 50% 0%,#c3191f,#7a0a10 60%,#3a0407) padding-box,var(--chrome) border-box;
     box-shadow:0 0 0 2px #000,0 0 26px 4px rgba(255,40,80,.45)}
-  /* 両脇の LED の柱と、上の縁の LED（帯の色をずらすだけなので軽い） */
-  .cab::after{content:"";position:absolute;top:26px;bottom:110px;left:-10px;right:-10px;border-radius:4px;pointer-events:none;
-    background:var(--led) 0 0/6px 48px repeat-y,var(--led) 100% 0/6px 48px repeat-y;filter:drop-shadow(0 0 4px rgba(255,120,200,.9));animation:ledv 2.4s linear infinite}
+  /* 両脇の LED の柱（絵を縦につなげて流す） */
+  .cab::after{content:"";position:absolute;top:24px;bottom:24px;left:-15px;right:-15px;pointer-events:none;
+    background:var(--c-led,var(--led)) 0 0/14px auto repeat-y,var(--c-led,var(--led)) 100% 0/14px auto repeat-y;filter:drop-shadow(0 0 4px rgba(255,120,200,.8));animation:ledv 3s linear infinite}
   .cab::before{content:"";position:absolute;left:18px;right:18px;top:-5px;height:5px;border-radius:2px;background:linear-gradient(90deg,#ff2878,#3cc8ff,#ffd23c,#ff2878);background-size:200% 100%;box-shadow:0 0 8px rgba(255,120,200,.8);animation:led 3s linear infinite;pointer-events:none}
 
   /* 機種名：金の筆文字 */
-  .cabtop{justify-content:center;flex-direction:column;gap:0;text-align:center}
-  .cabtop b{font-family:var(--brush);font-size:30px;letter-spacing:.08em;background:linear-gradient(180deg,#fff6c0,#f2c45a 45%,#a8731a 75%,#ffe9a0);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #3a0407) drop-shadow(0 0 6px rgba(255,200,80,.5))}
-  .cabtop .sub{color:#f3d7a8;font-size:11px}
+  .cabtop{justify-content:center;flex-direction:column;gap:0;text-align:center;aspect-ratio:900/284;margin:-6px -8px 0;padding:0 18%;background:var(--c-crest,none) center/100% 100% no-repeat}
+  .cabtop b{font-family:var(--brush);font-size:28px;line-height:1.1;letter-spacing:.08em;background:linear-gradient(180deg,#fff6c0,#f2c45a 45%,#a8731a 75%,#ffe9a0);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 2px 0 #000) drop-shadow(0 0 8px rgba(255,200,80,.6))}
+  .cabtop .sub{color:#f3d7a8;font-size:10px;text-shadow:0 1px 2px #000}
 
   /* データカウンター：金の枠に黒い窓、光る数字 */
   .stats div,.counter div{border:2px solid transparent;border-radius:6px;background:linear-gradient(#050306,#050306) padding-box,var(--goldframe) border-box;box-shadow:inset 0 0 8px rgba(0,0,0,.9)}
@@ -206,25 +207,35 @@ body:has(.cab){
   .glass{border-radius:10px;padding:4px;background:var(--chrome);box-shadow:inset 0 0 0 2px #d4a032,0 0 0 2px #000,inset 0 8px 14px rgba(0,0,0,.35),0 0 18px rgba(255,190,90,.35)}
   .glass + .sub{color:#f3d7a8!important}
 
-  /* レバーとストップボタン：クロームの受け皿 */
-  .ctrl{padding:10px;border-radius:14px;background:linear-gradient(180deg,#eef1f4,#8b939c 35%,#3a4048 60%,#9aa3ad 85%,#5e6670);box-shadow:inset 0 2px 0 #fff,inset 0 -3px 6px rgba(0,0,0,.5),0 0 0 2px #000}
-  .lever{color:#fff;text-shadow:0 1px 2px #000;border:4px solid transparent;background:radial-gradient(circle at 38% 28%,#fff,#ff7a8e 22%,#e0102e 55%,#7a0616) padding-box,var(--chrome) border-box;box-shadow:0 5px 0 #000,0 0 12px rgba(255,60,80,.6)}
-  .stop{color:#fff1e0;text-shadow:0 1px 2px #000;border:4px solid transparent;border-radius:999px;background:radial-gradient(circle at 50% 30%,#fff 0%,#ff9a8a 16%,#ff2e2e 42%,#a0081a 78%,#5a0610) padding-box,var(--chrome) border-box;box-shadow:0 5px 0 #000,0 0 16px rgba(255,60,60,.6)}
-  .stop:disabled,.lever:disabled{filter:grayscale(.6) brightness(.55)}
+  /* レバーとストップボタン：レバーの絵と、受け皿の絵の3つの穴に置くボタンの絵 */
+  .ctrl{grid-template-columns:15% 1fr;gap:4px;align-items:center}
+  .lever{width:100%;aspect-ratio:300/685;border:0;border-radius:0;background:var(--c-lever,none) center/contain no-repeat;box-shadow:none;color:transparent;text-shadow:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.6))}
+  .stops{position:relative;display:block;aspect-ratio:900/254;background:var(--c-tray,none) center/100% 100% no-repeat}
+  /* 穴の中心は左から 26.0%・49.8%・73.6%、高さ 47%、直径は幅の 14.5%。押せる範囲は穴より広くとる */
+  .stop{position:absolute;top:0;bottom:0;width:22%;min-height:0;margin-left:-11%;border:0;border-radius:0;color:transparent;text-shadow:none;box-shadow:none;
+    background:var(--c-stop-on,none) center 47%/66% auto no-repeat}
+  .stop:nth-child(1){left:26%}.stop:nth-child(2){left:49.8%}.stop:nth-child(3){left:73.6%}
+  .stop:disabled{background-image:var(--c-stop-off,none);filter:none}
+  .stops.warm .stop:not(:disabled){background-image:var(--c-stop-off,none);filter:none}
+  .stop .nv{top:4%;color:#fff}
+  .lever:disabled{filter:grayscale(.6) brightness(.55) drop-shadow(0 4px 3px rgba(0,0,0,.6))}
+  .lever:active:not(:disabled),.stop:active:not(:disabled){transform:translateY(2px);box-shadow:none}
 
-  /* オートとやめる：金の札と赤い札 */
-  .grid3 .cmd{border:2.5px solid transparent!important;border-radius:8px;background:linear-gradient(180deg,#f8dd8a,#d9a432 50%,#a8731a) padding-box,linear-gradient(#3a2200,#3a2200) border-box!important;box-shadow:0 4px 0 #000,inset 0 2px 0 rgba(255,255,255,.6)}
-  .grid3 .cmd b{font-family:var(--brush);font-size:17px;color:#3a1a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}
-  .grid3 .cmd span{color:#5a3606}
-  .grid3 .cmd[data-a=quit]{background:linear-gradient(180deg,#e2423a,#a3191b 55%,#5c0a0b) padding-box,linear-gradient(#2a0002,#2a0002) border-box!important}
+  /* オートとやめる：金の札と赤い札の絵 */
+  .grid3 .cmd{border:0!important;border-radius:0;padding:8px 13%;aspect-ratio:400/177;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:0;background:var(--c-plate-gold,none) center/100% 100% no-repeat!important;box-shadow:none;filter:drop-shadow(0 4px 2px rgba(0,0,0,.6))}
+  .grid3 .cmd b{font-family:var(--brush);font-size:16px;line-height:1.15;color:#3a1a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  /* 札の中は狭いので説明は画面には出さず、読み上げだけに残す */
+  .grid3 .cmd span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .grid3 .cmd b{font-size:19px}
+  .grid3 .cmd[data-a=quit]{background:var(--c-plate-red,none) center/100% 100% no-repeat!important}
   .grid3 .cmd[data-a=quit] b{color:#fff1e0;text-shadow:0 2px 0 #000}
   .grid3 .cmd[data-a=quit] span{color:#ffd9cf}
-  .grid3 .cmd.on{box-shadow:0 4px 0 #000,0 0 0 3px #fff3b0,0 0 14px rgba(255,220,120,.9)}
+  .grid3 .cmd.on{filter:drop-shadow(0 0 6px #fff3b0) drop-shadow(0 0 10px rgba(255,220,120,.9))}
   .grid3 .cmd:disabled{filter:grayscale(.5) brightness(.6)}
   /* 配当表などの開く欄：黒い漆に金の縁 */
   .strip{background:linear-gradient(180deg,#1d0a0c,#0e0506)!important;border:2px solid transparent!important;background-clip:padding-box!important;box-shadow:0 0 0 2px #b8862a}
   .strip summary{color:#f3d7a8}
 }
 @keyframes led{to{background-position:-200% 0}}
-@keyframes ledv{to{background-position:0 48px,100% 48px}}
+@keyframes ledv{to{background-position:0 128px,100% 128px}}
 @media (prefers-reduced-motion:reduce){body:has(.cab) .cab::before,body:has(.cab) .cab::after{animation:none}}

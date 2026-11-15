@@ -14,7 +14,11 @@ import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, 
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
+// 台の部品の絵（public/cabinet/）の場所を CSS の --c-* に入れる（base のパスを付けるため JS で渡す）
+const CABINET_ART=['wave','led','crest','lever','tray','stop-on','stop-off','plate-gold','plate-red'];
+function setCabinetArt(){for(const n of CABINET_ART)document.documentElement.style.setProperty('--c-'+n,`url(${import.meta.env.BASE_URL}cabinet/${n}.webp)`)}
 export function startApp(){
+setCabinetArt();
 
 
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
