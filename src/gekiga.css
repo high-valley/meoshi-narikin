@@ -159,24 +159,72 @@ body:not(:has(.cab)){
 .logo img{display:block;height:auto;max-height:46px;width:auto;max-width:100%;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.6))}
 
 /* ==========================================================================
-   台（打つ画面）：実機のスロット台。クロームの枠と、縁を流れる LED の光
+   台（打つ画面）：実機のスロット台。赤い漆に金の波模様の筐体、クロームの枠、両脇と上の縁を流れる LED、
+   金の枠のデータカウンター、クロームの受け皿に並ぶ赤いストップボタン。ユーザーが作った参考画像に合わせた
    ========================================================================== */
+:root{
+  /* 金の青海波（波の模様） */
+  --wave:radial-gradient(circle at 50% 100%,rgba(0,0,0,0) 0 7px,rgba(232,180,80,.32) 7px 8px,rgba(0,0,0,0) 8px 11px,rgba(232,180,80,.32) 11px 12px,rgba(0,0,0,0) 12px 15px,rgba(232,180,80,.32) 15px 16px,rgba(0,0,0,0) 16px);
+  --chrome:linear-gradient(160deg,#f7f9fb,#9aa3ad 22%,#eef1f4 45%,#5e6670 70%,#dfe3e8 88%,#8b939c);
+  --goldframe:linear-gradient(160deg,#fff3b0,#d4a032 30%,#7a4e10 55%,#f5d27a 80%,#a8731a);
+  --led:repeating-linear-gradient(180deg,#ff2b6a 0 12px,#ffd23c 12px 24px,#3cc8ff 24px 36px,#b44bff 36px 48px);
+}
 body:has(.cab){
-  background:radial-gradient(90% 40% at 50% 0%,#2a1c4a 0%,rgba(42,28,74,0) 70%),radial-gradient(70% 40% at 50% 100%,#3a0c22 0%,rgba(58,12,34,0) 70%),#07060d;
-  .cab{position:relative;border:4px solid transparent;border-radius:20px;background:linear-gradient(180deg,#2a0d22 0%,#14081e 45%,#0d0a1c 100%) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 22%,#eef1f4 45%,#5e6670 70%,#dfe3e8 88%,#8b939c) border-box;box-shadow:0 0 0 2px #000,0 0 22px 4px rgba(255,40,120,.45)}
-  /* 台の上の縁を流れる LED（帯の色をずらすだけなので軽い） */
-  .cab::before{content:"";position:absolute;left:18px;right:18px;top:-4px;height:4px;border-radius:2px;background:linear-gradient(90deg,#ff2878,#3cc8ff,#ffd23c,#ff2878);background-size:200% 100%;box-shadow:0 0 8px rgba(255,120,200,.8);animation:led 3s linear infinite;pointer-events:none}
-  .cabtop b{font-size:24px;letter-spacing:.06em}
-  .glass{background:linear-gradient(180deg,#d9dde2,#7d858e);box-shadow:inset 0 0 0 2px #fff,0 0 0 2px #000,inset 0 6px 14px rgba(0,0,0,.35)}
-  .stats div{background:#030308;border:1.5px solid #5e6670;box-shadow:inset 0 0 8px rgba(255,60,60,.12)}
-  .stats b{font-family:var(--dot);color:#ff5b4a;text-shadow:0 0 6px rgba(255,80,60,.8)}
-  .stats .rb b{color:#5fb3ff;text-shadow:0 0 6px rgba(80,170,255,.8)}
-  .counter{background:#030308!important;border:1.5px solid #5e6670!important}
-  .counter b{color:#ffcf4a;text-shadow:0 0 6px rgba(255,200,60,.6)}
+  background:radial-gradient(90% 40% at 50% 0%,#4a0d12 0%,rgba(74,13,18,0) 70%),radial-gradient(70% 40% at 50% 100%,#2a0a20 0%,rgba(42,10,32,0) 70%),#0b0507;
+  /* 上の所持金・ゲージも黒い漆に金の縁 */
+  .status{background:linear-gradient(180deg,#1d0a0c,#0e0506)!important;border:2px solid transparent!important;background-clip:padding-box!important;box-shadow:0 0 0 2px #b8862a,0 4px 10px rgba(0,0,0,.5)}
+
+  .cab{position:relative;border:5px solid transparent;border-radius:22px;padding:14px 14px 16px;
+    background:var(--wave) 0 0/32px 16px,radial-gradient(120% 60% at 50% 0%,#c3191f,#7a0a10 60%,#3a0407) padding-box,var(--chrome) border-box;
+    box-shadow:0 0 0 2px #000,0 0 26px 4px rgba(255,40,80,.45)}
+  /* 両脇の LED の柱と、上の縁の LED（帯の色をずらすだけなので軽い） */
+  .cab::after{content:"";position:absolute;top:26px;bottom:110px;left:-10px;right:-10px;border-radius:4px;pointer-events:none;
+    background:var(--led) 0 0/6px 48px repeat-y,var(--led) 100% 0/6px 48px repeat-y;filter:drop-shadow(0 0 4px rgba(255,120,200,.9));animation:ledv 2.4s linear infinite}
+  .cab::before{content:"";position:absolute;left:18px;right:18px;top:-5px;height:5px;border-radius:2px;background:linear-gradient(90deg,#ff2878,#3cc8ff,#ffd23c,#ff2878);background-size:200% 100%;box-shadow:0 0 8px rgba(255,120,200,.8);animation:led 3s linear infinite;pointer-events:none}
+
+  /* 機種名：金の筆文字 */
+  .cabtop{justify-content:center;flex-direction:column;gap:0;text-align:center}
+  .cabtop b{font-family:var(--brush);font-size:30px;letter-spacing:.08em;background:linear-gradient(180deg,#fff6c0,#f2c45a 45%,#a8731a 75%,#ffe9a0);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #3a0407) drop-shadow(0 0 6px rgba(255,200,80,.5))}
+  .cabtop .sub{color:#f3d7a8;font-size:11px}
+
+  /* データカウンター：金の枠に黒い窓、光る数字 */
+  .stats div,.counter div{border:2px solid transparent;border-radius:6px;background:linear-gradient(#050306,#050306) padding-box,var(--goldframe) border-box;box-shadow:inset 0 0 8px rgba(0,0,0,.9)}
+  .counter div,.stats div:not(.bb):not(.rb) span{color:#f3e6c8}
+  .stats b{font-family:var(--dot);color:#4dff7a;text-shadow:0 0 6px rgba(80,255,120,.8)}
+  .stats .bb b{color:#ff4a4a;text-shadow:0 0 6px rgba(255,70,70,.8)}
+  .stats .rb b{color:#4ab4ff;text-shadow:0 0 6px rgba(80,170,255,.8)}
+  .stats div:last-child b{color:#ffd23c;text-shadow:0 0 6px rgba(255,210,60,.8)}
+  .counter{background:none!important;border:0!important;padding:0;gap:4px}
+  .counter div{padding:2px 0}
+  .counter b{color:#ffd23c;text-shadow:0 0 6px rgba(255,200,60,.6)}
   .counter b.pos{color:#5dff8a;text-shadow:0 0 6px rgba(80,255,130,.6)}.counter b.neg{color:#ff5b4a;text-shadow:0 0 6px rgba(255,80,60,.7)}
-  .lever{color:#fff;text-shadow:0 1px 2px #000;background:radial-gradient(circle at 38% 28%,#fff,#ff7a8e 25%,#e0102e 60%,#7a0616) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 40%,#5e6670 75%,#dfe3e8) border-box}
-  .stop{background:radial-gradient(circle at 50% 30%,#fff 0%,#ff9a8a 18%,#ff2e2e 45%,#a0081a 80%) padding-box,linear-gradient(160deg,#f7f9fb,#9aa3ad 40%,#5e6670 75%,#dfe3e8) border-box;box-shadow:0 5px 0 #000,0 0 16px rgba(255,60,60,.6)}
-  .stop:disabled{filter:grayscale(.7) brightness(.5)}
+
+  /* 液晶：クロームの額縁 */
+  .lcd{border:3px solid transparent!important;border-radius:8px;background-clip:padding-box;box-shadow:0 0 0 3px #c9ced4,0 0 0 5px #000,0 0 16px rgba(255,200,120,.35)}
+
+  /* リール：クロームの枠と金の内枠 */
+  .glass{border-radius:10px;padding:4px;background:var(--chrome);box-shadow:inset 0 0 0 2px #d4a032,0 0 0 2px #000,inset 0 8px 14px rgba(0,0,0,.35),0 0 18px rgba(255,190,90,.35)}
+  .glass + .sub{color:#f3d7a8!important}
+
+  /* レバーとストップボタン：クロームの受け皿 */
+  .ctrl{padding:10px;border-radius:14px;background:linear-gradient(180deg,#eef1f4,#8b939c 35%,#3a4048 60%,#9aa3ad 85%,#5e6670);box-shadow:inset 0 2px 0 #fff,inset 0 -3px 6px rgba(0,0,0,.5),0 0 0 2px #000}
+  .lever{color:#fff;text-shadow:0 1px 2px #000;border:4px solid transparent;background:radial-gradient(circle at 38% 28%,#fff,#ff7a8e 22%,#e0102e 55%,#7a0616) padding-box,var(--chrome) border-box;box-shadow:0 5px 0 #000,0 0 12px rgba(255,60,80,.6)}
+  .stop{color:#fff1e0;text-shadow:0 1px 2px #000;border:4px solid transparent;border-radius:999px;background:radial-gradient(circle at 50% 30%,#fff 0%,#ff9a8a 16%,#ff2e2e 42%,#a0081a 78%,#5a0610) padding-box,var(--chrome) border-box;box-shadow:0 5px 0 #000,0 0 16px rgba(255,60,60,.6)}
+  .stop:disabled,.lever:disabled{filter:grayscale(.6) brightness(.55)}
+
+  /* オートとやめる：金の札と赤い札 */
+  .grid3 .cmd{border:2.5px solid transparent!important;border-radius:8px;background:linear-gradient(180deg,#f8dd8a,#d9a432 50%,#a8731a) padding-box,linear-gradient(#3a2200,#3a2200) border-box!important;box-shadow:0 4px 0 #000,inset 0 2px 0 rgba(255,255,255,.6)}
+  .grid3 .cmd b{font-family:var(--brush);font-size:17px;color:#3a1a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  .grid3 .cmd span{color:#5a3606}
+  .grid3 .cmd[data-a=quit]{background:linear-gradient(180deg,#e2423a,#a3191b 55%,#5c0a0b) padding-box,linear-gradient(#2a0002,#2a0002) border-box!important}
+  .grid3 .cmd[data-a=quit] b{color:#fff1e0;text-shadow:0 2px 0 #000}
+  .grid3 .cmd[data-a=quit] span{color:#ffd9cf}
+  .grid3 .cmd.on{box-shadow:0 4px 0 #000,0 0 0 3px #fff3b0,0 0 14px rgba(255,220,120,.9)}
+  .grid3 .cmd:disabled{filter:grayscale(.5) brightness(.6)}
+  /* 配当表などの開く欄：黒い漆に金の縁 */
+  .strip{background:linear-gradient(180deg,#1d0a0c,#0e0506)!important;border:2px solid transparent!important;background-clip:padding-box!important;box-shadow:0 0 0 2px #b8862a}
+  .strip summary{color:#f3d7a8}
 }
 @keyframes led{to{background-position:-200% 0}}
-@media (prefers-reduced-motion:reduce){body:has(.cab) .cab::before{animation:none}}
+@keyframes ledv{to{background-position:0 48px,100% 48px}}
+@media (prefers-reduced-motion:reduce){body:has(.cab) .cab::before,body:has(.cab) .cab::after{animation:none}}
