@@ -20,7 +20,7 @@ export const SLOTS: Record<string, { x: number; y: number; w: number }> = {
   plant: { x: 93, y: 74, w: 9 },
   game: { x: 27, y: 87, w: 12 },
   sofa: { x: 50, y: 98, w: 30 },
-  bed: { x: 84, y: 99, w: 26 },
+  bed: { x: 84, y: 99, w: 26 }, // 幅は寝具ごとの FURNITURE_W を使う（ないときの既定値）
   mchair: { x: 11, y: 99, w: 17 },
 };
 /** 主人公の立つ場所（同じく %） */
