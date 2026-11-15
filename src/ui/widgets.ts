@@ -152,3 +152,48 @@ export function openSheet(o: { title: string; body: string; yes: string; no?: st
   document.body.append(back);
   back.querySelector<HTMLElement>(o.no ? '[data-s="no"]' : '[data-s="yes"]')?.focus();
 }
+
+/**
+ * 横から引き出すメニュー（打っている画面の所持金・オート・やめるなど）。
+ * つまみを押すか、右端から左へ指を動かすと開き、背景を押す・右へ指を動かす・Esc で閉じる。
+ * 画面を作り直すたびに呼ぶ。指と Esc の受け付けは一度だけ登録し、今ある引き出しに効かせる
+ */
+let drw: { drawer: HTMLElement; tab: HTMLElement; set: (open: boolean) => void } | null = null;
+let drawerReady = false;
+export function bindDrawer(drawer: HTMLElement, tab: HTMLElement, back: HTMLElement): void {
+  const set = (open: boolean, focus = true) => {
+    drawer.classList.toggle('open', open); back.classList.toggle('open', open);
+    tab.setAttribute('aria-expanded', String(open));
+    drawer.inert = !open;
+    if (open && focus) drawer.querySelector<HTMLElement>('button,summary')?.focus({ preventScroll: true });
+  };
+  // 画面を作り直す前に開いていたら、開いたままにする（オートを押したあとなど）
+  const keep = !!drw && !document.contains(drw.drawer) && drw.drawer.classList.contains('open');
+  drw = { drawer, tab, set };
+  set(keep, false);
+  tab.addEventListener('click', () => set(!drawer.classList.contains('open')));
+  back.addEventListener('click', () => set(false));
+  if (drawerReady) return;
+  drawerReady = true;
+  const live = () => (drw && document.contains(drw.drawer) ? drw : null);
+  document.addEventListener('keydown', e => {
+    const d = live();
+    if (d && e.key === 'Escape' && d.drawer.classList.contains('open')) { d.set(false); d.tab.focus(); }
+  });
+  // 指の動き：右端（24px 以内）から左へで開く、開いた引き出しの上で右へで閉じる
+  let x0 = 0, y0 = 0, id = -1, from: 'edge' | 'drawer' | null = null;
+  document.addEventListener('pointerdown', e => {
+    const d = live();
+    if (!d || !e.isPrimary) return;
+    const open = d.drawer.classList.contains('open');
+    from = !open && e.clientX > window.innerWidth - 24 ? 'edge' : open && d.drawer.contains(e.target as Node) ? 'drawer' : null;
+    if (from) { x0 = e.clientX; y0 = e.clientY; id = e.pointerId; }
+  });
+  document.addEventListener('pointerup', e => {
+    const d = live();
+    if (e.pointerId !== id || !from || !d) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (from === 'edge' && dx < 0) d.set(true); else if (from === 'drawer' && dx > 0) d.set(false); }
+    id = -1; from = null;
+  });
+}
