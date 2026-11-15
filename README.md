@@ -31,3 +31,7 @@ npm run build    # 型チェック ＋ dist/ へビルド
 ## 公開（GitHub Pages）
 
 `main` への push で `.github/workflows/deploy-pages.yml` がテスト・ビルドして Pages に公開する。PR ではテストとビルドだけ流す。Settings → Pages → Source は **GitHub Actions**。
+
+## 台全体の絵の取り込み
+
+`python3 scripts/cut-cabinet.py 元の絵.png public/cabinet/cabinet.webp` で、緑一色（#00FF00）の窓を透明に切り抜き、窓の位置（台に対する %）を出す。出た値を `src/data/cabinet.ts` に写し、`CAB_ART` にファイル名を入れる。

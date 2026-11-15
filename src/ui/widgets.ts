@@ -152,3 +152,61 @@ export function openSheet(o: { title: string; body: string; yes: string; no?: st
   document.body.append(back);
   back.querySelector<HTMLElement>(o.no ? '[data-s="no"]' : '[data-s="yes"]')?.focus();
 }
+
+/**
+ * 横から引き出すメニュー（打っている画面の所持金・オート・やめるなど）。
+ * つまみを押すか、右端から左へ指を動かすと開き、背景を押す・右へ指を動かす・Esc で閉じる。
+ * 画面を作り直すたびに呼ぶ。指と Esc の受け付けは一度だけ登録し、今ある引き出しに効かせる
+ */
+let drw: { drawer: HTMLElement; tab: HTMLElement; set: (open: boolean, focus?: boolean) => void } | null = null;
+let drawerReady = false;
+/** 引き出しが開いているか（打っている画面のキー操作を止めるため） */
+export function drawerOpen(): boolean { return !!drw && document.contains(drw.drawer) && drw.drawer.classList.contains('open'); }
+/** 引き出しを閉じる（オートを始めたときなど、台を見せたいとき） */
+export function closeDrawer(): void { if (drawerOpen()) drw!.set(false, false); }
+/** keepOpen：打っている間に画面を作り直すとき、開いていた引き出しを開いたままにする */
+export function bindDrawer(drawer: HTMLElement, tab: HTMLElement, back: HTMLElement, stage: HTMLElement | null, keepOpen = false): void {
+  const set = (open: boolean, focus = true) => {
+    drawer.classList.toggle('open', open); back.classList.toggle('open', open);
+    tab.setAttribute('aria-expanded', String(open));
+    drawer.inert = !open;
+    // 開いている間は後ろの台に触れない（キーボードでも届かない）
+    if (stage) stage.inert = open;
+    if (open && focus) drawer.querySelector<HTMLElement>('button,summary')?.focus({ preventScroll: true });
+    if (!open && focus && drawer.contains(document.activeElement)) tab.focus({ preventScroll: true });
+  };
+  drw = { drawer, tab, set };
+  set(keepOpen, false);
+  tab.addEventListener('click', () => set(!drawer.classList.contains('open')));
+  back.addEventListener('click', () => set(false));
+  if (drawerReady) return;
+  drawerReady = true;
+  const live = () => (drw && document.contains(drw.drawer) ? drw : null);
+  document.addEventListener('keydown', e => {
+    const d = live();
+    if (d && e.key === 'Escape' && d.drawer.classList.contains('open')) d.set(false);
+  });
+  // 指の動き：右端（24px 以内）から左へで開く、開いた引き出しの上で右へで閉じる。
+  // 横に動かした直後の click は止める（ボタンの上で指を離しても押されないように）
+  let x0 = 0, y0 = 0, id = -1, from: 'edge' | 'drawer' | null = null, swiped = false;
+  document.addEventListener('pointerdown', e => {
+    const d = live();
+    if (!d || !e.isPrimary) return;
+    const open = d.drawer.classList.contains('open');
+    from = !open && e.clientX > window.innerWidth - 24 ? 'edge' : open && d.drawer.contains(e.target as Node) ? 'drawer' : null;
+    if (from) { x0 = e.clientX; y0 = e.clientY; id = e.pointerId; }
+  });
+  const end = (e: PointerEvent) => {
+    const d = live();
+    if (e.pointerId !== id || !from || !d) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      swiped = true; setTimeout(() => { swiped = false; }, 350);
+      if (from === 'edge' && dx < 0) d.set(true); else if (from === 'drawer' && dx > 0) d.set(false);
+    }
+    id = -1; from = null;
+  };
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', end);
+  document.addEventListener('click', e => { if (swiped) { e.stopPropagation(); e.preventDefault(); swiped = false; } }, true);
+}

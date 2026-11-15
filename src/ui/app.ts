@@ -12,7 +12,8 @@ import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
 import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
-import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
+import { setTabbar, pagesHTML, bindPages, openSheet, bindDrawer, closeDrawer, drawerOpen } from './widgets';
+import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT } from '../data/cabinet';
 
 // 台の部品の絵（public/cabinet/）の場所を CSS の --c-* に入れる（base のパスを付けるため JS で渡す）
 const CABINET_ART=['wave','led','crest','lever','tray','stop-on','stop-off','plate-gold','plate-red'];
@@ -29,6 +30,8 @@ function layout(){
   if(!cv||!document.body.contains(cv))return;
   const n=reels.length||1,cw=Math.min(428,(cv.parentElement&&cv.parentElement.clientWidth)||360);
   RW=Math.min(n===1?130:999,(cw-2*PAD-(n-1)*GAP)/n);RH=Math.max(44,Math.round(RW*.6));
+  // 台の窓に合わせるとき（data-fit）は、窓の高さに3コマが収まるようにする
+  const box=cv.parentElement;if(box&&box.dataset.fit!==undefined&&box.clientHeight){const pw=box.clientWidth;RW=(pw-2*PAD-(n-1)*GAP)/n;RH=Math.max(24,Math.min(RW*.8,(box.clientHeight-2*PAD)/3))}
   const W=n*RW+(n-1)*GAP+2*PAD,H=3*RH+2*PAD;dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
 }
@@ -147,10 +150,12 @@ $('#snd').onclick=()=>{soundOn=!soundOn;if(soundOn&&!ac){try{ac=new (window.Audi
 const MICON={hun:'<path d="M8 3v7a2 2 0 0 1-1.5 1.9V21h-2v-9.1A2 2 0 0 1 3 10V3h1.2v5h1V3h1.2v5h1V3zM16 3c2 0 3 2.5 3 6s-1 4-2 4.3V21h-2V3z"/>',fun:'<path d="M7 7h10a5 5 0 0 1 4.8 6.4l-1 3.3a2.6 2.6 0 0 1-4.4 1L14.8 16H9.2l-1.6 1.7a2.6 2.6 0 0 1-4.4-1l-1-3.3A5 5 0 0 1 7 7zm0 3v1.5H5.5v1.5H7v1.5h1.5V13H10v-1.5H8.5V10zm8.5.3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm2 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>',hp:'<path d="M12 20.5 4.2 12.9A4.8 4.8 0 0 1 12 6.6a4.8 4.8 0 0 1 7.8 6.3z"/>'};
 function meterHTML(k,n,col){const v=S[k];return `<div class="mt ${v<25?'low':''}"><i class="mi" style="--c:${col}"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">${MICON[k]}</svg></i><div class="mtb"><div class="r"><span>${n}</span><b>${v}%</b></div><div class="bar"><i style="width:${v}%;background:${col}"></i></div></div></div>`}
 function status(){
-  $('#status').innerHTML=`<div class="moneybox"><i class="coin" aria-hidden="true"></i><span class="lbl">所持金</span><span class="cash${yen(S.money).length>13?' xlong':yen(S.money).length>9?' long':''}">${yen(S.money)}</span></div>
+  const html=`<div class="moneybox"><i class="coin" aria-hidden="true"></i><span class="lbl">所持金</span><span class="cash${yen(S.money).length>13?' xlong':yen(S.money).length>9?' long':''}">${yen(S.money)}</span></div>
   <div class="daybox"><b>${S.day}日目</b><span>${S.phase==='morning'?'朝':'夜'}</span></div>
   <span class="day">${isEvent(S.day)?'<em>イベント日</em>　':''}${HOMES[S.home].n}${S.title?'　「'+S.title+'」':''}</span>
   <div class="meters">${meterHTML('hun','お腹','var(--hun)')}${meterHTML('fun','娯楽','var(--fun)')}${meterHTML('hp','体調','var(--hp)')}</div>`;
+  // 打っている画面では、右の引き出しにも同じものを出す
+  for(const el of document.querySelectorAll('#status,#dstatus'))el.innerHTML=html;
 }
 function apply(e){for(const [k,v] of Object.entries(e))S[k]=clamp(S[k]+v)}
 function spend(p){if(S.money<p){toast('お金が足りません');return false}S.money-=p;return true}
@@ -466,20 +471,36 @@ function cue(){
 function statsHTML(){const b=P.big+(P.reg||0);return `<div class="stats"><div><span>総ゲーム数</span><b>${P.g}</b></div><div class="bb"><span>BIG</span><b>${P.big}</b></div><div class="rb"><span>REG</span><b>${P.reg||0}</b></div><div><span>合成確率</span><b>${b?'1/'+Math.round((P.ng||0)/b):'—'}</b></div></div>`}
 function counterHTML(){const out=P.medals*P.rate,net=out-P.inv;return `<div class="counter"><div>時刻<b>${clock(P.g)}</b></div><div>現在<b>${P.since}G</b></div><div>持ちメダル<b>${P.medals}</b></div><div>収支<b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
 function renderPlay(){
+  // 打っている間の作り直し（オートの終わりなど）では、開いていた引き出しをそのままにする。オート中は台を見せる
+  const keepOpen=drawerOpen()&&!P.autoRun;
   status();tabs(null);const [c,cl]=cue();
   const busyBonus=['big','reg','at','zen','align','door','cont'].includes(P.mode)||!!P.pend;
-  $('#view').innerHTML=`<div class="cab"><div class="cabtop"><b>${P.m.n}</b><span class="sub">${P.hall}${P.boost?'　基盤':''}${S.dropDay===S.day?'　目薬':''}</span></div>
-    ${statsHTML()}
+  // 台は画面いっぱいに出し、液晶・リール・カウンター・ボタンを台の絵の上に重ねる（仕様書 9.9）。ほかは右の引き出しへ
+  const pos=b=>`left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%`;
+  const stop=(s,i)=>{const w=s.d*STOP_HIT;return `<button class="stop" type="button" data-i="${i}" disabled aria-label="${['左','中','右'][i]}のストップ" style="left:${s.x-w/2}%;top:${s.y-w*CAB_ASPECT/2}%;width:${w}%;aspect-ratio:1">${P.navi>=0&&navOrder()[0]===i&&P.order.length===0?'<span class="nv">1</span>':''}</button>`};
+  const art=CAB_ART?`--cab-art:url(${import.meta.env.BASE_URL}cabinet/${CAB_ART});`:'';
+  $('#view').innerHTML=`<div class="stage" id="stage"><div class="cab${CAB_ART?' art':''}" style="${art}aspect-ratio:${CAB_ASPECT};--ar:${CAB_ASPECT}">
+    <div class="cabtop" style="${pos(CAB_BOXES.name)}"><b>${P.m.n}</b></div>
+    <div class="cab-stats" style="${pos(CAB_BOXES.stats)}">${statsHTML()}</div>
+    <div class="lcd lcd-${P.m.kind}" style="${pos(CAB_BOXES.lcd)};--bn:url(${import.meta.env.BASE_URL}banners/${P.m.kind}.webp)">${lcdMsgHTML()}<div class="lamp ${cl}${c?'':' empty'}" id="lamp"><span>${c||'&nbsp;'}</span></div></div>
+    <div class="glass" id="glass" data-fit style="${pos(CAB_BOXES.reels)}"><canvas id="reels" aria-label="リール（5ライン：上段・中段・下段・斜め2本）" role="img"></canvas></div>
+    ${(S.hun<25||S.hp<25)?`<p class="cab-warn" style="left:${CAB_BOXES.reels.x}%;top:${CAB_BOXES.reels.y+CAB_BOXES.reels.h+.3}%;width:${CAB_BOXES.reels.w}%">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>`:''}
+    ${P.mode==='door'||P.mode==='cont'?`<div class="cab-over" style="${pos(CAB_BOXES.over)}">${P.mode==='door'?doorHTML():contHTML()}</div>`:`<button class="lever" id="lever" type="button" aria-label="レバー" style="${pos(CAB_BOXES.lever)}"></button><div class="stops" id="stops">${CAB_STOPS.map(stop).join('')}</div>`}
+  </div></div>
+  <button class="drawer-tab" id="drawerTab" type="button" aria-controls="drawer" aria-expanded="false"><span aria-hidden="true">◀</span><b>メニュー</b></button>
+  <div class="drawer-back" id="drawerBack"></div>
+  <aside class="drawer" id="drawer" aria-label="メニュー">
+    <div class="status" id="dstatus"></div>
+    <p class="sub dr-hall">${P.hall}${P.boost?'　基盤':''}${S.dropDay===S.day?'　目薬':''}</p>
     ${counterHTML()}
-    <div class="lcd lcd-${P.m.kind}" style="--bn:url(${import.meta.env.BASE_URL}banners/${P.m.kind}.webp)">${lcdMsgHTML()}<div class="lamp ${cl}${c?'':' empty'}" id="lamp"><span>${c||'&nbsp;'}</span></div></div>
-    <div class="glass" id="glass"><canvas id="reels"></canvas></div><p class="sub" style="text-align:center;font-size:12px;margin-top:-4px">5ライン：上段・中段・下段・斜め2本</p>
-    ${P.mode==='door'?doorHTML():P.mode==='cont'?contHTML():`<div class="ctrl"><button class="lever" id="lever" type="button">レバー</button><div class="stops" id="stops">${[0,1,2].map(i=>`<button class="stop" type="button" data-i="${i}" disabled>${['左','中','右'][i]}${P.navi>=0&&navOrder()[0]===i&&P.order.length===0?'<span class="nv">1</span>':''}</button>`).join('')}</div></div>`}
-  </div>
-  <div class="grid3">${AUTO_GAMES.map(n=>`<button class="cmd" type="button" data-a="auto" data-i="${n}" ${busyBonus||P.spinning?'disabled':''}><b>${n}G 回す</b><span>適当打ち。ボーナスで止まる</span></button>`).join('')}
-  <button class="cmd" type="button" data-a="quit" ${busyBonus||P.spinning?'disabled':''}><b>やめる</b><span>換金して帰る</span></button></div>
-  <details class="strip"><summary>配当表と遊び方</summary>${payHTML()}</details>
-  <details class="strip"><summary>リール配列表（上から下へ流れる）</summary><p class="sub">左リールのチェリーはBARの真下、スイカは左でBARの3コマ上、中でBARの2コマ上、右はBARの2コマ上ともう1か所にあります。赤7は左に2つ、中に1つ、右は「7・リプレイ・BAR」の1か所だけ。左リールの「7・リプレイ・7」の並びがBIG中のビタ押しポイントです。BARが上段に来るタイミング（枠の上から入ってきた瞬間）で押せば、どちらも取りこぼしません。</p><canvas id="stripT" aria-label="リール配列表"></canvas></details>
-  <p class="sub">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>`;
+    <div class="grid3">${AUTO_GAMES.map(n=>`<button class="cmd" type="button" data-a="auto" data-i="${n}" ${busyBonus||P.spinning?'disabled':''}><b>${n}G 回す</b><span>適当打ち。ボーナスで止まる</span></button>`).join('')}
+    <button class="cmd" type="button" data-a="quit" ${busyBonus||P.spinning?'disabled':''}><b>やめる</b><span>換金して帰る</span></button></div>
+    <button class="cmd" type="button" data-a="snd"><b>${soundOn?'音 ON':'音 OFF'}</b><span>効果音の切り替え</span></button>
+    <p class="sub">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>
+    <details class="strip"><summary>配当表と遊び方</summary>${payHTML()}</details>
+    <details class="strip"><summary>リール配列表（上から下へ流れる）</summary><p class="sub">左リールのチェリーはBARの真下、スイカは左でBARの3コマ上、中でBARの2コマ上、右はBARの2コマ上ともう1か所にあります。赤7は左に2つ、中に1つ、右は「7・リプレイ・BAR」の1か所だけ。左リールの「7・リプレイ・7」の並びがBIG中のビタ押しポイントです。BARが上段に来るタイミング（枠の上から入ってきた瞬間）で押せば、どちらも取りこぼしません。</p><canvas id="stripT" aria-label="リール配列表"></canvas></details>
+  </aside>`;
+  status();bindDrawer($('#drawer'),$('#drawerTab'),$('#drawerBack'),$('#stage'),keepOpen);
   bindCabinet();sync();const st=$('#stripT');if(st){drawStripTable(st);st.style.width=(st.width/2)+'px'}
 }
 function bindCabinet(){
@@ -488,6 +509,8 @@ function bindCabinet(){
   const st=$('#stops');if(st){st.addEventListener('pointerdown',e=>{const b=e.target.closest('.stop');if(!b||b.disabled)return;e.preventDefault();stopAt(+b.dataset.i,e)});st.addEventListener('keydown',e=>{const b=e.target.closest('.stop');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();stopAt(+b.dataset.i,e)}})}
 }
 function sync(){
+  // オート中は引き出しのつまみを光らせ、止めるボタンがそこにあることを分かるようにする
+  const dt=$('#drawerTab');if(dt){dt.classList.toggle('auto',!!P.autoRun);const q=dt.querySelector('b');if(q)q.textContent=P.autoRun?'オート中':'メニュー'}
   const lv=$('#lever');if(lv)lv.disabled=!!P.spinning||P.autoRun;
   document.querySelectorAll('.stop').forEach((b,i)=>b.disabled=!reels[i]||reels[i].state!=='spin'||P.autoRun||(P.mode==='big'&&i>0&&reels[0].state==='spin'));
   document.querySelectorAll('[data-a=auto]').forEach(b=>{b.querySelector('b').textContent=P.autoRun?'止める':b.dataset.i+'G 回す';b.classList.toggle('on',!!P.autoRun)});
@@ -689,6 +712,7 @@ $('#view').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;act(b.dataset.a,b)});
 // ボタン（data-a）と購入の確認画面から呼ぶ
 function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
+  if(a==='snd'){$('#snd').click();const q=b.querySelector('b');if(q)q.textContent=soundOn?'音 ON':'音 OFF';return}
   if(a==='home'){renderHome()}
   else if(a==='ask')askBuy(b.dataset.k);
   else if(a==='verTap'){const n=Date.now();devTaps=n-devTapAt<DEV_TAP_MS?devTaps+1:1;devTapAt=n;if(devTaps>=DEV_TAPS&&!$('#devPw')){devTaps=0;showDevLogin()}}
@@ -722,13 +746,13 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='sit')sitDown(i);
   else if(a==='floorK'){floorK=id;floorSel=-1;renderFloor()}
   else if(a==='pick'){floorSel=i;renderFloor()}
-  else if(a==='auto'){if(P.autoRun)P.autoStop=true;else autoPlay(i)}
+  else if(a==='auto'){if(P.autoRun)P.autoStop=true;else{closeDrawer();autoPlay(i)}}
   else if(a==='quit')quit(false);
   else if(a==='door')pickDoor(+b.dataset.d);
   else if(a==='cont')pickCont(+b.dataset.d);
 }
 document.addEventListener('keydown',e=>{
-  if(!P||e.repeat)return;
+  if(!P||e.repeat||drawerOpen())return;
   if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();lever()}
   const k={KeyJ:0,KeyK:1,KeyL:2}[e.code];if(k!==undefined)stopAt(k,e);
 });
