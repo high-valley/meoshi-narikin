@@ -10,7 +10,7 @@ import { dailyEffects, arrangePlaced } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
+import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet } from './widgets';
 
@@ -206,7 +206,8 @@ function roomHTML(){
   const base=import.meta.env.BASE_URL,items=S.placed.map(p=>p.id).filter(id=>SLOTS[SLOT_OF[id]||id]);
   // 絵のない家具の仮のドット絵は正方形で背が高くなるので、小さめに置いて重なりを避ける
   const pos=(s,k=1)=>`left:${s.x-s.w*k/2}%;bottom:${100-s.y}%;width:${s.w*k}%`;
-  const furn=id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(SLOTS[SLOT_OF[id]||id],FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}${FURNITURE_IMAGES.includes(id)?`;aspect-ratio:1/${FURNITURE_ASPECT[id]}`:''}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`;
+  const slotOf=id=>{const s=SLOTS[SLOT_OF[id]||id];return FURNITURE_W[id]?{...s,w:FURNITURE_W[id]}:s};
+  const furn=id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(slotOf(id),FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}${FURNITURE_IMAGES.includes(id)?`;aspect-ratio:1/${FURNITURE_ASPECT[id]}`:''}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`;
   // 主人公も家具と一緒に奥から順に並べ、手前の家具（ソファなど）の後ろに立てるようにする。y が同じ家具とは主人公が手前になる
   const list=[...items.map(id=>({y:SLOTS[SLOT_OF[id]||id].y,h:furn(id)})),{y:PLAYER_SPOT.y,h:`<img class="pc" src="${base}rooms/${PLAYER_IMAGE}" alt="" style="${pos(PLAYER_SPOT)};aspect-ratio:1/${PLAYER_ASPECT}">`}].sort((a,b)=>a.y-b.y);
   return `<div class="room anime" id="room" role="group" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]});aspect-ratio:${ROOM_ASPECT}">
