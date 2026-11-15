@@ -209,24 +209,23 @@ body:has(.cab){
 
   /* レバーとストップボタン：レバーの絵と、受け皿の絵の3つの穴に置くボタンの絵 */
   .ctrl{grid-template-columns:15% 1fr;gap:4px;align-items:center}
-  .lever{width:100%;aspect-ratio:300/685;border:0;border-radius:0;background:var(--c-lever,none) center/contain no-repeat;box-shadow:none;color:transparent;text-shadow:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.6))}
+  .lever{width:100%;aspect-ratio:300/685;border:0;border-radius:0;background:var(--c-lever,none) center/contain no-repeat,radial-gradient(circle at 50% 14%,#e0102e 0 18%,transparent 19%),linear-gradient(90deg,transparent 44%,#c9ced4 44% 56%,transparent 56%) center/100% 70% no-repeat;box-shadow:none;color:transparent;text-shadow:none;filter:drop-shadow(0 4px 3px rgba(0,0,0,.6))}
   .stops{position:relative;display:block;aspect-ratio:900/254;background:var(--c-tray,none) center/100% 100% no-repeat}
   /* 穴の中心は左から 26.0%・49.8%・73.6%、高さ 47%、直径は幅の 14.5%。押せる範囲は穴より広くとる */
   .stop{position:absolute;top:0;bottom:0;width:22%;min-height:0;margin-left:-11%;border:0;border-radius:0;color:transparent;text-shadow:none;box-shadow:none;
-    background:var(--c-stop-on,none) center 47%/66% auto no-repeat}
+    background:var(--c-stop-on,none) center 47%/66% auto no-repeat,radial-gradient(circle at 50% 47%,#ff2e2e 0 26%,transparent 27%)}
   .stop:nth-child(1){left:26%}.stop:nth-child(2){left:49.8%}.stop:nth-child(3){left:73.6%}
-  .stop:disabled{background-image:var(--c-stop-off,none);filter:none}
-  .stops.warm .stop:not(:disabled){background-image:var(--c-stop-off,none);filter:none}
+  .stop:disabled{background-image:var(--c-stop-off,none),radial-gradient(circle at 50% 47%,#5a0610 0 26%,transparent 27%);filter:none}
+  .stops.warm .stop:not(:disabled){background-image:var(--c-stop-off,none),radial-gradient(circle at 50% 47%,#5a0610 0 26%,transparent 27%);filter:none}
   .stop .nv{top:4%;color:#fff}
   .lever:disabled{filter:grayscale(.6) brightness(.55) drop-shadow(0 4px 3px rgba(0,0,0,.6))}
   .lever:active:not(:disabled),.stop:active:not(:disabled){transform:translateY(2px);box-shadow:none}
 
   /* オートとやめる：金の札と赤い札の絵 */
   .grid3 .cmd{border:0!important;border-radius:0;padding:8px 13%;aspect-ratio:400/177;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:0;background:var(--c-plate-gold,none) center/100% 100% no-repeat!important;box-shadow:none;filter:drop-shadow(0 4px 2px rgba(0,0,0,.6))}
-  .grid3 .cmd b{font-family:var(--brush);font-size:16px;line-height:1.15;color:#3a1a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  .grid3 .cmd b{font-family:var(--brush);font-size:19px;line-height:1.15;color:#3a1a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}
   /* 札の中は狭いので説明は画面には出さず、読み上げだけに残す */
   .grid3 .cmd span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .grid3 .cmd b{font-size:19px}
   .grid3 .cmd[data-a=quit]{background:var(--c-plate-red,none) center/100% 100% no-repeat!important}
   .grid3 .cmd[data-a=quit] b{color:#fff1e0;text-shadow:0 2px 0 #000}
   .grid3 .cmd[data-a=quit] span{color:#ffd9cf}
@@ -237,5 +236,5 @@ body:has(.cab){
   .strip summary{color:#f3d7a8}
 }
 @keyframes led{to{background-position:-200% 0}}
-@keyframes ledv{to{background-position:0 128px,100% 128px}}
+@keyframes ledv{to{background-position:0 108px,100% 108px}}
 @media (prefers-reduced-motion:reduce){body:has(.cab) .cab::before,body:has(.cab) .cab::after{animation:none}}

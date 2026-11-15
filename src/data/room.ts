@@ -1,4 +1,4 @@
-// 部屋（仕様書 7.2・9.8）。家ごとのアニメ調の背景と、家具ごとに決まった置き場所
+// 部屋（仕様書 7.2・9.8）。家ごとの劇画風の背景と、家具ごとに決まった置き場所
 /** 家ごとの部屋の背景（public/rooms/） */
 export const ROOM_IMAGES = ['room0.webp', 'room1.webp', 'room2.webp', 'room3.webp', 'room4.webp'];
 
