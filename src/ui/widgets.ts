@@ -156,9 +156,12 @@ export function openSheet(o: { title: string; body: string; yes: string; no?: st
 /**
  * 横から引き出すメニュー（打っている画面の所持金・オート・やめるなど）。
  * つまみを押すか、右端から左へ指を動かすと開き、背景を押す・右へ指を動かす・Esc で閉じる。
+ * 指を動かしている間は引き出しが指について動き、離した位置と速さで開くか閉じるかを決める。
+ * つまみは引き出しの左の縁に付いて一緒に動き、開いているときは「閉じる」と出す。
  * 画面を作り直すたびに呼ぶ。指と Esc の受け付けは一度だけ登録し、今ある引き出しに効かせる
  */
-let drw: { drawer: HTMLElement; tab: HTMLElement; set: (open: boolean, focus?: boolean) => void } | null = null;
+interface Drw { drawer: HTMLElement; tab: HTMLElement; back: HTMLElement; set: (open: boolean, focus?: boolean) => void }
+let drw: Drw | null = null;
 let drawerReady = false;
 /** 引き出しが開いているか（打っている画面のキー操作を止めるため） */
 export function drawerOpen(): boolean { return !!drw && document.contains(drw.drawer) && drw.drawer.classList.contains('open'); }
@@ -166,16 +169,19 @@ export function drawerOpen(): boolean { return !!drw && document.contains(drw.dr
 export function closeDrawer(): void { if (drawerOpen()) drw!.set(false, false); }
 /** keepOpen：打っている間に画面を作り直すとき、開いていた引き出しを開いたままにする */
 export function bindDrawer(drawer: HTMLElement, tab: HTMLElement, back: HTMLElement, stage: HTMLElement | null, keepOpen = false): void {
+  const label = tab.querySelector('b');
   const set = (open: boolean, focus = true) => {
-    drawer.classList.toggle('open', open); back.classList.toggle('open', open);
+    for (const el of [drawer, tab, back]) { el.classList.toggle('open', open); el.classList.remove('drag'); el.style.transform = ''; el.style.opacity = ''; }
     tab.setAttribute('aria-expanded', String(open));
+    tab.setAttribute('aria-label', open ? 'メニューを閉じる' : 'メニューを開く');
+    if (label) label.textContent = open ? '閉じる' : (tab.dataset.label || 'メニュー');
     drawer.inert = !open;
     // 開いている間は後ろの台に触れない（キーボードでも届かない）
     if (stage) stage.inert = open;
     if (open && focus) drawer.querySelector<HTMLElement>('button,summary')?.focus({ preventScroll: true });
     if (!open && focus && drawer.contains(document.activeElement)) tab.focus({ preventScroll: true });
   };
-  drw = { drawer, tab, set };
+  drw = { drawer, tab, back, set };
   set(keepOpen, false);
   tab.addEventListener('click', () => set(!drawer.classList.contains('open')));
   back.addEventListener('click', () => set(false));
@@ -186,27 +192,58 @@ export function bindDrawer(drawer: HTMLElement, tab: HTMLElement, back: HTMLElem
     const d = live();
     if (d && e.key === 'Escape' && d.drawer.classList.contains('open')) d.set(false);
   });
-  // 指の動き：右端（24px 以内）から左へで開く、開いた引き出しの上で右へで閉じる。
-  // 横に動かした直後の click は止める（ボタンの上で指を離しても押されないように）
-  let x0 = 0, y0 = 0, id = -1, from: 'edge' | 'drawer' | null = null, swiped = false;
+  // 指の動き：右端（24px 以内）かつまみから左へで開く、開いた引き出し・つまみ・背景の上で右へで閉じる
+  let x0 = 0, y0 = 0, id = -1, startOpen = false, mode: 'none' | 'h' | 'v' = 'none', lastX = 0, lastT = 0, vx = 0, swiped = false;
+  const width = (d: Drw) => d.drawer.offsetWidth;
+  const place = (d: Drw, off: number) => {
+    // off：引き出しが右へずれている量（0＝全部開く、width＝閉じる）
+    const w = width(d);
+    for (const el of [d.drawer, d.tab, d.back]) el.classList.add('drag');
+    d.drawer.style.transform = `translateX(${off}px)`;
+    d.tab.style.transform = `translate(${off - w}px,-50%)`;
+    d.back.style.opacity = String(1 - off / w);
+    d.back.style.pointerEvents = 'none';
+  };
   document.addEventListener('pointerdown', e => {
     const d = live();
-    if (!d || !e.isPrimary) return;
-    const open = d.drawer.classList.contains('open');
-    from = !open && e.clientX > window.innerWidth - 24 ? 'edge' : open && d.drawer.contains(e.target as Node) ? 'drawer' : null;
-    if (from) { x0 = e.clientX; y0 = e.clientY; id = e.pointerId; }
+    if (!d || !e.isPrimary || id !== -1) return;
+    startOpen = d.drawer.classList.contains('open');
+    const t = e.target as Node;
+    const ok = startOpen ? (d.drawer.contains(t) || d.tab.contains(t) || d.back.contains(t)) : (e.clientX > window.innerWidth - 24 || d.tab.contains(t));
+    if (!ok) return;
+    x0 = lastX = e.clientX; y0 = e.clientY; lastT = e.timeStamp; id = e.pointerId; mode = 'none'; vx = 0;
   });
-  const end = (e: PointerEvent) => {
+  document.addEventListener('pointermove', e => {
     const d = live();
-    if (e.pointerId !== id || !from || !d) return;
+    if (!d || e.pointerId !== id) return;
     const dx = e.clientX - x0, dy = e.clientY - y0;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      swiped = true; setTimeout(() => { swiped = false; }, 350);
-      if (from === 'edge' && dx < 0) d.set(true); else if (from === 'drawer' && dx > 0) d.set(false);
+    if (mode === 'none') {
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) mode = 'h';
+      else if (Math.abs(dy) > 10) { mode = 'v'; id = -1; return; }
+      else return;
     }
-    id = -1; from = null;
+    const w = width(d);
+    const off = Math.min(w, Math.max(0, (startOpen ? 0 : w) + dx));
+    place(d, off);
+    const dt = e.timeStamp - lastT;
+    if (dt > 0) vx = (e.clientX - lastX) / dt;
+    lastX = e.clientX; lastT = e.timeStamp;
+  });
+  const end = (e: PointerEvent, cancel: boolean) => {
+    const d = live();
+    if (e.pointerId !== id) return;
+    id = -1;
+    if (!d || mode !== 'h') { mode = 'none'; return; }
+    mode = 'none';
+    d.back.style.pointerEvents = '';
+    const w = width(d), dx = e.clientX - x0, off = Math.min(w, Math.max(0, (startOpen ? 0 : w) + dx));
+    // 速く払ったら向きで決め、ゆっくりなら半分を越えたかで決める
+    const open = cancel ? startOpen : Math.abs(vx) > 0.4 ? vx < 0 : off < w / 2;
+    d.set(open, false);
+    swiped = true; setTimeout(() => { swiped = false; }, 350);
   };
-  document.addEventListener('pointerup', end);
-  document.addEventListener('pointercancel', end);
+  document.addEventListener('pointerup', e => end(e, false));
+  document.addEventListener('pointercancel', e => end(e, true));
+  // 横に動かした直後の click は止める（ボタンの上で指を離しても押されないように）
   document.addEventListener('click', e => { if (swiped) { e.stopPropagation(); e.preventDefault(); swiped = false; } }, true);
 }

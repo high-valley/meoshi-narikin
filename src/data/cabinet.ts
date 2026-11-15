@@ -1,27 +1,39 @@
 // 打つ画面の台（仕様書 9.9）。台を画面いっぱいに出し、台の絵の上に液晶・リール・カウンター・ボタンを重ねる。
-// 位置と大きさは台に対する %（x・y は左上、w・h は幅・高さ）。台全体の絵が届いたら、絵の緑の窓に合わせて差し替える
+// 位置と大きさは台に対する %（x・y は左上、w・h は幅・高さ）。値は台の絵の緑の窓から scripts/cut-cabinet.py で読み取ったもの
 
 export interface Box { x: number; y: number; w: number; h: number }
 
-/** 台の縦横比（横 / 縦） */
-export const CAB_ASPECT = 9 / 16;
-/** 台全体の絵（public/cabinet/ のファイル名）。空なら部品の絵と CSS で描く */
-export const CAB_ART = '';
+/** 台の縦横比（横 / 縦）。台の絵（941×1672）に合わせる */
+export const CAB_ASPECT = 941 / 1672;
+/** 台全体の絵（public/cabinet/ のファイル名、窓は透明に切り抜いたもの）。空なら部品の絵と CSS で描く */
+export const CAB_ART = 'cabinet.webp';
 
-export const CAB_BOXES: { name: Box; stats: Box; lcd: Box; reels: Box; lever: Box; over: Box } = {
-  name: { x: 15, y: 2.2, w: 70, h: 7 },
-  stats: { x: 7.5, y: 10.5, w: 85, h: 6 },
-  lcd: { x: 7.5, y: 18, w: 85, h: 21 },
-  reels: { x: 7.5, y: 41, w: 85, h: 26 },
-  lever: { x: 3.5, y: 68, w: 13, h: 15 },
+export const CAB_BOXES: { name: Box; stats: Box; lcd: Box; reels: Box; over: Box } = {
+  /** 上の金の名札（機種名を重ねる） */
+  name: { x: 24, y: 2.7, w: 52, h: 6.3 },
+  /** データカウンターの4つの窓をまとめた範囲 */
+  stats: { x: 14.1, y: 15.3, w: 71.8, h: 3.9 },
+  lcd: { x: 12.5, y: 22.8, w: 74.9, h: 19.6 },
+  /** リールの3つの窓をまとめた範囲 */
+  reels: { x: 16.2, y: 48.3, w: 67.6, h: 13.6 },
   /** 扉・3択を出す場所（レバーとストップボタンの代わり） */
-  over: { x: 5, y: 68, w: 90, h: 30 },
+  over: { x: 4, y: 64, w: 92, h: 32 },
 };
+/** カウンターの窓どうし・リールの窓どうしのすき間（台の幅に対する %） */
+export const STATS_GAP = 4.1;
+export const REELS_GAP = 3.0;
 /** ストップボタンの丸の中心（x・y）と直径（d、台の幅に対する %） */
 export const CAB_STOPS: { x: number; y: number; d: number }[] = [
-  { x: 33, y: 76, d: 14 },
-  { x: 51, y: 76, d: 14 },
-  { x: 69, y: 76, d: 14 },
+  { x: 37.5, y: 74, d: 11.5 },
+  { x: 56.3, y: 74, d: 11.5 },
+  { x: 75.2, y: 74, d: 11.5 },
 ];
-/** ストップボタンの押せる範囲（丸の直径に対する倍率）。押しやすさのため丸より広くとる */
-export const STOP_HIT = 1.25; // 隣のボタンと重ならないよう、丸の間隔÷直径（18÷14）より小さく
+/** ストップボタンの押せる範囲（丸の直径に対する倍率）。押しやすさのため丸より広くとるが、隣と重ならない大きさ（間隔÷直径 ≒ 1.6 より小さく） */
+export const STOP_HIT = 1.4;
+/** レバーの受け（台に対して垂直に刺さったレバーの根元）の中心と直径（台の幅に対する %） */
+export const CAB_LEVER = { x: 10.1, y: 72.7, d: 14 };
+/** レバーの押せる範囲（受けの直径に対する倍率） */
+export const LEVER_HIT = 1.45;
+/** レバーを叩いたときに下へ動く量（受けの直径に対する %）と、戻るまでの時間（ミリ秒） */
+export const LEVER_DIP = 14;
+export const LEVER_MS = 260;
