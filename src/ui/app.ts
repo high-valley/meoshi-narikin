@@ -13,7 +13,7 @@ import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
 import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet, bindDrawer, closeDrawer, drawerOpen } from './widgets';
-import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT } from '../data/cabinet';
+import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT, STATS_GAP, REELS_GAP, CAB_LEVER, LEVER_HIT, LEVER_DIP, LEVER_MS } from '../data/cabinet';
 
 // 台の部品の絵（public/cabinet/）の場所を CSS の --c-* に入れる（base のパスを付けるため JS で渡す）
 const CABINET_ART=['wave','led','crest','lever','tray','stop-on','stop-off','plate-gold','plate-red'];
@@ -28,10 +28,12 @@ function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);
 let cv=null,rc=null,reels=[],RW=90,RH=54,PAD=8,GAP=8,dpr=1;
 function layout(){
   if(!cv||!document.body.contains(cv))return;
+  PAD=8;GAP=8;
   const n=reels.length||1,cw=Math.min(428,(cv.parentElement&&cv.parentElement.clientWidth)||360);
   RW=Math.min(n===1?130:999,(cw-2*PAD-(n-1)*GAP)/n);RH=Math.max(44,Math.round(RW*.6));
   // 台の窓に合わせるとき（data-fit）は、窓の高さに3コマが収まるようにする
-  const box=cv.parentElement;if(box&&box.dataset.fit!==undefined&&box.clientHeight){const pw=box.clientWidth;RW=(pw-2*PAD-(n-1)*GAP)/n;RH=Math.max(24,Math.min(RW*.8,(box.clientHeight-2*PAD)/3))}
+  // リールの窓が台の絵で3つに分かれているときは、窓のすき間に合わせて余白なしで並べる
+  const box=cv.parentElement;if(box&&box.dataset.fit!==undefined&&box.clientHeight){const pw=box.clientWidth;PAD=0;GAP=pw*(+box.dataset.gap||0);RW=(pw-(n-1)*GAP)/n;RH=Math.max(16,Math.min(RW*.8,box.clientHeight/3))}
   const W=n*RW+(n-1)*GAP+2*PAD,H=3*RH+2*PAD;dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
 }
@@ -103,12 +105,13 @@ function drawReels(now){
     c.fillStyle=g;c.fillRect(x,y0,RW,3*RH);c.restore();
     if(r.noSlip){c.strokeStyle='#ff3b6b';c.lineWidth=3;rr(c,x-1,y0-1,RW+2,3*RH+2,7);c.stroke()}
   });
-  if(P&&P.mode==='big'){const x=PAD;c.fillStyle='rgba(21,16,31,.55)';for(const n of [1,2])c.fillRect(PAD+n*(RW+GAP),PAD,RW,3*RH);c.strokeStyle='#ffcf4a';c.lineWidth=3;rr(c,x-1,PAD-1,RW+2,3*RH+2,7);c.stroke();
+  if(P&&P.mode==='big'){const x=PAD;c.fillStyle='rgba(21,16,31,.55)';for(const n of [1,2])c.fillRect(PAD+n*(RW+GAP),PAD,RW,3*RH);const m=PAD>0?-1:1.5;c.strokeStyle='#ffcf4a';c.lineWidth=3;rr(c,x+m,PAD+m,RW-2*m,3*RH-2*m,7);c.stroke();
     c.strokeStyle='rgba(255,207,74,.9)';c.lineWidth=2;c.strokeRect(x+2,PAD+1,RW-4,3*RH-2);c.fillStyle='#ffcf4a';c.font='bold 9px sans-serif';c.textAlign='left';c.fillText('7',x+4,PAD+10);c.fillText('R',x+4,PAD+RH+10);c.fillText('7',x+4,PAD+2*RH+10);
     const fl=P.flashT?1-(now-P.flashT)/450:0;if(fl>0){c.fillStyle=`rgba(255,250,220,${fl*.85})`;c.fillRect(x,PAD,RW,3*RH)}}
   const rowY=row=>PAD+(row+.5)*RH,colX=n=>PAD+n*(RW+GAP)+RW/2;
   c.fillStyle='#ff3b6b';c.font='bold 9px sans-serif';c.textAlign='center';c.textBaseline='middle';
-  [[0,'1'],[1,'2'],[2,'3']].forEach(([row,t])=>{c.fillText(t,PAD/2,rowY(row));c.fillText(t,W-PAD/2,rowY(row))});
+  // 行番号はリールの外の余白に描く（台の窓に合わせて余白がないときは描かない）
+  if(PAD>=6)[[0,'1'],[1,'2'],[2,'3']].forEach(([row,t])=>{c.fillText(t,PAD/2,rowY(row));c.fillText(t,W-PAD/2,rowY(row))});
   if(P&&P.wins&&P.wins.length){c.lineWidth=4;c.lineCap='round';
     for(const w of P.wins){const L=LINES[w.n];c.strokeStyle='rgba(255,207,74,.85)';c.beginPath();L.forEach((row,n)=>{const X=colX(n),Y=rowY(row);n?c.lineTo(X,Y):c.moveTo(X-RW/2,Y)});c.lineTo(colX(2)+RW/2,rowY(L[2]));c.stroke()}}
 }
@@ -481,13 +484,13 @@ function renderPlay(){
   const art=CAB_ART?`--cab-art:url(${import.meta.env.BASE_URL}cabinet/${CAB_ART});`:'';
   $('#view').innerHTML=`<div class="stage" id="stage"><div class="cab${CAB_ART?' art':''}" style="${art}aspect-ratio:${CAB_ASPECT};--ar:${CAB_ASPECT}">
     <div class="cabtop" style="${pos(CAB_BOXES.name)}"><b>${P.m.n}</b></div>
-    <div class="cab-stats" style="${pos(CAB_BOXES.stats)}">${statsHTML()}</div>
+    <div class="cab-stats" style="${pos(CAB_BOXES.stats)};--sgap:${STATS_GAP}cqw">${statsHTML()}</div>
     <div class="lcd lcd-${P.m.kind}" style="${pos(CAB_BOXES.lcd)};--bn:url(${import.meta.env.BASE_URL}banners/${P.m.kind}.webp)">${lcdMsgHTML()}<div class="lamp ${cl}${c?'':' empty'}" id="lamp"><span>${c||'&nbsp;'}</span></div></div>
-    <div class="glass" id="glass" data-fit style="${pos(CAB_BOXES.reels)}"><canvas id="reels" aria-label="リール（5ライン：上段・中段・下段・斜め2本）" role="img"></canvas></div>
+    <div class="glass" id="glass" data-fit data-gap="${REELS_GAP/CAB_BOXES.reels.w}" style="${pos(CAB_BOXES.reels)}"><canvas id="reels" aria-label="リール（5ライン：上段・中段・下段・斜め2本）" role="img"></canvas></div>
     ${(S.hun<25||S.hp<25)?`<p class="cab-warn" style="left:${CAB_BOXES.reels.x}%;top:${CAB_BOXES.reels.y+CAB_BOXES.reels.h+.3}%;width:${CAB_BOXES.reels.w}%">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>`:''}
-    ${P.mode==='door'||P.mode==='cont'?`<div class="cab-over" style="${pos(CAB_BOXES.over)}">${P.mode==='door'?doorHTML():contHTML()}</div>`:`<button class="lever" id="lever" type="button" aria-label="レバー" style="${pos(CAB_BOXES.lever)}"></button><div class="stops" id="stops">${CAB_STOPS.map(stop).join('')}</div>`}
+    ${P.mode==='door'||P.mode==='cont'?`<div class="cab-over" style="${pos(CAB_BOXES.over)}">${P.mode==='door'?doorHTML():contHTML()}</div>`:`${leverHTML()}<div class="stops" id="stops">${CAB_STOPS.map(stop).join('')}</div>`}
   </div></div>
-  <button class="drawer-tab" id="drawerTab" type="button" aria-controls="drawer" aria-expanded="false"><span aria-hidden="true">◀</span><b>メニュー</b></button>
+  <button class="drawer-tab" id="drawerTab" type="button" aria-controls="drawer" aria-expanded="false"><span class="arw" aria-hidden="true">◀</span><b>メニュー</b></button>
   <div class="drawer-back" id="drawerBack"></div>
   <aside class="drawer" id="drawer" aria-label="メニュー">
     <div class="status" id="dstatus"></div>
@@ -503,6 +506,9 @@ function renderPlay(){
   status();bindDrawer($('#drawer'),$('#drawerTab'),$('#drawerBack'),$('#stage'),keepOpen);
   bindCabinet();sync();const st=$('#stripT');if(st){drawStripTable(st);st.style.width=(st.width/2)+'px'}
 }
+// 台に対して垂直に刺さったレバー（正面から見ると受けの中に赤い玉）。叩くと少し下へ動いて戻る
+function leverHTML(){const w=CAB_LEVER.d*LEVER_HIT;return `<button class="lever" id="lever" type="button" aria-label="レバー" style="left:${CAB_LEVER.x-w/2}%;top:${CAB_LEVER.y-w*CAB_ASPECT/2}%;width:${w}%;aspect-ratio:1;--dip:${LEVER_DIP}%;--lv-ms:${LEVER_MS}ms;--lv-d:${(1/LEVER_HIT*100).toFixed(1)}%"><i class="lv-socket"></i><i class="lv-ball"></i></button>`}
+function leverHit(){const lv=$('#lever');if(!lv||lv.disabled)return;lv.classList.remove('hit');void lv.offsetWidth;lv.classList.add('hit')}
 function bindCabinet(){
   const cvNew=$('#reels');if(cvNew){cv=cvNew;rc=cv.getContext('2d');layout()}
   const lv=$('#lever');if(lv){lv.addEventListener('pointerdown',e=>{e.preventDefault();lever()});lv.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();lever()}})}
@@ -510,7 +516,7 @@ function bindCabinet(){
 }
 function sync(){
   // オート中は引き出しのつまみを光らせ、止めるボタンがそこにあることを分かるようにする
-  const dt=$('#drawerTab');if(dt){dt.classList.toggle('auto',!!P.autoRun);const q=dt.querySelector('b');if(q)q.textContent=P.autoRun?'オート中':'メニュー'}
+  const dt=$('#drawerTab');if(dt){dt.classList.toggle('auto',!!P.autoRun);dt.dataset.label=P.autoRun?'オート中':'メニュー';const q=dt.querySelector('b');if(q&&!dt.classList.contains('open'))q.textContent=dt.dataset.label}
   const lv=$('#lever');if(lv)lv.disabled=!!P.spinning||P.autoRun;
   document.querySelectorAll('.stop').forEach((b,i)=>b.disabled=!reels[i]||reels[i].state!=='spin'||P.autoRun||(P.mode==='big'&&i>0&&reels[0].state==='spin'));
   document.querySelectorAll('[data-a=auto]').forEach(b=>{b.querySelector('b').textContent=P.autoRun?'止める':b.dataset.i+'G 回す';b.classList.toggle('on',!!P.autoRun)});
@@ -521,7 +527,7 @@ function lever(){
   if(P.spinning||P.autoRun)return;
   if(P.medals<3){if(!borrow()){toast('お金が足りません');return}}
   if(P.g>=CLOSE_MIN-OPEN_MIN&&P.mode==='normal'){toast('閉店です');return quit(true)}
-  P.medals-=3;
+  leverHit();P.medals-=3;
   if(P.mode==='normal'){P.since++;if(P.since>=CEIL[P.m.kind]&&!P.post){P.pend='BIG';P.ceilHit=true}}
   else if(P.mode==='align')P.since++; // 揃えるゲームも、ボーナスが始まるまでは「現在」に数える（天井はもう関係ない）
   P.g++;if(P.mode==='normal'||P.mode==='align')P.ng=(P.ng||0)+1;P.order=[];P.navi=-1;P.hint=-1;P.res=[];P.wins=null;

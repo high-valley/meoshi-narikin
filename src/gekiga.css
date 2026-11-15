@@ -194,10 +194,12 @@ body:has(.cab){
 /* 機種名 */
 .stage .cabtop{display:flex;align-items:center;justify-content:center;z-index:4;background:var(--c-crest,none) center/100% 100% no-repeat}
 .stage .cab.art .cabtop{background:none}
+/* 金の名札の上では、赤黒い彫り文字にする（金の文字だと名札に溶ける） */
+.stage .cab.art .cabtop b{background:linear-gradient(180deg,#7a0a0e,#2a0204);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 rgba(255,240,190,.9)) drop-shadow(0 -1px 0 rgba(60,20,0,.5))}
 .stage .cabtop b{font-family:var(--brush);font-size:8cqw;line-height:1;letter-spacing:.06em;background:linear-gradient(180deg,#fff6c0,#f2c45a 45%,#a8731a 75%,#ffe9a0);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 2px 0 #000) drop-shadow(0 0 8px rgba(255,200,80,.6))}
 
 /* データカウンター */
-.stage .cab-stats .stats{height:100%;gap:1.2cqw}
+.stage .cab-stats .stats{height:100%;gap:var(--sgap,1.2cqw);grid-template-columns:repeat(4,1fr)}
 .stage .stats div{justify-content:center;padding:0;border:.5cqw solid transparent;border-radius:1.4cqw;background:linear-gradient(#050306,#050306) padding-box,linear-gradient(160deg,#fff3b0,#d4a032 30%,#7a4e10 55%,#f5d27a 80%,#a8731a) border-box;box-shadow:inset 0 0 8px rgba(0,0,0,.9)}
 .stage .cab.art .stats div{border:0;border-radius:0;background:#050306}
 .stage .stats span{font-size:2.6cqw;line-height:1.1}
@@ -217,15 +219,22 @@ body:has(.cab){
 .stage .glass canvas{max-width:100%;max-height:100%}
 
 /* レバーとストップボタン */
-.stage .lever{z-index:4;padding:0;border:0;border-radius:0;aspect-ratio:auto;background:var(--c-lever,none) center/contain no-repeat,radial-gradient(circle at 50% 14%,#e0102e 0 18%,transparent 19%);box-shadow:none;cursor:pointer;filter:drop-shadow(0 4px 3px rgba(0,0,0,.6))}
-.stage .cab.art .lever{background:none;filter:none}
-.stage .lever:active:not(:disabled){transform:translateY(1.5cqw)}
-.stage .lever:disabled{filter:grayscale(.6) brightness(.55)}
-.stage .cab.art .lever:disabled{filter:none}
+.stage .lever{z-index:4;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;cursor:pointer;touch-action:manipulation;filter:none}
+/* 受け：クロームの丸い座。中に黒い穴 */
+.stage .lever .lv-socket{position:absolute;left:50%;top:50%;width:var(--lv-d);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle at 50% 50%,#0b0b0e 0 26%,#2a2c31 30%,#cfd3d8 44%,#7d838c 56%,#f3f5f7 66%,#5b6068 80%,#c9cdd2 90%,#3a3d42 100%);box-shadow:0 .6cqw 1.2cqw rgba(0,0,0,.65),inset 0 0 0 .3cqw rgba(0,0,0,.6)}
+/* 赤い玉：手前に突き出て少し下を向いている。叩くと下へ動いて戻る */
+.stage .lever .lv-ball{position:absolute;left:50%;top:50%;width:calc(var(--lv-d) * .62);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-38%);
+  background:radial-gradient(circle at 36% 28%,#fff 0 7%,#ffb0ba 12%,#ff3a4e 30%,#c00a1e 62%,#5a0410 100%);box-shadow:0 1.2cqw 1.6cqw rgba(0,0,0,.7),0 0 0 .25cqw rgba(0,0,0,.35)}
+.stage .lever .lv-ball::after{content:"";position:absolute;left:50%;top:100%;width:28%;height:22%;transform:translate(-50%,-60%);border-radius:0 0 50% 50%;background:linear-gradient(90deg,#6b7078,#eef1f4 45%,#7d838c);z-index:-1}
+.stage .lever.hit .lv-ball{animation:lvHit var(--lv-ms,260ms) cubic-bezier(.3,1.6,.5,1)}
+@keyframes lvHit{0%{transform:translate(-50%,-38%)}30%{transform:translate(-50%,calc(-38% + var(--dip,14%) * 3)) scale(.94,.9)}100%{transform:translate(-50%,-38%)}}
+@media (prefers-reduced-motion:reduce){.stage .lever.hit .lv-ball{animation:none}}
+.stage .lever:disabled .lv-ball{filter:brightness(.75)}
 .stage .stops{display:contents}
 .stage .stop{position:absolute;z-index:4;min-height:0;padding:0;border:0;border-radius:50%;box-shadow:none;cursor:pointer;
-  background:var(--c-stop-on,none) center/69% auto no-repeat,radial-gradient(circle,#ff2e2e 0 33%,transparent 34%)}
-.stage .stop:disabled,.stage .stops.warm .stop:not(:disabled){filter:none;cursor:default;background-image:var(--c-stop-off,none),radial-gradient(circle,#5a0610 0 33%,transparent 34%)}
+  background:var(--c-stop-on,none) center/74% auto no-repeat,radial-gradient(circle,#ff2e2e 0 35%,transparent 36%)}
+.stage .stop:disabled,.stage .stops.warm .stop:not(:disabled){filter:none;cursor:default;background-image:var(--c-stop-off,none),radial-gradient(circle,#5a0610 0 35%,transparent 36%)}
 .stage .stop:active:not(:disabled){transform:translateY(.8cqw)}
 .stage .stop .nv{top:4%;font-size:3.4cqw}
 .stage .cab:not(.art) .stops::before{content:none}
@@ -240,18 +249,26 @@ body:has(.cab){
 .stage .cab-over .sub{font-size:3.2cqw;margin:0;color:#f3d7a8}
 
 /* 右の引き出し */
-.drawer-tab{position:fixed;z-index:30;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px 12px 8px;
-  border:2px solid #b8862a;border-right:0;border-radius:10px 0 0 10px;background:linear-gradient(180deg,#2a0a0d,#120506);color:#f3d7a8;font-size:12px;cursor:pointer;box-shadow:-3px 0 12px rgba(0,0,0,.6)}
+/* 右の引き出し。つまみは引き出しの左の縁に付いて一緒に動く（閉じているときは画面の右端、開くと「閉じる」） */
+:root{--dw:min(86vw,380px);--d-ease:cubic-bezier(.32,.72,0,1);--d-ms:.38s}
+.drawer-tab{position:fixed;z-index:33;right:0;top:50%;transform:translate(0,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px 14px 8px;
+  border:2px solid #b8862a;border-right:0;border-radius:12px 0 0 12px;background:linear-gradient(180deg,#2a0a0d,#120506);color:#f3d7a8;font-size:12px;cursor:pointer;box-shadow:-3px 0 12px rgba(0,0,0,.6);
+  transition:transform var(--d-ms) var(--d-ease),background .2s;touch-action:none}
 .drawer-tab b{writing-mode:vertical-rl;letter-spacing:.2em;font-weight:700}
+.drawer-tab .arw{display:inline-block;transition:transform var(--d-ms) var(--d-ease)}
 .drawer-tab.auto{background:linear-gradient(180deg,#d9a432,#7a4e10);color:#2a1400;border-color:#fff3b0}
-.drawer-back{position:fixed;inset:0;z-index:31;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-tab.open{transform:translate(calc(-1 * var(--dw)),-50%);background:linear-gradient(180deg,#5c0a0b,#2a0506);color:#fff1e0}
+.drawer-tab.open .arw{transform:rotate(180deg)}
+.drawer-back{position:fixed;inset:0;z-index:31;touch-action:pan-y;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity var(--d-ms) var(--d-ease)}
 .drawer-back.open{opacity:1;pointer-events:auto}
-.drawer{position:fixed;z-index:32;top:0;bottom:0;right:0;width:min(88vw,380px);overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;
+.drawer{position:fixed;z-index:32;top:0;bottom:0;right:0;width:var(--dw);overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;
   padding:calc(env(safe-area-inset-top,0px) + 14px) calc(env(safe-area-inset-right,0px) + 14px) calc(env(safe-area-inset-bottom,0px) + 18px) 14px;
   background:linear-gradient(180deg,#1d0a0c,#0b0405);border-left:2px solid #b8862a;box-shadow:-8px 0 30px rgba(0,0,0,.7);
-  touch-action:pan-y;transform:translateX(105%);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  touch-action:pan-y;transform:translateX(100%);transition:transform var(--d-ms) var(--d-ease);will-change:transform}
 .drawer.open{transform:none}
-@media (prefers-reduced-motion:reduce){.drawer,.drawer-back{transition:none}}
+/* 指で動かしている間は、指に合わせて動かす（アニメーションなし） */
+.drawer.drag,.drawer-tab.drag,.drawer-back.drag{transition:none}
+@media (prefers-reduced-motion:reduce){.drawer,.drawer-back,.drawer-tab,.drawer-tab .arw{transition:none}}
 .drawer .status{background:linear-gradient(180deg,#2a0d10,#120506)!important;border:2px solid #b8862a!important;box-shadow:none;color:#f3e6c8}
 .drawer .status .cash,.drawer .daybox b,.drawer .mt .r b,.drawer .mt .r{color:#f3e6c8}
 .drawer .moneybox,.drawer .daybox{background:rgba(0,0,0,.35);border-color:#7a4e10}
