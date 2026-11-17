@@ -13,11 +13,13 @@ import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
 import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet, bindDrawer, closeDrawer, drawerOpen } from './widgets';
-import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT, STATS_GAP, REELS_GAP, CAB_LEVER, LEVER_HIT, LEVER_DIP, LEVER_MS } from '../data/cabinet';
+import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT, STATS_GAP, REELS_GAP, CAB_LEVER, LEVER_HIT, LEVER_DIP, LEVER_MS, LEVER_ART } from '../data/cabinet';
 
 // 台の部品の絵（public/cabinet/）の場所を CSS の --c-* に入れる（base のパスを付けるため JS で渡す）
 const CABINET_ART=['wave','led','crest','lever','tray','stop-on','stop-off','plate-gold','plate-red'];
-function setCabinetArt(){for(const n of CABINET_ART)document.documentElement.style.setProperty('--c-'+n,`url(${import.meta.env.BASE_URL}cabinet/${n}.webp)`)}
+function setCabinetArt(){for(const n of CABINET_ART)document.documentElement.style.setProperty('--c-'+n,`url(${import.meta.env.BASE_URL}cabinet/${n}.webp)`);
+  // レバーの絵が読めたときだけ絵を出し、読めなければ CSS の玉のまま
+  if(LEVER_ART.file){const im=new Image();im.onload=()=>document.documentElement.classList.add('lever-art');im.src=`${import.meta.env.BASE_URL}cabinet/${LEVER_ART.file}`}}
 export function startApp(){
 setCabinetArt();
 
@@ -511,7 +513,7 @@ function renderPlay(){
 }
 // 台に対して垂直に刺さったレバー（正面から見ると受けの中に赤い玉）。叩くと少し下へ動いて戻る
 function leverAnim(){const el=P.leverT?performance.now()-P.leverT:1e9;return el<LEVER_MS?`--lv-del:-${Math.round(el)}ms;`:''}
-function leverHTML(){const w=CAB_LEVER.d*LEVER_HIT;return `<button class="lever${leverAnim()?' hit':''}" id="lever" type="button" aria-label="レバー" style="${leverAnim()}left:${CAB_LEVER.x-w/2}%;top:${CAB_LEVER.y-w*CAB_ASPECT/2}%;width:${w}%;aspect-ratio:1;--dip:${LEVER_DIP}%;--lv-ms:${LEVER_MS}ms;--lv-d:${(1/LEVER_HIT*100).toFixed(1)}%"><i class="lv-socket"></i><i class="lv-ball"></i></button>`}
+function leverHTML(){const w=CAB_LEVER.d*LEVER_HIT;return `<button class="lever${leverAnim()?' hit':''}" id="lever" type="button" aria-label="レバー" style="${leverAnim()}left:${CAB_LEVER.x-w/2}%;top:${CAB_LEVER.y-w*CAB_ASPECT/2}%;width:${w}%;aspect-ratio:1;--dip:${LEVER_DIP}%;--lv-ms:${LEVER_MS}ms;--lv-d:${(1/LEVER_HIT*100).toFixed(1)}%"><i class="lv-socket"></i>${LEVER_ART.file?(()=>{const iw=LEVER_ART.w/w*100,ih=iw*LEVER_ART.ar;return `<i class="lv-ball"></i><i class="lv-img" style="width:${iw.toFixed(1)}%;height:${ih.toFixed(1)}%;left:${(50-LEVER_ART.cx*iw).toFixed(1)}%;top:${(50-LEVER_ART.cy*ih).toFixed(1)}%;transform-origin:${LEVER_ART.cx*100}% ${LEVER_ART.cy*100}%;background-image:url(${import.meta.env.BASE_URL}cabinet/${LEVER_ART.file})"></i>`})():'<i class="lv-ball"></i>'}</button>`}
 // 叩いた直後に画面を作り直しても動きが途切れないよう、叩いた時刻を覚えて leverHTML で続きから動かす
 function leverHit(){P.leverT=performance.now()}
 function bindCabinet(){
