@@ -251,8 +251,8 @@ body:has(.cab){
    叩いたことが分かるよう、下を向いた絵への切り替えだけは残す（絵が変わるだけで動きはない） */
 @media (prefers-reduced-motion:reduce){
   .stage .lever.hit .lv-ball,.stage .lever.hit .lv-socket,:root:not(.lever-pressed-art) .stage .lever.hit .lv-img:not(.lv-press){animation:none!important}
-  :root.lever-pressed-art .stage .lever.hit .lv-img:not(.lv-press){animation:lvRestStill var(--lv-ms,650ms) step-end var(--lv-del,0ms) both!important}
-  :root.lever-pressed-art .stage .lever.hit .lv-press{animation:lvPressStill var(--lv-ms,650ms) step-end var(--lv-del,0ms) both!important}
+  :root.lever-pressed-art .stage .lever.hit .lv-img:not(.lv-press){animation:lvRestStill var(--lv-ms,450ms) step-end var(--lv-del,0ms) both!important}
+  :root.lever-pressed-art .stage .lever.hit .lv-press{animation:lvPressStill var(--lv-ms,450ms) step-end var(--lv-del,0ms) both!important}
 }
 @keyframes lvRestStill{0%,4%{opacity:1}5%,58%{opacity:0}59%,100%{opacity:1}}
 @keyframes lvPressStill{0%,4%{opacity:0}5%,58%{opacity:1}59%,100%{opacity:0}}
