@@ -247,7 +247,15 @@ body:has(.cab){
 .stage .lever:disabled .lv-img:not(.lv-press){filter:brightness(.75) drop-shadow(0 1.2cqw 1.2cqw rgba(0,0,0,.7))}
 .stage .lever.hit .lv-socket{animation:lvShake var(--lv-ms,340ms) ease-out var(--lv-del,0ms) both}
 @keyframes lvShake{0%{transform:translate(-50%,-50%)}18%{transform:translate(-50%,-47%) scale(.98)}45%{transform:translate(-50%,-51%)}100%{transform:translate(-50%,-50%)}}
-@media (prefers-reduced-motion:reduce){.stage .lever.hit .lv-ball,.stage .lever.hit .lv-socket,:root .stage .lever.hit .lv-img:not(.lv-press),:root .stage .lever.hit .lv-press{animation:none!important}}
+/* 動きを減らす設定（iPhone の「視差効果を減らす」など）では、揺れや沈み込みは止めるが、
+   叩いたことが分かるよう、下を向いた絵への切り替えだけは残す（絵が変わるだけで動きはない） */
+@media (prefers-reduced-motion:reduce){
+  .stage .lever.hit .lv-ball,.stage .lever.hit .lv-socket,:root:not(.lever-pressed-art) .stage .lever.hit .lv-img:not(.lv-press){animation:none!important}
+  :root.lever-pressed-art .stage .lever.hit .lv-img:not(.lv-press){animation:lvRestStill var(--lv-ms,650ms) step-end var(--lv-del,0ms) both!important}
+  :root.lever-pressed-art .stage .lever.hit .lv-press{animation:lvPressStill var(--lv-ms,650ms) step-end var(--lv-del,0ms) both!important}
+}
+@keyframes lvRestStill{0%,4%{opacity:1}5%,58%{opacity:0}59%,100%{opacity:1}}
+@keyframes lvPressStill{0%,4%{opacity:0}5%,58%{opacity:1}59%,100%{opacity:0}}
 .stage .lever:disabled .lv-ball{filter:brightness(.75)}
 .stage .stops{display:contents}
 .stage .stop{position:absolute;z-index:4;min-height:0;padding:0;border:0;border-radius:50%;box-shadow:none;cursor:pointer;
