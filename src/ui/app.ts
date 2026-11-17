@@ -19,7 +19,7 @@ import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT, STATS_GAP, REELS_G
 const CABINET_ART=['wave','led','crest','lever','tray','stop-on','stop-off','plate-gold','plate-red'];
 function setCabinetArt(){for(const n of CABINET_ART)document.documentElement.style.setProperty('--c-'+n,`url(${import.meta.env.BASE_URL}cabinet/${n}.webp)`);
   // レバーの絵が読めたときだけ絵を出し、読めなければ CSS の玉のまま
-  if(LEVER_PRESSED.file){const p=new Image();p.src=`${import.meta.env.BASE_URL}cabinet/${LEVER_PRESSED.file}`}
+  if(LEVER_PRESSED.file){const p=new Image();p.onload=()=>document.documentElement.classList.add('lever-pressed-art');p.src=`${import.meta.env.BASE_URL}cabinet/${LEVER_PRESSED.file}`}
   if(LEVER_ART.file){const im=new Image();im.onload=()=>document.documentElement.classList.add('lever-art');im.src=`${import.meta.env.BASE_URL}cabinet/${LEVER_ART.file}`}}
 export function startApp(){
 setCabinetArt();
