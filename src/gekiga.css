@@ -227,10 +227,10 @@ body:has(.cab){
 .stage .lever .lv-ball{position:absolute;left:50%;top:50%;width:calc(var(--lv-d) * .62);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-38%);
   background:radial-gradient(circle at 36% 28%,#fff 0 7%,#ffb0ba 12%,#ff3a4e 30%,#c00a1e 62%,#5a0410 100%);box-shadow:0 1.2cqw 1.6cqw rgba(0,0,0,.7),0 0 0 .25cqw rgba(0,0,0,.35)}
 .stage .lever .lv-ball::after{content:"";position:absolute;left:50%;top:100%;width:28%;height:22%;transform:translate(-50%,-60%);border-radius:0 0 50% 50%;background:linear-gradient(90deg,#6b7078,#eef1f4 45%,#7d838c);z-index:-1}
-.stage .lever.hit .lv-ball{animation:lvHit var(--lv-ms,340ms) ease-out}
+.stage .lever.hit .lv-ball{animation:lvHit var(--lv-ms,340ms) ease-out var(--lv-del,0ms) both}
 /* 叩いた感じ：素早く沈み、反動で少し跳ね上がって戻る */
 @keyframes lvHit{0%{transform:translate(-50%,-38%)}18%{transform:translate(-50%,calc(-38% + var(--dip,16%) * 3)) scale(.93,.86)}45%{transform:translate(-50%,calc(-38% - var(--dip,16%) * .6)) scale(1.02,1.04)}70%{transform:translate(-50%,calc(-38% + var(--dip,16%) * .3))}100%{transform:translate(-50%,-38%)}}
-.stage .lever.hit .lv-socket{animation:lvShake var(--lv-ms,340ms) ease-out}
+.stage .lever.hit .lv-socket{animation:lvShake var(--lv-ms,340ms) ease-out var(--lv-del,0ms) both}
 @keyframes lvShake{0%{transform:translate(-50%,-50%)}18%{transform:translate(-50%,-47%) scale(.98)}45%{transform:translate(-50%,-51%)}100%{transform:translate(-50%,-50%)}}
 @media (prefers-reduced-motion:reduce){.stage .lever.hit .lv-ball,.stage .lever.hit .lv-socket{animation:none}}
 .stage .lever:disabled .lv-ball{filter:brightness(.75)}
@@ -252,7 +252,7 @@ body:has(.cab){
 /* 縦画面向けなので、横向きで台が小さくなるときは縦にするよう知らせる */
 @media (orientation:landscape) and (max-height:520px){.stage::after{content:"スマホを縦にして遊んでください";position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:5;padding:4px 12px;border-radius:999px;font-size:12px;color:#f3e6c8;background:rgba(0,0,0,.75)}}
 /* 扉・3択 */
-.stage .cab-over{z-index:4;display:flex;flex-direction:column;justify-content:center;gap:1.5cqw;padding:2cqw;border-radius:2cqw;background:rgba(10,3,4,.82);box-shadow:0 0 0 .6cqw #b8862a}
+.stage .cab-over{z-index:4;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:1.5cqw;padding:2cqw;border-radius:2cqw;background:rgba(10,3,4,.82);box-shadow:0 0 0 .6cqw #b8862a}
 .stage .cab-over .lead{font-size:4.4cqw!important;margin:0;color:#f3e6c8}
 .stage .cab-over .door{font-size:5cqw;aspect-ratio:auto;padding:2cqw 0}
 .stage .cab-over .sub{font-size:3.2cqw;margin:0;color:#f3d7a8}

@@ -20,7 +20,7 @@ export const CAB_BOXES: { name: Box; stats: Box; lcd: Box; reels: Box; meter: Bo
   /** 下の赤い板（持ちメダルと収支を出す） */
   meter: { x: 17, y: 85.6, w: 66, h: 7.4 },
   /** 扉・3択を出す場所（レバーとストップボタンの代わり） */
-  over: { x: 4, y: 64, w: 92, h: 32 },
+  over: { x: 4, y: 63.5, w: 92, h: 21.5 },
 };
 /** カウンターの窓どうし・リールの窓どうしのすき間（台の幅に対する %） */
 export const STATS_GAP = 4.1;

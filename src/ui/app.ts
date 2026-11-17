@@ -510,8 +510,10 @@ function renderPlay(){
   bindCabinet();sync();const st=$('#stripT');if(st){drawStripTable(st);st.style.width=(st.width/2)+'px'}
 }
 // 台に対して垂直に刺さったレバー（正面から見ると受けの中に赤い玉）。叩くと少し下へ動いて戻る
-function leverHTML(){const w=CAB_LEVER.d*LEVER_HIT;return `<button class="lever" id="lever" type="button" aria-label="レバー" style="left:${CAB_LEVER.x-w/2}%;top:${CAB_LEVER.y-w*CAB_ASPECT/2}%;width:${w}%;aspect-ratio:1;--dip:${LEVER_DIP}%;--lv-ms:${LEVER_MS}ms;--lv-d:${(1/LEVER_HIT*100).toFixed(1)}%"><i class="lv-socket"></i><i class="lv-ball"></i></button>`}
-function leverHit(){const lv=$('#lever');if(!lv||lv.disabled)return;lv.classList.remove('hit');void lv.offsetWidth;lv.classList.add('hit')}
+function leverAnim(){const el=P.leverT?performance.now()-P.leverT:1e9;return el<LEVER_MS?`--lv-del:-${Math.round(el)}ms;`:''}
+function leverHTML(){const w=CAB_LEVER.d*LEVER_HIT;return `<button class="lever${leverAnim()?' hit':''}" id="lever" type="button" aria-label="レバー" style="${leverAnim()}left:${CAB_LEVER.x-w/2}%;top:${CAB_LEVER.y-w*CAB_ASPECT/2}%;width:${w}%;aspect-ratio:1;--dip:${LEVER_DIP}%;--lv-ms:${LEVER_MS}ms;--lv-d:${(1/LEVER_HIT*100).toFixed(1)}%"><i class="lv-socket"></i><i class="lv-ball"></i></button>`}
+// 叩いた直後に画面を作り直しても動きが途切れないよう、叩いた時刻を覚えて leverHTML で続きから動かす
+function leverHit(){P.leverT=performance.now()}
 function bindCabinet(){
   const cvNew=$('#reels');if(cvNew){cv=cvNew;rc=cv.getContext('2d');layout()}
   const lv=$('#lever');if(lv){lv.addEventListener('pointerdown',e=>{e.preventDefault();lever()});lv.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();lever()}})}
