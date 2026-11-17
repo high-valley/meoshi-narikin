@@ -46,4 +46,4 @@ export const LEVER_PRESSED = { file: 'lever-pressed.webp', w: 11.1, cx: 0.49, cy
 export const LEVER_HIT = 1.45;
 /** レバーを叩いたときに下へ動く量（受けの直径に対する %）と、戻るまでの時間（ミリ秒） */
 export const LEVER_DIP = 16;
-export const LEVER_MS = 340;
+export const LEVER_MS = 650;
