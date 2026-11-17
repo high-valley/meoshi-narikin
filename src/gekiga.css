@@ -230,9 +230,14 @@ body:has(.cab){
 .stage .lever.hit .lv-ball{animation:lvHit var(--lv-ms,340ms) ease-out var(--lv-del,0ms) both}
 /* 叩いた感じ：素早く沈み、反動で少し跳ね上がって戻る */
 @keyframes lvHit{0%{transform:translate(-50%,-38%)}18%{transform:translate(-50%,calc(-38% + var(--dip,16%) * 3)) scale(.93,.86)}45%{transform:translate(-50%,calc(-38% - var(--dip,16%) * .6)) scale(1.02,1.04)}70%{transform:translate(-50%,calc(-38% + var(--dip,16%) * .3))}100%{transform:translate(-50%,-38%)}}
+/* レバーの絵：根元の輪を中心に、叩くと玉が下へ倒れ込む（下へずれながら縦に伸びる）ように見せる */
+.stage .lever .lv-img{position:absolute;background:center/100% 100% no-repeat;filter:drop-shadow(0 1.2cqw 1.2cqw rgba(0,0,0,.7));pointer-events:none}
+.stage .lever.hit .lv-img{animation:lvImg var(--lv-ms,340ms) ease-out var(--lv-del,0ms) both}
+@keyframes lvImg{0%{transform:none}18%{transform:translateY(var(--dip,16%)) scale(.97,1.1)}45%{transform:translateY(calc(var(--dip,16%) * -.25)) scale(1.01,.97)}70%{transform:translateY(calc(var(--dip,16%) * .12))}100%{transform:none}}
+.stage .lever:disabled .lv-img{filter:brightness(.75) drop-shadow(0 1.2cqw 1.2cqw rgba(0,0,0,.7))}
 .stage .lever.hit .lv-socket{animation:lvShake var(--lv-ms,340ms) ease-out var(--lv-del,0ms) both}
 @keyframes lvShake{0%{transform:translate(-50%,-50%)}18%{transform:translate(-50%,-47%) scale(.98)}45%{transform:translate(-50%,-51%)}100%{transform:translate(-50%,-50%)}}
-@media (prefers-reduced-motion:reduce){.stage .lever.hit .lv-ball,.stage .lever.hit .lv-socket{animation:none}}
+@media (prefers-reduced-motion:reduce){.stage .lever.hit .lv-ball,.stage .lever.hit .lv-socket,.stage .lever.hit .lv-img{animation:none}}
 .stage .lever:disabled .lv-ball{filter:brightness(.75)}
 .stage .stops{display:contents}
 .stage .stop{position:absolute;z-index:4;min-height:0;padding:0;border:0;border-radius:50%;box-shadow:none;cursor:pointer;

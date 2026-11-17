@@ -35,6 +35,11 @@ export const CAB_STOPS: { x: number; y: number; d: number }[] = [
 export const STOP_HIT = 1.4;
 /** レバーの受け（台に対して垂直に刺さったレバーの根元）の中心と直径（台の幅に対する %） */
 export const CAB_LEVER = { x: 10.1, y: 72.7, d: 14 };
+/**
+ * レバーの絵（public/cabinet/、正面から見た赤い玉と根元の輪）。空なら CSS で描く。
+ * w：絵の幅（台の幅に対する %）、cx・cy：絵の中の根元の輪の中心（絵に対する割合）、ar：絵の縦÷横
+ */
+export const LEVER_ART = { file: 'lever-front.webp', w: 13, cx: 0.509, cy: 0.202, ar: 1070 / 690 };
 /** レバーの押せる範囲（受けの直径に対する倍率） */
 export const LEVER_HIT = 1.45;
 /** レバーを叩いたときに下へ動く量（受けの直径に対する %）と、戻るまでの時間（ミリ秒） */
