@@ -473,6 +473,8 @@ function cue(){
 // 「現在」（counterHTML）は最後の当たりからの回転数で、ボーナス・ラッシュに入ると0に戻り、ボーナス中は数えない
 function statsHTML(){const b=P.big+(P.reg||0);return `<div class="stats"><div><span>総ゲーム数</span><b>${P.g}</b></div><div class="bb"><span>BIG</span><b>${P.big}</b></div><div class="rb"><span>REG</span><b>${P.reg||0}</b></div><div><span>合成確率</span><b>${b?'1/'+Math.round((P.ng||0)/b):'—'}</b></div></div>`}
 function counterHTML(){const out=P.medals*P.rate,net=out-P.inv;return `<div class="counter"><div>時刻<b>${clock(P.g)}</b></div><div>現在<b>${P.since}G</b></div><div>持ちメダル<b>${P.medals}</b></div><div>収支<b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
+// 台の下の板：持ちメダルと収支（打ちながら見えるように）
+function meterHTML2(){const net=P.medals*P.rate-P.inv;return `<div class="cab-meter" style="left:${CAB_BOXES.meter.x}%;top:${CAB_BOXES.meter.y}%;width:${CAB_BOXES.meter.w}%;height:${CAB_BOXES.meter.h}%"><div><span>持ちメダル</span><b>${P.medals}</b></div><div><span>収支</span><b class="${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div></div>`}
 function renderPlay(){
   // 打っている間の作り直し（オートの終わりなど）では、開いていた引き出しをそのままにする。オート中は台を見せる
   const keepOpen=drawerOpen()&&!P.autoRun;
@@ -487,6 +489,7 @@ function renderPlay(){
     <div class="cab-stats" style="${pos(CAB_BOXES.stats)};--sgap:${STATS_GAP}cqw">${statsHTML()}</div>
     <div class="lcd lcd-${P.m.kind}" style="${pos(CAB_BOXES.lcd)};--bn:url(${import.meta.env.BASE_URL}banners/${P.m.kind}.webp)">${lcdMsgHTML()}<div class="lamp ${cl}${c?'':' empty'}" id="lamp"><span>${c||'&nbsp;'}</span></div></div>
     <div class="glass" id="glass" data-fit data-gap="${REELS_GAP/CAB_BOXES.reels.w}" style="${pos(CAB_BOXES.reels)}"><canvas id="reels" aria-label="リール（5ライン：上段・中段・下段・斜め2本）" role="img"></canvas></div>
+    ${meterHTML2()}
     ${(S.hun<25||S.hp<25)?`<p class="cab-warn" style="left:${CAB_BOXES.reels.x}%;top:${CAB_BOXES.reels.y+CAB_BOXES.reels.h+.3}%;width:${CAB_BOXES.reels.w}%">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>`:''}
     ${P.mode==='door'||P.mode==='cont'?`<div class="cab-over" style="${pos(CAB_BOXES.over)}">${P.mode==='door'?doorHTML():contHTML()}</div>`:`${leverHTML()}<div class="stops" id="stops">${CAB_STOPS.map(stop).join('')}</div>`}
   </div></div>
@@ -675,7 +678,7 @@ async function autoPlay(games){
     else if(f==='CH'){if(Math.random()<.67){gain(k==='fuku'?PAY.CHf:PAY.CHo);if(Math.random()<P.m.dup){P.mode='align';P.bonus=P.m.reg&&Math.random()<.4?'REG':'BIG';say('チェリー重複','ボーナス確定！','hot');SND.fan();break}}}
     else if(f==='WM'&&k==='fuku'){if(Math.random()<.18)gain(PAY.WM)}
     randomStops();
-    $('.counter').outerHTML=counterHTML();const st2=$('.stats');if(st2)st2.outerHTML=statsHTML();status();
+    $('.counter').outerHTML=counterHTML();const cm=$('.cab-meter');if(cm)cm.outerHTML=meterHTML2();const st2=$('.stats');if(st2)st2.outerHTML=statsHTML();status();
     await new Promise(z=>setTimeout(z,110));
     if(!P||!P.autoRun)return; // 途中で「やめる」を押した
     if(S.hp<=0){P.autoRun=false;return collapse()}

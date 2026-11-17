@@ -227,9 +227,12 @@ body:has(.cab){
 .stage .lever .lv-ball{position:absolute;left:50%;top:50%;width:calc(var(--lv-d) * .62);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-38%);
   background:radial-gradient(circle at 36% 28%,#fff 0 7%,#ffb0ba 12%,#ff3a4e 30%,#c00a1e 62%,#5a0410 100%);box-shadow:0 1.2cqw 1.6cqw rgba(0,0,0,.7),0 0 0 .25cqw rgba(0,0,0,.35)}
 .stage .lever .lv-ball::after{content:"";position:absolute;left:50%;top:100%;width:28%;height:22%;transform:translate(-50%,-60%);border-radius:0 0 50% 50%;background:linear-gradient(90deg,#6b7078,#eef1f4 45%,#7d838c);z-index:-1}
-.stage .lever.hit .lv-ball{animation:lvHit var(--lv-ms,260ms) cubic-bezier(.3,1.6,.5,1)}
-@keyframes lvHit{0%{transform:translate(-50%,-38%)}30%{transform:translate(-50%,calc(-38% + var(--dip,14%) * 3)) scale(.94,.9)}100%{transform:translate(-50%,-38%)}}
-@media (prefers-reduced-motion:reduce){.stage .lever.hit .lv-ball{animation:none}}
+.stage .lever.hit .lv-ball{animation:lvHit var(--lv-ms,340ms) ease-out}
+/* 叩いた感じ：素早く沈み、反動で少し跳ね上がって戻る */
+@keyframes lvHit{0%{transform:translate(-50%,-38%)}18%{transform:translate(-50%,calc(-38% + var(--dip,16%) * 3)) scale(.93,.86)}45%{transform:translate(-50%,calc(-38% - var(--dip,16%) * .6)) scale(1.02,1.04)}70%{transform:translate(-50%,calc(-38% + var(--dip,16%) * .3))}100%{transform:translate(-50%,-38%)}}
+.stage .lever.hit .lv-socket{animation:lvShake var(--lv-ms,340ms) ease-out}
+@keyframes lvShake{0%{transform:translate(-50%,-50%)}18%{transform:translate(-50%,-47%) scale(.98)}45%{transform:translate(-50%,-51%)}100%{transform:translate(-50%,-50%)}}
+@media (prefers-reduced-motion:reduce){.stage .lever.hit .lv-ball,.stage .lever.hit .lv-socket{animation:none}}
 .stage .lever:disabled .lv-ball{filter:brightness(.75)}
 .stage .stops{display:contents}
 .stage .stop{position:absolute;z-index:4;min-height:0;padding:0;border:0;border-radius:50%;box-shadow:none;cursor:pointer;
@@ -238,6 +241,12 @@ body:has(.cab){
 .stage .stop:active:not(:disabled){transform:translateY(.8cqw)}
 .stage .stop .nv{top:4%;font-size:3.4cqw}
 .stage .cab:not(.art) .stops::before{content:none}
+/* 下の赤い板の持ちメダルと収支：黒い窓に光る数字 */
+.stage .cab-meter{z-index:4;display:grid;grid-template-columns:1fr 1.3fr;gap:3cqw;padding:0 2cqw;align-items:center}
+.stage .cab-meter div{display:flex;flex-direction:column;align-items:center;justify-content:center;height:78%;border-radius:1.4cqw;background:#050306;box-shadow:0 0 0 .5cqw #d4a032,0 0 0 .9cqw #3a0407,inset 0 0 8px rgba(0,0,0,.9)}
+.stage .cab-meter span{font-size:2.6cqw;line-height:1.1;color:#f3e6c8}
+.stage .cab-meter b{font-family:var(--dot);font-size:5.4cqw;line-height:1.1;color:#ffd23c;text-shadow:0 0 6px rgba(255,210,60,.8)}
+.stage .cab-meter b.pos{color:#5dff8a;text-shadow:0 0 6px rgba(80,255,130,.7)}.stage .cab-meter b.neg{color:#ff5b4a;text-shadow:0 0 6px rgba(255,80,60,.8)}
 /* 体調・空腹の知らせ（引き込みに効くので台の上にも出す） */
 .stage .cab-warn{z-index:4;margin:0;padding:.4cqw 1cqw;font-size:max(10px,2.8cqw);line-height:1.3;text-align:center;color:#fff1e0;background:rgba(120,0,10,.85);border-radius:1cqw}
 /* 縦画面向けなので、横向きで台が小さくなるときは縦にするよう知らせる */
