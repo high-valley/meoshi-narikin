@@ -40,6 +40,8 @@ export const CAB_LEVER = { x: 10.1, y: 72.7, d: 14 };
  * w：絵の幅（台の幅に対する %）、cx・cy：絵の中の根元の輪の中心（絵に対する割合）、ar：絵の縦÷横
  */
 export const LEVER_ART = { file: 'lever-front.webp', w: 13, cx: 0.509, cy: 0.202, ar: 1070 / 690 };
+/** 叩いて下を向いたレバーの絵（沈む瞬間だけ切り替える）。根元の輪は受けに隠れるので、玉の大きさが上の絵と近くなるよう少し大きめ（輪をそろえる 9.25 の 1.2 倍） */
+export const LEVER_PRESSED = { file: 'lever-pressed.webp', w: 11.1, cx: 0.49, cy: 0.215, ar: 1177 / 549 };
 /** レバーの押せる範囲（受けの直径に対する倍率） */
 export const LEVER_HIT = 1.45;
 /** レバーを叩いたときに下へ動く量（受けの直径に対する %）と、戻るまでの時間（ミリ秒） */
