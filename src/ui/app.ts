@@ -10,7 +10,7 @@ import { dailyEffects, arrangePlaced } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
+import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT, roomSlot, roomPlayerSpot } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet, bindDrawer, closeDrawer, drawerOpen } from './widgets';
 import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT, STATS_GAP, REELS_GAP, CAB_LEVER, LEVER_HIT, LEVER_DIP, LEVER_MS, LEVER_ART, LEVER_PRESSED } from '../data/cabinet';
@@ -130,10 +130,10 @@ const $=s=>document.querySelector(s);
 const yen=n=>(n<0?'−':'')+'¥'+Math.abs(Math.round(n)).toLocaleString('ja-JP');
 const clamp=v=>Math.max(0,Math.min(100,Math.round(v)));
 const KEY='meoshi-narikin-v1';
-function fresh(){return {tot:{sum:0,n:0,win:0,lose:0,best:0},halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:30000,hun:70,fun:50,hp:80,home:0,inv:{},placed:[{id:'futon'}],phase:'morning',peak:30000,hist:[],play:null}}
+function fresh(){return {tot:{sum:0,n:0,win:0,lose:0,best:0},halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:30000,hun:70,fun:50,hp:80,home:0,inv:{},roomPositions:{},placed:[{id:'futon'}],phase:'morning',peak:30000,hist:[],play:null}}
 let S=fresh(),remote=null,saving=false,dirty=false;
 try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.day)S=v}catch(e){}
-function norm(){const f=fresh();delete S.floor;if(!Array.isArray(S.placed))S.placed=f.placed;if(!S.inv||typeof S.inv!=='object')S.inv={};for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k];
+function norm(){const f=fresh();delete S.floor;if(!Array.isArray(S.placed))S.placed=f.placed;if(!S.inv||typeof S.inv!=='object')S.inv={};if(!S.roomPositions||typeof S.roomPositions!=='object')S.roomPositions={};for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k];
   // 家具は1種類1つまで（仕様書 7.2）。前の版で複数持っていたら1つにまとめる（置いてあればそれを残す）
   // 置き場所が決まる形（仕様書 9.8）なので、同じ置き場所の寝具は一番良いものを残し、ほかは持ち物へ。マス目の位置は使わない
   {const r=arrangePlaced(S.placed.filter(p=>p&&ITEMS[p.id]),SLOT_OF),on=new Set(r.placed.map(p=>p.id));S.placed=r.placed;
@@ -193,6 +193,7 @@ function drawMachine(c,m){
 }
 
 /* ---------- room ---------- */
+let roomEditing=false;
 function placedCount(id){return S.placed.filter(p=>p.id===id).length}
 // 家具は1種類1つまで（仕様書 7.2）
 function ownF(id){return placedCount(id)+(S.inv[id]||0)>0}
@@ -202,7 +203,9 @@ function renderHome(){
   const ev=dailyEffects(S.placed,S.home,has('house')?5:0);
   $('#view').innerHTML=`${updNote()}
     <p class="sub">${isEvent(S.day)?'<b style="color:var(--neon)">今日は7のつく日。</b>どの店も設定が入りやすいが、整理券の抽選がある':`次のイベント日（7のつく日）まで あと${(17-S.day%10)%10||10}日`}</p>
+    <div class="room-tools"><strong>${H.n}</strong><button type="button" class="room-mode-btn" data-a="roomEdit">${roomEditing?'配置を終える':'模様替え'}</button>${roomEditing?'<button type="button" class="room-mode-btn secondary" data-a="roomReset">おまかせ配置に戻す</button>':''}</div>
     ${roomHTML()}
+    ${roomEditing?`<p class="sub">家具を指でドラッグすると好きな位置に移動できます。配置は家ごとに保存されます。</p><div class="inv">${S.placed.map(p=>`<button type="button" class="chip" data-a="takeF" data-id="${p.id}">${ITEMS[p.id].n}を片付ける</button>`).join('')}</div>`:''}
     ${inv.length?`<div class="ch">持ち物（タップで部屋に置く）</div><div class="inv">${inv.map(([id])=>{const sw=S.placed.find(p=>p.id!==id&&(SLOT_OF[p.id]||p.id)===(SLOT_OF[id]||id));return `<button class="chip" type="button" data-a="putF" data-id="${id}"${sw?` aria-label="${ITEMS[id].n}（${ITEMS[sw.id].n}と入れ替え）"`:''}>${FURNITURE_IMAGES.includes(id)?`<img src="${import.meta.env.BASE_URL}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}${ITEMS[id].n}</button>`}).join('')}</div>`:''}
     <p class="sub">${S.placed.length?'置いた家具をタップすると片付けます。':'家具は「買い物」で買えます。'}同じ場所を使う寝具とテレビは1つずつ置けます。</p>
     <p class="sub">寝ると 体調+${ev.sleep}${ev.fun?` 娯楽+${ev.fun}`:''}${ev.hp?` 体調+${ev.hp}`:''}${ev.keep?` お腹の減り−${ev.keep}`:''}${H.rent?`、家賃 ${yen(H.rent)}`:''}</p>
@@ -216,17 +219,23 @@ function renderHome(){
   tabs('home');
   document.querySelectorAll('[data-icon]').forEach(cv=>drawItem(cv.getContext('2d'),cv.dataset.icon,0,0));
 }
-// 部屋：家ごとの背景の絵に、家具を決まった場所に重ねる（奥から手前の順）
+// 部屋：家ごとの背景と縮尺・配置座標を使い、手前/奥の重なりを表現する
+function roomSpotFor(id){
+  const s=roomSlot(S.home,id);if(!s)return null;
+  const saved=S.roomPositions?.[S.home]?.[id];
+  if(!saved||!Number.isFinite(saved.x)||!Number.isFinite(saved.y))return s;
+  return {...s,x:Math.max(s.w/2+1,Math.min(99-s.w/2,saved.x)),y:Math.max(74,Math.min(99,saved.y))}
+}
 function roomHTML(){
-  const base=import.meta.env.BASE_URL,items=S.placed.map(p=>p.id).filter(id=>SLOTS[SLOT_OF[id]||id]);
-  // 絵のない家具の仮のドット絵は正方形で背が高くなるので、小さめに置いて重なりを避ける
+  const base=import.meta.env.BASE_URL,items=S.placed.map(p=>p.id).filter(id=>roomSpotFor(id));
   const pos=(s,k=1)=>`left:${s.x-s.w*k/2}%;bottom:${100-s.y}%;width:${s.w*k}%`;
-  const slotOf=id=>{const s=SLOTS[SLOT_OF[id]||id];return FURNITURE_W[id]?{...s,w:FURNITURE_W[id]}:s};
-  const furn=id=>`<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(slotOf(id),FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE)}${FURNITURE_IMAGES.includes(id)?`;aspect-ratio:1/${FURNITURE_ASPECT[id]}`:''}" aria-label="${ITEMS[id].n}（タップで片付け）">${FURNITURE_IMAGES.includes(id)?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`;
-  // 主人公も家具と一緒に奥から順に並べ、手前の家具（ソファなど）の後ろに立てるようにする。y が同じ家具とは主人公が手前になる
-  const list=[...items.map(id=>({y:SLOTS[SLOT_OF[id]||id].y,h:furn(id)})),{y:PLAYER_SPOT.y,h:`<img class="pc" src="${base}rooms/${PLAYER_IMAGE}" alt="" style="${pos(PLAYER_SPOT)};aspect-ratio:1/${PLAYER_ASPECT}">`}].sort((a,b)=>a.y-b.y);
-  return `<div class="room anime" id="room" role="group" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]});aspect-ratio:${ROOM_ASPECT}">
-    ${list.map(e=>e.h).join('')}</div>`}
+  const furn=id=>{const s=roomSpotFor(id),hasImage=FURNITURE_IMAGES.includes(id),k=hasImage?1:PLACEHOLDER_SCALE;
+    return `<button type="button" class="furn" data-a="takeF" data-id="${id}" style="${pos(s,k)};z-index:${Math.round(s.y*100)};${hasImage?`aspect-ratio:1/${FURNITURE_ASPECT[id]}`:''}" aria-label="${ITEMS[id].n}（${roomEditing?'ドラッグで移動':'タップで片付け'}）">${hasImage?`<img src="${base}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}</button>`};
+  const player=roomPlayerSpot(S.home);
+  const list=[...items.map(id=>({y:roomSpotFor(id).y,h:furn(id)})),{y:player.y,h:`<img class="pc" src="${base}rooms/${PLAYER_IMAGE}" alt="" style="${pos(player)};aspect-ratio:1/${PLAYER_ASPECT};z-index:${Math.round(player.y*100)}">`}].sort((a,b)=>a.y-b.y);
+  return `<div class="room anime${roomEditing?' room-editing':''}" id="room" role="group" aria-label="部屋（${HOMES[S.home].n}）" style="--room:url(${base}rooms/${ROOM_IMAGES[S.home]});aspect-ratio:${ROOM_ASPECT}">
+    ${list.map(e=>e.h).join('')}</div>`
+}
 // 家具の絵の透明度（押したところに絵があるか調べる用）。読み込めていない絵は四角の範囲で判定する
 const furnAlpha={};
 function alphaOf(img){const k=img.currentSrc||img.src;if(furnAlpha[k]!==undefined)return furnAlpha[k];
@@ -246,6 +255,7 @@ function putF(id){if(!(S.inv[id]>0))return;const slot=SLOT_OF[id]||id;
   for(const p of S.placed.filter(q=>(SLOT_OF[q.id]||q.id)===slot)){S.inv[p.id]=(S.inv[p.id]||0)+1}
   S.placed=S.placed.filter(q=>(SLOT_OF[q.id]||q.id)!==slot);S.inv[id]--;S.placed.push({id});save();SND.coin();renderHome()}
 function takeF(id){const at=S.placed.findIndex(p=>p.id===id);if(at<0)return;S.placed.splice(at,1);S.inv[id]=(S.inv[id]||0)+1;save();renderHome();toast(ITEMS[id].n+'を片付けた')}
+function resetRoomLayout(){if(S.roomPositions)delete S.roomPositions[S.home];save();renderHome();toast('この部屋の配置を元に戻しました')}
 // 買い物と自分の画面は、上のタブと横スワイプでページを切り替える（仕様書 9.4）
 let shopTab='food',meTab='self';
 // 買い物はどれも、押すと「購入しますか？」の確認を出し、買ったら「購入しました」と結果を見せる（仕様書 9.4）
@@ -722,14 +732,47 @@ function stopReelsLoop(){cancelAnimationFrame(reelRAF)}
 function route(){if(S.play)cashOutStale();if(P)return renderPlay();renderHome()}
 // 下のタブバー。打っている最中・バイト・ルーレットの途中は隠す（その画面で tabs(null)）
 function tabs(t){setTabbar(t,go=>{if(go==='home')renderHome();else if(go==='halls')renderHalls();else if(go==='shop')renderShop(shopTab);else renderMe(meTab);window.scrollTo(0,0)})}
+// 模様替え中だけ、部屋の中の指操作で家具を移動する。通常はタップで片付け。
+let roomDrag=null;
+$('#view').addEventListener('pointerdown',e=>{
+  const room=e.target.closest?.('#room');
+  if(!roomEditing||!room||e.button>0)return;
+  const id=furnAt(e.clientX,e.clientY),s=id&&roomSpotFor(id);
+  if(!s)return;
+  const r=room.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*100,my=(e.clientY-r.top)/r.height*100;
+  roomDrag={id,room,pointerId:e.pointerId,x:s.x,y:s.y,dx:s.x-mx,dy:s.y-my,w:s.w*(FURNITURE_IMAGES.includes(id)?1:PLACEHOLDER_SCALE),startX:e.clientX,startY:e.clientY,moved:false};
+  e.preventDefault();room.setPointerCapture(e.pointerId);
+});
+$('#view').addEventListener('pointermove',e=>{
+  const d=roomDrag;if(!d||e.pointerId!==d.pointerId)return;
+  e.preventDefault();
+  const r=d.room.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*100,my=(e.clientY-r.top)/r.height*100;
+  d.x=Math.max(d.w/2+1,Math.min(99-d.w/2,mx+d.dx));d.y=Math.max(74,Math.min(99,my+d.dy));
+  if(Math.hypot(e.clientX-d.startX,e.clientY-d.startY)>5)d.moved=true;
+  const el=[...d.room.querySelectorAll('.furn')].find(node=>node.dataset.id===d.id);
+  if(el){el.style.left=(d.x-d.w/2)+'%';el.style.bottom=(100-d.y)+'%';el.style.zIndex=String(Math.round(d.y*100))}
+});
+function finishRoomDrag(e){
+  const d=roomDrag;if(!d||e.pointerId!==d.pointerId)return;
+  roomDrag=null;
+  if(!d.moved)return;
+  if(!S.roomPositions||typeof S.roomPositions!=='object')S.roomPositions={};
+  if(!S.roomPositions[S.home])S.roomPositions[S.home]={};
+  S.roomPositions[S.home][d.id]={x:Math.round(d.x*10)/10,y:Math.round(d.y*10)/10};
+  save();renderHome();
+}
+$('#view').addEventListener('pointerup',finishRoomDrag);
+$('#view').addEventListener('pointercancel',finishRoomDrag);
 $('#view').addEventListener('click',e=>{
-  // 部屋の家具は絵の透けたところでは押せない。指の下で絵が描かれている一番手前の家具を探す（キーボードの操作はボタンのまま）
-  if(e.target.id==='room'){const id=furnAt(e.clientX,e.clientY);if(id)act('takeF',{dataset:{id}});return}
+  // 部屋内の家具は透過ピクセルを無視し、見えている一番手前の家具に反応する
+  if(e.target.closest?.('#room')){if(!roomEditing){const id=furnAt(e.clientX,e.clientY);if(id)act('takeF',{dataset:{id}})}return}
   const b=e.target.closest('[data-a]');if(!b||b.disabled)return;act(b.dataset.a,b)});
 // ボタン（data-a）と購入の確認画面から呼ぶ
 function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   if(a==='snd'){$('#snd').click();const q=b.querySelector('b');if(q)q.textContent=soundOn?'音 ON':'音 OFF';return}
   if(a==='home'){renderHome()}
+  else if(a==='roomEdit'){roomEditing=!roomEditing;renderHome()}
+  else if(a==='roomReset')resetRoomLayout();
   else if(a==='ask')askBuy(b.dataset.k);
   else if(a==='verTap'){const n=Date.now();devTaps=n-devTapAt<DEV_TAP_MS?devTaps+1:1;devTapAt=n;if(devTaps>=DEV_TAPS&&!$('#devPw')){devTaps=0;showDevLogin()}}
   else if(a==='devMoney'){S.money=DEV_MAX_MONEY;S.peak=Math.max(S.peak,DEV_MAX_MONEY);save();renderDev();toast('お金を最大にしました')}
