@@ -46,3 +46,65 @@ export const HIT_SAMPLE_W = 160;
 export const HIT_ALPHA = 40;
 /** 絵のない家具を足したとき、仮のドット絵を置き場所の幅のこの割合で描く */
 export const PLACEHOLDER_SCALE = 0.55;
+
+
+/**
+ * 部屋ごとの家具レイアウト。背景は同じ4:3でも、壁・床の境目や奥行きが異なるため
+ * 家ごとに接地点を調整する。値は [家具の中央 x%, 床の接地点 y%]。
+ * 家が大きくなるほど同じ家具は画面内で小さく見えるようにする。
+ */
+export const ROOM_ANCHORS: Array<Record<string, [number, number]>> = [
+  {
+    shelf: [11, 77], fridge: [24, 79], tv: [38, 79], bigtv: [56, 79],
+    tank: [78, 79], plant: [94, 79], game: [24, 89],
+    sofa: [49, 98], bed: [84, 99], mchair: [10, 99],
+  },
+  {
+    shelf: [12, 77], fridge: [25, 78], tv: [39, 79], bigtv: [56, 79],
+    tank: [79, 78], plant: [93, 77], game: [25, 89],
+    sofa: [49, 98], bed: [84, 99], mchair: [10, 99],
+  },
+  {
+    shelf: [12, 75], fridge: [25, 77], tv: [39, 78], bigtv: [57, 78],
+    tank: [79, 77], plant: [93, 77], game: [26, 88],
+    sofa: [49, 98], bed: [84, 99], mchair: [10, 99],
+  },
+  {
+    shelf: [12, 76], fridge: [25, 77], tv: [39, 78], bigtv: [58, 78],
+    tank: [80, 78], plant: [94, 77], game: [26, 89],
+    sofa: [49, 98], bed: [84, 99], mchair: [10, 99],
+  },
+  {
+    shelf: [12, 75], fridge: [25, 77], tv: [39, 78], bigtv: [57, 78],
+    tank: [80, 78], plant: [94, 77], game: [26, 89],
+    sofa: [49, 98], bed: [84, 99], mchair: [10, 99],
+  },
+];
+
+/** 部屋が広くなるにつれて家具を少し小さくし、床面の余白を残す。 */
+export const ROOM_SCALES = [1.03, 1, 0.94, 0.88, 0.82];
+export const PLAYER_SPOTS = [
+  { x: 67, y: 89, w: 8 },
+  { x: 68, y: 89, w: 8 },
+  { x: 69, y: 90, w: 7.5 },
+  { x: 70, y: 90, w: 7.1 },
+  { x: 70, y: 90, w: 6.8 },
+];
+
+/** 元画像の比率に合わせた、住居別の家具の表示サイズと足元の位置。 */
+export function roomSlot(home: number, id: string): { x: number; y: number; w: number } | null {
+  const key = SLOT_OF[id] || id;
+  const origin = SLOTS[key];
+  if (!origin) return null;
+  const tier = Math.max(0, Math.min(ROOM_ANCHORS.length - 1, Math.floor(home) || 0));
+  const anchor = ROOM_ANCHORS[tier][key] || [origin.x, origin.y];
+  return {
+    x: anchor[0],
+    y: anchor[1],
+    w: (FURNITURE_W[id] || origin.w) * ROOM_SCALES[tier],
+  };
+}
+
+export function roomPlayerSpot(home: number) {
+  return PLAYER_SPOTS[Math.max(0, Math.min(PLAYER_SPOTS.length - 1, Math.floor(home) || 0))];
+}
