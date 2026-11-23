@@ -11,6 +11,9 @@ import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
 import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT } from '../data/room';
+import { START, PLAY_DRAIN, PLAY_FUN, LOW, WEAK_SLIP, COLLAPSE, MOVE_FUN } from '../data/meters';
+import { UPG as UPG_NUM, EYE_SLOW, DROPS, KIBAN, JOB, FRIEND, HOT_CEIL, ACH_NUM } from '../data/growth';
+import { upgCost, speedMul as speedOf, maxSlip as slipOf, kibanPrice as kibanOf, bustRate as bustOf, kibanFine, jobPay, sleepMeters } from '../game/growth';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet, bindDrawer, closeDrawer, drawerOpen } from './widgets';
 import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT, STATS_GAP, REELS_GAP, CAB_LEVER, LEVER_HIT, LEVER_DIP, LEVER_MS, LEVER_ART, LEVER_PRESSED } from '../data/cabinet';
@@ -44,16 +47,17 @@ window.addEventListener('resize',layout);
 function evTime(e){const n=performance.now(),t=e&&e.timeStamp;return (t&&t<=n+5&&t>n-1000)?t:n}
 
 
+const yen=n=>(n<0?'−':'')+'¥'+Math.abs(Math.round(n)).toLocaleString('ja-JP');
 const ACH=[
-  {id:'first',n:'初当たり',d:'初めてボーナスを引く',r:'¥3,000',give:()=>{S.money+=3000}},
-  {id:'ceil',n:'天井到達',d:'天井まで回してボーナスを引く',r:'¥10,000',give:()=>{S.money+=10000}},
-  {id:'hyena',n:'ハイエナ',d:'400G以上ハマった台に座り、天井より前に当てる',r:'ホールで天井が近い台に印が付く'},
-  {id:'bita10',n:'ビタ職人',d:'BIG中のビタ押しを10連続で成功',r:'BIG中のビタ成功が+2枚'},
-  {id:'win50',n:'大勝ち',d:'1日で+5万円以上勝つ',r:'娯楽+20',give:()=>{S.fun=clamp(S.fun+20)}},
-  {id:'ticket1',n:'一番乗り',d:'イベント日の整理券で1番を引く',r:'¥5,000',give:()=>{S.money+=5000}},
-  {id:'six',n:'設定6をつかむ',d:'イベント日に設定6の台を打つ',r:'¥20,000',give:()=>{S.money+=20000}},
-  {id:'job',n:'検品のプロ',d:'バイトをノーミスで終える',r:'バイト代が1割増える'},
-  {id:'house',n:'ボロアパートから一戸建て',d:'一戸建てに住む',r:'寝た時の体調回復+5'},
+  {id:'first',n:'初当たり',d:'初めてボーナスを引く',r:yen(ACH_NUM.first),give:()=>{S.money+=ACH_NUM.first}},
+  {id:'ceil',n:'天井到達',d:'天井まで回してボーナスを引く',r:yen(ACH_NUM.ceil),give:()=>{S.money+=ACH_NUM.ceil}},
+  {id:'hyena',n:'ハイエナ',d:`${ACH_NUM.hyenaFrom}G以上ハマった台に座り、天井より前に当てる`,r:'ホールで天井が近い台に印が付く'},
+  {id:'bita10',n:'ビタ職人',d:`BIG中のビタ押しを${ACH_NUM.bitaRun}連続で成功`,r:`BIG中のビタ成功が+${ACH_NUM.bitaPlus}枚`},
+  {id:'win50',n:'大勝ち',d:`1日で+${yen(ACH_NUM.winDay)}以上勝つ`,r:`娯楽+${ACH_NUM.winFun}`,give:()=>{S.fun=clamp(S.fun+ACH_NUM.winFun)}},
+  {id:'ticket1',n:'一番乗り',d:'イベント日の整理券で1番を引く',r:yen(ACH_NUM.ticket1),give:()=>{S.money+=ACH_NUM.ticket1}},
+  {id:'six',n:'設定6をつかむ',d:'イベント日に設定6の台を打つ',r:yen(ACH_NUM.six),give:()=>{S.money+=ACH_NUM.six}},
+  {id:'job',n:'検品のプロ',d:'バイトをノーミスで終える',r:`バイト代が${Math.round((JOB.proBonus-1)*100)}%増える`},
+  {id:'house',n:'ボロアパートから一戸建て',d:'一戸建てに住む',r:`寝た時の体調回復+${ACH_NUM.houseSleep}`},
   {id:'tower',n:'成金',d:'タワマン最上階に住む',r:'称号のみ'},
   {id:'banned',n:'前科者',d:'改造基盤が店員に見つかる',r:'称号のみ'}
 ];
@@ -127,10 +131,9 @@ function drawStripTable(cv2){
 
 
 const $=s=>document.querySelector(s);
-const yen=n=>(n<0?'−':'')+'¥'+Math.abs(Math.round(n)).toLocaleString('ja-JP');
 const clamp=v=>Math.max(0,Math.min(100,Math.round(v)));
 const KEY='meoshi-narikin-v1';
-function fresh(){return {tot:{sum:0,n:0,win:0,lose:0,best:0},halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:30000,hun:70,fun:50,hp:80,home:0,inv:{},placed:[{id:'futon'}],phase:'morning',peak:30000,hist:[],play:null}}
+function fresh(){return {tot:{sum:0,n:0,win:0,lose:0,best:0},halls:{},ach:{},title:'',bitaRun:0,upg:{eye:0,data:0,body:0},drops:0,dropDay:0,kiban:0,ban:{},conv:0,day:1,money:START.money,hun:START.hun,fun:START.fun,hp:START.hp,home:0,inv:{},placed:[{id:'futon'}],phase:'morning',peak:START.money,hist:[],play:null}}
 let S=fresh(),remote=null,saving=false,dirty=false;
 try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.day)S=v}catch(e){}
 function norm(){const f=fresh();delete S.floor;if(!Array.isArray(S.placed))S.placed=f.placed;if(!S.inv||typeof S.inv!=='object')S.inv={};for(const k of ['halls','upg','drops','dropDay','kiban','ban','conv','ach','title','bitaRun','peak'])if(S[k]===undefined)S[k]=f[k];
@@ -154,7 +157,7 @@ $('#snd').onclick=()=>{soundOn=!soundOn;if(soundOn&&!ac){try{ac=new (window.Audi
 /* ---------- status ---------- */
 // ゲージの横の丸いアイコン（お腹＝ナイフとフォーク、娯楽＝ゲームのコントローラー、体調＝ハート）
 const MICON={hun:'<path d="M8 3v7a2 2 0 0 1-1.5 1.9V21h-2v-9.1A2 2 0 0 1 3 10V3h1.2v5h1V3h1.2v5h1V3zM16 3c2 0 3 2.5 3 6s-1 4-2 4.3V21h-2V3z"/>',fun:'<path d="M7 7h10a5 5 0 0 1 4.8 6.4l-1 3.3a2.6 2.6 0 0 1-4.4 1L14.8 16H9.2l-1.6 1.7a2.6 2.6 0 0 1-4.4-1l-1-3.3A5 5 0 0 1 7 7zm0 3v1.5H5.5v1.5H7v1.5h1.5V13H10v-1.5H8.5V10zm8.5.3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm2 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>',hp:'<path d="M12 20.5 4.2 12.9A4.8 4.8 0 0 1 12 6.6a4.8 4.8 0 0 1 7.8 6.3z"/>'};
-function meterHTML(k,n,col){const v=S[k];return `<div class="mt ${v<25?'low':''}"><i class="mi" style="--c:${col}"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">${MICON[k]}</svg></i><div class="mtb"><div class="r"><span>${n}</span><b>${v}%</b></div><div class="bar"><i style="width:${v}%;background:${col}"></i></div></div></div>`}
+function meterHTML(k,n,col){const v=S[k];return `<div class="mt ${v<LOW?'low':''}"><i class="mi" style="--c:${col}"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">${MICON[k]}</svg></i><div class="mtb"><div class="r"><span>${n}</span><b>${v}%</b></div><div class="bar"><i style="width:${v}%;background:${col}"></i></div></div></div>`}
 function status(){
   const html=`<div class="moneybox"><i class="coin" aria-hidden="true"></i><span class="lbl">所持金</span><span class="cash${yen(S.money).length>13?' xlong':yen(S.money).length>9?' long':''}">${yen(S.money)}</span></div>
   <div class="daybox"><b>${S.day}日目</b><span>${S.phase==='morning'?'朝':'夜'}</span></div>
@@ -199,7 +202,7 @@ function ownF(id){return placedCount(id)+(S.inv[id]||0)>0}
 function renderHome(){
   stopReelsLoop();status();
   const H=HOMES[S.home],inv=Object.entries(S.inv).filter(([,n])=>n>0);
-  const ev=dailyEffects(S.placed,S.home,has('house')?5:0);
+  const ev=dailyEffects(S.placed,S.home,has('house')?ACH_NUM.houseSleep:0);
   $('#view').innerHTML=`${updNote()}
     <p class="sub">${isEvent(S.day)?'<b style="color:var(--neon)">今日は7のつく日。</b>どの店も設定が入りやすいが、整理券の抽選がある':`次のイベント日（7のつく日）まで あと${(17-S.day%10)%10||10}日`}</p>
     ${roomHTML()}
@@ -274,8 +277,8 @@ function estatePage(){return HOMES.map((h,i)=>{const cost=h.buy||h.move,cur=i===
     if(cur||owned||i===0)return `<div class="cmd card dis"><b>${h.n}${cur?'（今の家）':''}</b><span>${desc}</span><span class="p">${pt}</span></div>`;
     return buyCard({a:'move',data:`data-i="${i}"`,name:h.n,desc,price:cost,ptext:pt,verb:h.buy?'購入':'引っ越し',doneTitle:h.buy?'購入しました':'引っ越しました',yesText:h.buy?'購入する':'引っ越す',after:'新しい家に移りました。家具もそのまま持っていきました。'})}).join('')+
   `<p class="sub">引っ越しても、置いた家具はそのまま新しい家に置かれます。家を買うと家賃がなくなり、高レートの店に入れるようになります。</p>`}
-function blackPage(){if(S.day<3)return '<p class="lead">裏市場は3日目から開きます。</p>';
-  return `<p class="lead">「いいのがあるよ」</p>${buyCard({a:'buyKiban',data:'',name:'改造基盤',desc:`台に仕込むと、その日はボーナスが1.4倍当たりやすい。1回使い切り。仕込む時に${bustRate()}%で店員に見つかる。見つかると罰金（所持金の3割、最低5万円）と、その店に5日間出入り禁止。見つかるたびに次から見つかりやすくなる`,price:kibanPrice(),ptext:`${yen(kibanPrice())}　所持 ${S.kiban}`})}
+function blackPage(){if(S.day<KIBAN.openDay)return `<p class="lead">裏市場は${KIBAN.openDay}日目から開きます。</p>`;
+  return `<p class="lead">「いいのがあるよ」</p>${buyCard({a:'buyKiban',data:'',name:'改造基盤',desc:`台に仕込むと、その日はボーナスが${KIBAN.boost}倍当たりやすい。1回使い切り。仕込む時に${bustRate()}%で店員に見つかる。見つかると罰金（所持金の${Math.round(KIBAN.fineRate*100)}%、最低${yen(KIBAN.fineMin)}）と、その店に${KIBAN.banDays}日間出入り禁止。見つかるたびに次から見つかりやすくなる`,price:kibanPrice(),ptext:`${yen(kibanPrice())}　所持 ${S.kiban}`})}
   <p class="sub">ゲームの中だけの話です。現実の不正は犯罪です。</p>`}
 function renderShop(tab){
   for(const k in buyInfo)delete buyInfo[k];
@@ -291,7 +294,7 @@ function renderEstate(){renderShop('estate')}
 function renderBlack(){renderShop('black')}
 function selfPage(){return `<p class="sub">一度身につけた力はずっと残ります。効果は小さく、値段はだんだん上がります。</p>
   ${Object.entries(UPG).map(([k,u])=>{const l=S.upg[k],done=l>=u.max;return buyCard({a:'upg',data:`data-id="${k}"`,name:`${u.n}　Lv${l}/${u.max}`,doneName:u.n,after:done?'':`Lv${l} → Lv${l+1}　${u.d(l)}`,desc:done?'最大まで鍛えた':u.d(l),price:done?0:u.cost(l),ptext:done?'—':yen(u.cost(l)),disabled:done})}).join('')}
-  ${buyCard({a:'drops',data:'',name:'目薬',desc:S.dropDay===S.day?'今日はもう差した':'今日1日、リールが3%ゆっくり見える',price:1500,disabled:S.dropDay===S.day})}`}
+  ${buyCard({a:'drops',data:'',name:'目薬',desc:S.dropDay===S.day?'今日はもう差した':`今日1日、リールが${Math.round(DROPS.slow*100)}%ゆっくり見える`,price:DROPS.price,disabled:S.dropDay===S.day})}`}
 function achPage(){return `<p class="sub">${Object.keys(S.ach).length}/${ACH.length} 達成。最後に達成した実績が称号として表示されます。</p>
   ${ACH.map(a=>`<div class="cmd ach ${has(a.id)?'got':'notyet'}"><b>${has(a.id)?'★ ':''}${a.n}</b><span>${a.d}</span><span class="p">ごほうび：${a.r}${has(a.id)?`（${S.ach[a.id]}日目に達成）`:''}</span></div>`).join('')}`}
 function histPage(){if(!S.hist.length)return '<p class="sub">まだ打っていません。パチ屋で打つと、ここに日ごとの収支が残ります。</p>';
@@ -310,13 +313,12 @@ function renderMe(tab){
 }
 function renderSelf(){renderMe('self')}
 function renderAch(){renderMe('ach')}
-function moveTo(i){const h=HOMES[i];if(!spend(h.buy||h.move))return;if(i>=3)grant('house');if(i===4)grant('tower');S.home=i;apply({fun:20});save();cutin(h.n+'へ');renderHome()}
+function moveTo(i){const h=HOMES[i];if(!spend(h.buy||h.move))return;if(i>=3)grant('house');if(i===4)grant('tower');S.home=i;apply({fun:MOVE_FUN});save();cutin(h.n+'へ');renderHome()}
 function sleep(){
-  const H=HOMES[S.home],ev=dailyEffects(S.placed,S.home,has('house')?5:0);
+  const H=HOMES[S.home],ev=dailyEffects(S.placed,S.home,has('house')?ACH_NUM.houseSleep:0);
   const lines=[];
   if(H.rent){S.money-=H.rent;lines.push(`家賃 ${yen(H.rent)}`)}
-  const hun=25-ev.keep;S.hun=clamp(S.hun-hun);S.fun=clamp(S.fun-8+ev.fun);
-  let rest=ev.sleep+ev.hp+10;if(S.fun<20)rest=Math.round(rest/2);if(S.hun<10)rest-=10;S.hp=clamp(S.hp+rest);
+  Object.assign(S,sleepMeters(S,ev));
   S.day++;S.phase='morning';
   if(S.money<0){lines.push('家賃が払えず、借金になった');}
   save();renderHome();toast(lines.join('、')||'よく眠れた');
@@ -324,13 +326,13 @@ function sleep(){
 
 /* ---------- growth and back market ---------- */
 const UPG={
-  eye:{n:'動体視力トレーニング',max:5,cost:l=>20000*(l+1)*(l+1),d:l=>`リールが${l+1}%ゆっくり見える（今${l}%）`},
-  data:{n:'データ分析',max:3,cost:l=>[30000,120000,400000][l],d:l=>['台のデータにREG回数が出る','前日の差枚が出る','高設定の気配が出る（6割の精度）'][l]||'最大'},
-  body:{n:'体力づくり',max:3,cost:l=>15000*(l+1)*(l+1),d:l=>`打っている時のお腹と体調の減りが${(l+1)*10}%少ない`}
+  eye:{...UPG_NUM.eye,cost:l=>upgCost('eye',l),d:l=>`リールが${Math.round((l+1)*EYE_SLOW*100)}%ゆっくり見える（今${Math.round(l*EYE_SLOW*100)}%）`},
+  data:{...UPG_NUM.data,cost:l=>upgCost('data',l),d:l=>['台のデータにREG回数が出る','前日の差枚が出る','高設定の気配が出る（6割の精度）'][l]||'最大'},
+  body:{...UPG_NUM.body,cost:l=>upgCost('body',l),d:l=>`打っている時のお腹と体調の減りが${Math.round((l+1)*PLAY_DRAIN.bodyCut*100)}%少ない`}
 };
-function kibanPrice(){return 50000*(1+S.home)}
+function kibanPrice(){return kibanOf(S.home)}
 function roulette(i){
-  const rate=bustRate(),n=10,bust=Math.round(rate/10),segs=Array.from({length:n},(_,k)=>k<bust);segs.sort(()=>Math.random()-.5);
+  const rate=bustRate(),n=KIBAN.segs,bust=Math.round(rate/100*n),segs=Array.from({length:n},(_,k)=>k<bust);segs.sort(()=>Math.random()-.5);
   const stop=Math.floor(Math.random()*n),caught=segs[stop];tabs(null);
   $('#view').innerHTML=`<div class="ch">仕込み中…店員の目は？</div><canvas id="rl" width="240" height="240" style="width:240px;max-width:100%;margin:0 auto;display:block"></canvas><p class="lead" id="rlt" style="text-align:center">　</p>`;
   const c=$('#rl').getContext('2d'),t0=performance.now(),dur=2600,turns=4+stop/n;
@@ -340,8 +342,8 @@ function roulette(i){
   const end=-Math.PI/2-(stop+.5)*2*Math.PI/n;
   const step=now=>{const k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3),a=end-(1-e)*turns*2*Math.PI;draw(a);if(k<1)return requestAnimationFrame(step);
     S.kiban--;
-    if(caught){grant('banned');hallState(hallIdx).friend=Math.max(0,hallState(hallIdx).friend-40);const fine=Math.max(50000,Math.round(S.money*.3));S.money-=fine;S.ban[hallIdx]=S.day+5;S.conv++;S.phase='evening';S.fun=clamp(S.fun-20);save();SND.miss();
-      $('#rlt').textContent='店員に見つかった';$('#view').insertAdjacentHTML('beforeend',`<div class="res"><span>罰金</span><b class="neg">${yen(-fine)}</b><span>出入り禁止</span><b>${HALLS[hallIdx].n}　${S.day+5}日目まで</b></div><button class="btn" type="button" data-a="home">とぼとぼ帰る</button>`);status()}
+    if(caught){grant('banned');hallState(hallIdx).friend=Math.max(0,hallState(hallIdx).friend-KIBAN.friendCut);const fine=kibanFine(S.money);S.money-=fine;S.ban[hallIdx]=S.day+KIBAN.banDays;S.conv++;S.phase='evening';S.fun=clamp(S.fun-KIBAN.funCut);save();SND.miss();
+      $('#rlt').textContent='店員に見つかった';$('#view').insertAdjacentHTML('beforeend',`<div class="res"><span>罰金</span><b class="neg">${yen(-fine)}</b><span>出入り禁止</span><b>${HALLS[hallIdx].n}　${S.day+KIBAN.banDays}日目まで</b></div><button class="btn" type="button" data-a="home">とぼとぼ帰る</button>`);status()}
     else{save();SND.fan();$('#rlt').textContent='誰にも見られていない';setTimeout(()=>sitDown2(i,true),900)}};
   requestAnimationFrame(step);
 }
@@ -351,31 +353,31 @@ function startJob(){
   status();tabs(null);
   $('#view').innerHTML=`<div class="ch">日雇いバイト　検品ライン</div><p class="sub">流れてくる箱が金の枠に入った瞬間に「検品」を押す。赤い×の箱（不良品）は押さずに見送る。</p>
   <div class="room"><canvas id="job" width="320" height="110" style="width:100%;max-width:100%;image-rendering:pixelated"></canvas></div>
-  <div class="counter"><div>正確<b id="jg">0</b></div><div>ミス<b id="jm">0</b></div><div>残り<b id="jl">30</b></div><div>給料<b id="jp">¥0</b></div></div>
-  <button class="btn" type="button" id="jobBtn">検品</button><p class="sub">基本給 ¥1,500 ＋ 1箱 ¥160。ミス1回 −¥200。</p>`;
+  <div class="counter"><div>正確<b id="jg">0</b></div><div>ミス<b id="jm">0</b></div><div>残り<b id="jl">${JOB.boxes}</b></div><div>給料<b id="jp">¥0</b></div></div>
+  <button class="btn" type="button" id="jobBtn">検品</button><p class="sub">基本給 ${yen(JOB.base)} ＋ 1箱 ${yen(JOB.perBox)}。ミス1回 −${yen(JOB.perMiss)}。</p>`;
   const cv2=$('#job'),c=cv2.getContext('2d'),Z=[214,246],boxes=[];let made=0,good=0,miss=0,done=0,t0=performance.now(),last=t0,next=t0+600;
-  const TOTAL=30,pay=()=>Math.max(1000,1500+good*160-miss*200);
+  const TOTAL=JOB.boxes,pay=()=>jobPay(good,miss);
   const upd=()=>{$('#jg').textContent=good;$('#jm').textContent=miss;$('#jl').textContent=TOTAL-done;$('#jp').textContent=yen(pay())};
   const press=()=>{const b=boxes.find(b=>!b.done&&b.x+12>=Z[0]&&b.x+12<=Z[1]);
     if(b){b.done=true;b.hit=true;if(b.bad){miss++;SND.miss()}else{good++;SND.coin()}}else{miss++;SND.miss()}upd()};
   $('#jobBtn').addEventListener('pointerdown',e=>{e.preventDefault();press()});
   const loop=now=>{if(!document.body.contains(cv2))return;const dt=(now-last)/1000;last=now;
     const sp=70+made*3.2;
-    if(made<TOTAL&&now>=next){boxes.push({x:-24,bad:Math.random()<.22,done:false});made++;next=now+(650+Math.random()*700)*(1-made/90)}
+    if(made<TOTAL&&now>=next){boxes.push({x:-24,bad:Math.random()<JOB.bad,done:false});made++;next=now+(650+Math.random()*700)*(1-made/90)}
     for(const b of boxes){b.x+=sp*dt;if(!b.out&&b.x>Z[1]){b.out=true;done++;if(!b.done&&!b.bad){miss++}upd()}}
     c.fillStyle='#2a2445';c.fillRect(0,0,320,110);c.fillStyle='#45425a';c.fillRect(0,60,320,26);c.fillStyle='#5a5878';for(let x=(now/8)%16-16;x<320;x+=16)c.fillRect(x,62,8,2);
     c.strokeStyle='#ffcf4a';c.lineWidth=2;c.strokeRect(Z[0]-2,28,Z[1]-Z[0]+28,60);
     for(const b of boxes){if(b.x>330)continue;c.fillStyle=b.bad?'#8a5a34':'#b98a5a';c.fillRect(b.x,36,24,24);c.fillStyle='#d9b88a';c.fillRect(b.x,36,24,5);
       if(b.bad){c.strokeStyle='#ff3b6b';c.lineWidth=3;c.beginPath();c.moveTo(b.x+5,44);c.lineTo(b.x+19,56);c.moveTo(b.x+19,44);c.lineTo(b.x+5,56);c.stroke()}
       if(b.hit){c.fillStyle=b.bad?'#ff3b6b':'#7dffa0';c.beginPath();c.arc(b.x+12,48,6,0,7);c.fill()}}
-    if(done>=TOTAL){const p=Math.round(pay()*(has('job')?1.1:1));if(miss===0)grant('job');S.money+=p;apply({hun:-25,hp:-12,fun:-10});S.phase='evening';save();status();
+    if(done>=TOTAL){const p=jobPay(good,miss,has('job'));if(miss===0)grant('job');S.money+=p;apply(JOB.effect);S.phase='evening';save();status();
       $('#view').insertAdjacentHTML('beforeend',`<div class="res"><span>正確に検品</span><b>${good}箱</b><span>ミス</span><b>${miss}回</b><span>給料</span><b class="big pos">${yen(p)}</b></div><button class="btn" type="button" data-a="home">家に帰る</button>`);$('#jobBtn').disabled=true;return}
     requestAnimationFrame(loop)};
   requestAnimationFrame(loop);upd();
 }
 
 /* ---------- hall floor ---------- */
-function hallState(h){if(!S.halls[h])S.halls[h]={friend:10,visit:0,gift:0,cur:null};return S.halls[h]}
+function hallState(h){if(!S.halls[h])S.halls[h]={friend:FRIEND.start,visit:0,gift:0,cur:null};return S.halls[h]}
 function FL(){return hallState(hallIdx).cur}
 // Overnight each machine is either reset (back to 0G) or left as it was at closing, at the hall's own rate.
 function makeFloor(){
@@ -390,11 +392,11 @@ function makeFloor(){
   if(!ev){const busy=ms.map((_,i)=>i).sort(()=>Math.random()-.5).slice(0,2+Math.floor(Math.random()*2));busy.forEach(i=>ms[i].taken=true)}
   save();
 }
-function friendInfo(){const f=hallState(hallIdx).friend,r=HALLS[hallIdx].reset;
-  if(f>=90)return '店員さんがこっそり教えてくれる。今日は台ごとにリセットか据え置きかが分かる';
-  if(f>=60)return `店員さん「うちは朝のリセットが だいたい${Math.round(r*100)}%くらいかな」`;
-  if(f>=30)return `店員さん「うちはリセット${r>=.5?'多め':'少なめ'}ですよ」`;
-  return 'まだ打ち解けていない。仲良くなると、朝のリセットの情報がもらえる（30で傾向、60で割合、90で台ごと）';}
+function friendInfo(){const f=hallState(hallIdx).friend,r=HALLS[hallIdx].reset,[t1,t2,t3]=FRIEND.tiers;
+  if(f>=t3)return '店員さんがこっそり教えてくれる。今日は台ごとにリセットか据え置きかが分かる';
+  if(f>=t2)return `店員さん「うちは朝のリセットが だいたい${Math.round(r*100)}%くらいかな」`;
+  if(f>=t1)return `店員さん「うちはリセット${r>=.5?'多め':'少なめ'}ですよ」`;
+  return `まだ打ち解けていない。仲良くなると、朝のリセットの情報がもらえる（${t1}で傾向、${t2}で割合、${t3}で台ごと）`;}
 // Players ahead of you take the machines that look best (good data, deep hamari).
 function lookScore(x){const m=MACH[x.k],p=x.big/Math.max(1,x.g);return p*2000+x.diff/1500+(x.since/CEIL[x.k])*1.2+Math.random()*.8}
 function drawTicket(){
@@ -415,17 +417,17 @@ function renderFloor(){
   status();tabs('halls');const h=HALLS[hallIdx],F=FL();
   if(F.ev&&!F.ticket){
     $('#view').innerHTML=`<div class="ch">${h.n}　イベント日の朝</div><p class="lead">開店前から長い列。整理券の抽選で入場順が決まる。</p><p class="sub">番号が若いほど先に入れます。後ろの番号だと、良さそうな台から他の客に取られていきます。</p><button class="btn" type="button" data-a="ticket">整理券を引く</button><button class="btn alt" type="button" data-a="home">並ばずに帰る</button>`;return}
-  const Hs=hallState(hallIdx);if(Hs.visit!==S.day){Hs.visit=S.day;Hs.friend=Math.min(100,Hs.friend+2);save()}
+  const Hs=hallState(hallIdx);if(Hs.visit!==S.day){Hs.visit=S.day;Hs.friend=Math.min(100,Hs.friend+FRIEND.visit);save()}
   const f=Hs.friend;
   // 機種を上のタブで選び、台の一覧（表）から1台選んで「この台で遊ぶ」（仕様書 9.4）
   if(!MACH[floorK])floorK='fuku';
   const m=MACH[floorK],rows=F.ms.map((x,i)=>[x,i]).filter(([x])=>x.k===floorK);
   if(floorSel>=0&&(F.ms[floorSel]?.k!==floorK||F.ms[floorSel].taken))floorSel=-1;
   const showReg=S.upg.data>=1&&m.reg,showDiff=S.upg.data>=2;
-  const row=([x,i])=>{const hot=x.since>=CEIL[x.k]*.6,near=has('hyena')&&hot&&!x.taken;
+  const row=([x,i])=>{const hot=x.since>=CEIL[x.k]*HOT_CEIL,near=has('hyena')&&hot&&!x.taken;
     return `<tr class="${x.taken?'taken':''}${near?' near':''}${i===floorSel?' sel':''}"><td><button type="button" data-a="pick" data-i="${i}" ${x.taken?'disabled':''} aria-pressed="${i===floorSel}">${i===floorSel?'<i class="crown" aria-hidden="true">♛</i>':''}${x.no}${S.upg.data>=3&&x.star?'<i class="star" title="高設定の気配">★</i>':''}</button></td>
       <td class="${hot?'hot':''}">${near?'<i class="aim" title="天井が近い">狙</i>':''}${x.since}G</td><td>${x.big}</td><td>${x.big?'1/'+Math.round(x.g/x.big):'—'}</td>${showReg?`<td>${x.reg}</td>`:''}${showDiff?`<td class="${x.diff>=0?'pos':'neg'}">${x.diff>0?'+':''}${x.diff}</td>`:''}
-      <td>${x.taken?'<span class="neg">使用中</span>':'<span class="pos">空き</span>'}${f>=90?`<br><span class="tag">${x.reset?'リセット':'据え置き'}</span>`:''}</td></tr>`};
+      <td>${x.taken?'<span class="neg">使用中</span>':'<span class="pos">空き</span>'}${f>=FRIEND.tiers[2]?`<br><span class="tag">${x.reset?'リセット':'据え置き'}</span>`:''}</td></tr>`};
   $('#view').innerHTML=`<div class="ch">${h.n}</div>
   <div class="seg" role="tablist">${['fuku','sanj','hachi'].map(k=>`<button type="button" role="tab" data-a="floorK" data-id="${k}" aria-selected="${k===floorK}">${MACH[k].n}</button>`).join('')}</div>
   <div class="banner b-${floorK}" style="--bn:url(${import.meta.env.BASE_URL}banners/${floorK}.webp)"><div><b>${m.n}</b><span>${m.desc}</span><span>天井 ${CEIL[floorK]}G　空き ${rows.filter(([x])=>!x.taken).length}/${rows.length}${F.ticket?`　整理券 ${F.ticket}番`:''}</span></div></div>
@@ -434,7 +436,7 @@ function renderFloor(){
   <p class="sub">ハマりは今の回転数（最後の当たりから何回転したか）。台番を押して選びます。金色に光るのは天井が近い台。</p>
   <button class="cta small" type="button" data-a="sit" data-i="${floorSel}" ${floorSel<0?'disabled':''}><span class="cta-t"><b>この台で遊ぶ</b><span>${floorSel<0?'台番を押して選んでください':F.ms[floorSel].no+'番台'}</span></span><span class="cta-go" aria-hidden="true">»</span></button>
   <div class="friend"><div class="r"><span>店員さんとの仲</span><b>${f}</b></div><div class="bar"><i style="width:${f}%;background:var(--cyan)"></i></div><p>${friendInfo()}</p>
-  <button class="btn alt" type="button" data-a="gift" ${Hs.gift===S.day||S.money<HALLS[hallIdx].gift?'disabled':''}>${Hs.gift===S.day?'今日は差し入れ済み':`差し入れをする ${yen(HALLS[hallIdx].gift)}（仲+8）`}</button></div>
+  <button class="btn alt" type="button" data-a="gift" ${Hs.gift===S.day||S.money<HALLS[hallIdx].gift?'disabled':''}>${Hs.gift===S.day?'今日は差し入れ済み':`差し入れをする ${yen(HALLS[hallIdx].gift)}（仲+${FRIEND.gift}）`}</button></div>
   <button class="btn alt" type="button" data-a="home">やっぱり帰る</button>`;
 }
 
@@ -442,13 +444,13 @@ function renderFloor(){
 let P=null;
 const OPEN_MIN=10*60,CLOSE_MIN=22*60+40;
 function clock(g){const m=OPEN_MIN+g;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
-function mach(){if(!P.boost)return P.m;const m=P.m;return {...m,big:s=>m.big(s)*1.4,reg:m.reg?s=>m.reg(s)*1.4:null}}
+function mach(){if(!P.boost)return P.m;const m=P.m;return {...m,big:s=>m.big(s)*KIBAN.boost,reg:m.reg?s=>m.reg(s)*KIBAN.boost:null}}
 function sitDown(i){
   if(S.kiban>0&&!S._skipKiban){$('#view').innerHTML=kibanAsk(i);tabs(null);return}
   S._skipKiban=false;sitDown2(i,false)}
-function kibanAsk(i){return `<div class="ch">裏市場の改造基盤</div><p class="lead">この台に改造基盤を仕込みますか？</p><p class="sub">成功すればこの日はボーナスが1.4倍当たりやすくなります。仕込む瞬間に店員に見つかると、罰金と出入り禁止です。見つかる確率は今 ${bustRate()}%。</p>
+function kibanAsk(i){return `<div class="ch">裏市場の改造基盤</div><p class="lead">この台に改造基盤を仕込みますか？</p><p class="sub">成功すればこの日はボーナスが${KIBAN.boost}倍当たりやすくなります。仕込む瞬間に店員に見つかると、罰金と出入り禁止です。見つかる確率は今 ${bustRate()}%。</p>
   <div class="grid2"><button class="cmd main" type="button" data-a="kiban" data-i="${i}"><b>仕込む</b><span>ルーレットで判定</span></button><button class="cmd" type="button" data-a="nokiban" data-i="${i}"><b>普通に打つ</b><span>基盤は持ったまま</span></button></div>`}
-function bustRate(){return Math.min(60,20+S.conv*10)}
+function bustRate(){return bustOf(S.conv)}
 function sitDown2(i,boost){
   if(S.phase!=='morning'){toast('今日はもう出かけた。寝ると次の日');return renderHalls()}
   const x=FL().ms[i];
@@ -457,8 +459,8 @@ function sitDown2(i,boost){
   setupReels();renderPlay();
 }
 function setupReels(){reels=STRIPS.map(st=>makeReel(st,Math.floor(Math.random()*N)));layout();startReelsLoop()}
-function speedMul(){return (S.hun<25?1.12:1)*(1-.01*S.upg.eye)*(S.dropDay===S.day?.97:1)}
-function maxSlip(){return S.hp<25?2:4}
+function speedMul(){return speedOf(S.hun,S.upg.eye,S.dropDay===S.day)}
+function maxSlip(){return slipOf(S.hp)}
 function borrow(){const c=50*P.rate;if(S.money<c)return false;S.money-=c;P.inv+=c;P.medals+=50;SND.coin();return true}
 function cue(){
   const m=P.m,f=P.flag;
@@ -493,7 +495,7 @@ function renderPlay(){
     <div class="lcd lcd-${P.m.kind}" style="${pos(CAB_BOXES.lcd)};--bn:url(${import.meta.env.BASE_URL}banners/${P.m.kind}.webp)">${lcdMsgHTML()}<div class="lamp ${cl}${c?'':' empty'}" id="lamp"><span>${c||'&nbsp;'}</span></div></div>
     <div class="glass" id="glass" data-fit data-gap="${REELS_GAP/CAB_BOXES.reels.w}" style="${pos(CAB_BOXES.reels)}"><canvas id="reels" aria-label="リール（5ライン：上段・中段・下段・斜め2本）" role="img"></canvas></div>
     ${meterHTML2()}
-    ${(S.hun<25||S.hp<25)?`<p class="cab-warn" style="left:${CAB_BOXES.reels.x}%;top:${CAB_BOXES.reels.y+CAB_BOXES.reels.h+.3}%;width:${CAB_BOXES.reels.w}%">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>`:''}
+    ${(S.hun<LOW||S.hp<LOW)?`<p class="cab-warn" style="left:${CAB_BOXES.reels.x}%;top:${CAB_BOXES.reels.y+CAB_BOXES.reels.h+.3}%;width:${CAB_BOXES.reels.w}%">${S.hun<LOW?'お腹が空いて、リールが速く見える。':''}${S.hp<LOW?`体調が悪く、手が震えて狙った図柄を${WEAK_SLIP}コマまでしか引き込めない。`:''}</p>`:''}
     ${P.mode==='door'||P.mode==='cont'?`<div class="cab-over" style="${pos(CAB_BOXES.over)}">${P.mode==='door'?doorHTML():contHTML()}</div>`:`${leverHTML()}<div class="stops" id="stops">${CAB_STOPS.map(stop).join('')}</div>`}
   </div></div>
   <button class="drawer-tab" id="drawerTab" type="button" aria-controls="drawer" aria-expanded="false"><span class="arw" aria-hidden="true">◀</span><b>メニュー</b></button>
@@ -505,7 +507,7 @@ function renderPlay(){
     <div class="grid3">${AUTO_GAMES.map(n=>`<button class="cmd" type="button" data-a="auto" data-i="${n}" ${busyBonus||P.spinning?'disabled':''}><b>${n}G 回す</b><span>適当打ち。ボーナスで止まる</span></button>`).join('')}
     <button class="cmd" type="button" data-a="quit" ${busyBonus||P.spinning?'disabled':''}><b>やめる</b><span>換金して帰る</span></button></div>
     <button class="cmd" type="button" data-a="snd"><b>${soundOn?'音 ON':'音 OFF'}</b><span>効果音の切り替え</span></button>
-    <p class="sub">${S.hun<25?'お腹が空いて、リールが速く見える。':''}${S.hp<25?'体調が悪く、手が震えて狙った図柄を2コマまでしか引き込めない。':''}</p>
+    <p class="sub">${S.hun<LOW?'お腹が空いて、リールが速く見える。':''}${S.hp<LOW?`体調が悪く、手が震えて狙った図柄を${WEAK_SLIP}コマまでしか引き込めない。`:''}</p>
     <details class="strip"><summary>配当表と遊び方</summary>${payHTML()}</details>
     <details class="strip"><summary>リール配列表（上から下へ流れる）</summary><p class="sub">左リールのチェリーはBARの真下、スイカは左でBARの3コマ上、中でBARの2コマ上、右はBARの2コマ上ともう1か所にあります。赤7は左に2つ、中に1つ、右は「7・リプレイ・BAR」の1か所だけ。左リールの「7・リプレイ・7」の並びがBIG中のビタ押しポイントです。BARが上段に来るタイミング（枠の上から入ってきた瞬間）で押せば、どちらも取りこぼしません。</p><canvas id="stripT" aria-label="リール配列表"></canvas></details>
   </aside>`;
@@ -633,9 +635,9 @@ function settle(){
       SND.fan();P.post=null;
     }else logMsg('そろわず。もう一度','miss');
   }else if(P.mode==='big'){
-    const ok=res[0].bita,okPay=BITA_OK+(has('bita10')?2:0);gain(ok?okPay:BITA_NG,ok?'ビタ成功':'ビタ失敗');S.bitaRun=ok?S.bitaRun+1:0;if(S.bitaRun>=10)grant('bita10');P.bitaN=(P.bitaN||0)+(ok?1:0);P.left--;if(P.left<=0){P.mode='normal';logMsg('BIG終了','end');S.fun=clamp(S.fun+6)}
+    const ok=res[0].bita,okPay=BITA_OK+(has('bita10')?ACH_NUM.bitaPlus:0);gain(ok?okPay:BITA_NG,ok?'ビタ成功':'ビタ失敗');S.bitaRun=ok?S.bitaRun+1:0;if(S.bitaRun>=ACH_NUM.bitaRun)grant('bita10');P.bitaN=(P.bitaN||0)+(ok?1:0);P.left--;if(P.left<=0){P.mode='normal';logMsg('BIG終了','end');S.fun=clamp(S.fun+PLAY_FUN.big)}
   }else if(P.mode==='reg'){
-    gain(REG_PAY,'REG');P.left--;if(P.left<=0){P.mode='normal';logMsg('REG終了','end');S.fun=clamp(S.fun+3)}
+    gain(REG_PAY,'REG');P.left--;if(P.left<=0){P.mode='normal';logMsg('REG終了','end');S.fun=clamp(S.fun+PLAY_FUN.reg)}
   }else if(P.mode==='at'){
     if(f==='BL'){const ok=P.order[0]===P.navi;gain(ok?PAY.BLok:PAY.BLng,ok?'ナビどおり ベル':'押し順ミス')}else if(f==='RP')gain(PAY.RP,'リプレイ',true);
     P.left--;if(P.left<=0){P.mode='cont';P.contWin=Math.floor(Math.random()*3)}
@@ -648,23 +650,23 @@ function settle(){
   if(S.hp<=0)return collapse();
   renderPlay();
 }
-function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');say('天井','ボーナス確定','hot')}else if(P.startSince>=400)grant('hyena');/* 天井より前に当てた */P.since=0;P.ceilHit=false;P.startSince=0}
+function bonusStarted(){P.bonusGot=0;grant('first');if(P.ceilHit){grant('ceil');say('天井','ボーナス確定','hot')}else if(P.startSince>=ACH_NUM.hyenaFrom)grant('hyena');/* 天井より前に当てた */P.since=0;P.ceilHit=false;P.startSince=0}
 function payHTML(){
   const k=P.m.kind,rows=[['ベル（1ライン）',k==='sanj'?'押し順正解9枚／不正解1枚':'8枚'],['リプレイ','もう1回無料'],['チェリー（左リールのどこでも）',(k==='fuku'?'4枚':'2枚')+`。${Math.round(P.m.dup*100)}%でボーナスも同時に当たっている`],...(k==='fuku'?[['スイカ（1ライン）','12枚']]:[]),
     ['7・7・7',k==='fuku'?`BIG ${BIG_G}G。毎ゲーム左リールを滑らせずに、上から7・リプレイ・7の形で止める（中段がリプレイ）。成功${BITA_OK}枚、失敗${BITA_NG}枚`:k==='sanj'?`侍ラッシュ ${AT_G}G（押し順ナビ）`:`扉チャンス。前兆${ZEN_G}Gの間、中リールに赤7を止めると扉-1、中段に滑りなしで止めると扉-2。最後に8択`],...(P.m.reg?[['7・7・BAR',`REG ${REG_G}G。毎ゲーム${REG_PAY}枚`]]:[])];
   return `<div class="res" style="font-size:13px;grid-template-columns:auto 1fr">${rows.map(([a,b])=>`<span>${a}</span><b style="font-family:var(--body);font-weight:500;text-align:left">${b}</b>`).join('')}</div>
   <p class="sub" style="margin-top:6px">天井：最後の当たりから${CEIL[P.m.kind]}Gで必ずボーナス。1回3枚。左リールから止める「順押し」なら、ベルとリプレイは必ずそろいます。左以外から止める「変則押し」では取りこぼすことがあります。ボーナスはレバーを引いた時か、リールが止まった後にランプで知らせます。左と中は赤7、右リールに7が止まればBIG、BARが滑ってくればREGです（右の7の2コマ上にBAR）。そろえるラインは5本のどれでもかまいません。BARが一列に並ぶのはリーチ目です。通常時は左リールにBARを狙っておくと、チェリーもスイカも取りこぼしません。</p>`;
 }
-function tick(){const sk=Math.random()<.1*S.upg.body;if(P.g%12===0&&!sk)S.hun=clamp(S.hun-1);if(P.g%20===0&&!sk)S.hp=clamp(S.hp-1);if(P.g%15===0)S.fun=clamp(S.fun+1);if(S.hun<=0&&P.g%5===0)S.hp=clamp(S.hp-1)}
+function tick(){const D=PLAY_DRAIN,sk=Math.random()<D.bodyCut*S.upg.body;if(P.g%D.hunEvery===0&&!sk)S.hun=clamp(S.hun-1);if(P.g%D.hpEvery===0&&!sk)S.hp=clamp(S.hp-1);if(P.g%D.funEvery===0)S.fun=clamp(S.fun+1);if(S.hun<=0&&P.g%D.starveEvery===0)S.hp=clamp(S.hp-1)}
 function doorHTML(){return `<p class="lead" style="text-align:center;font-size:18px">8つの扉から1つ選べ（残り${P.doors.length}）</p><div class="picks p8">${[0,1,2,3,4,5,6,7].map(d=>`<button class="door ${P.doors.includes(d)?'':'gone'}" type="button" data-a="door" data-d="${d}" ${P.doors.includes(d)?'':'disabled'}>${d+1}</button>`).join('')}</div><p class="sub">当たりなら ${DOOR_WIN}枚、外れでも ${DOOR_LOSE}枚</p>`}
 function contHTML(){return `<p class="lead" style="text-align:center;font-size:18px">継続をかけた3択。正解なら +${AT_ADD}G</p><div class="picks p3">${['左','中','右'].map((n,i)=>`<button class="door" type="button" data-a="cont" data-d="${i}">${n}</button>`).join('')}</div>`}
 function pickDoor(d){
   const win=d===P.winDoor;gain(win?DOOR_WIN:DOOR_LOSE,win?'扉 大当たり':'扉 外れ');
-  if(win){SND.fan();S.fun=clamp(S.fun+12)}else S.fun=clamp(S.fun+4);
+  if(win){SND.fan();S.fun=clamp(S.fun+PLAY_FUN.doorWin)}else S.fun=clamp(S.fun+PLAY_FUN.doorLose);
   P.mode='normal';P.doors=null;logMsg('扉チャンス終了','end');save();renderPlay();
 }
 function pickCont(d){
-  if(d===P.contWin){P.mode='at';P.left=AT_ADD;SND.fan();say('ラッシュ継続',`3択正解 +${AT_ADD}G`,'hot')}else{P.mode='normal';logMsg('ラッシュ終了','end');S.fun=clamp(S.fun+6)}
+  if(d===P.contWin){P.mode='at';P.left=AT_ADD;SND.fan();say('ラッシュ継続',`3択正解 +${AT_ADD}G`,'hot')}else{P.mode='normal';logMsg('ラッシュ終了','end');S.fun=clamp(S.fun+PLAY_FUN.rush)}
   save();renderPlay();
 }
 function randomStops(){for(let t=0;t<60;t++){reels.forEach(r=>{r.pos=Math.floor(Math.random()*N);r.final=r.pos;r.state='stop'});const fs=reels.map(r=>r.pos);if(!lineWins(fs,reels).length&&!bonusLines(fs,reels,'R7').length&&!bonusLines(fs,reels,'BAR').length&&![0,1,2].some(row=>['CH','WM'].includes(symAt(reels[0],fs[0],row))))break}if(P)P.wins=null}
@@ -698,15 +700,15 @@ function quit(closed){
   const out=P.medals*P.rate,net=out-P.inv;S.money+=out;S.peak=Math.max(S.peak,S.money);
   recordHist(P.hall,P.m.n,net);
   if(FL()&&FL().ms[P.unit]){FL().ms[P.unit].since=P.since;FL().ms[P.unit].taken=true;FL().ms[P.unit].played=true}
-  if(net>=50000)grant('win50');if(P.ev&&P.s===6)grant('six');
+  if(net>=ACH_NUM.winDay)grant('win50');if(P.ev&&P.s===6)grant('six');
   S.phase='evening';S.play=null;const p=P;P=null;stopReelsLoop();save();status();
   $('#view').innerHTML=`<p class="lead">${closed?'閉店の音楽が流れた。':'今日はここまで。'}</p>
   <div class="res"><span>台</span><b>${p.m.n}（設定${p.s}だった）</b><span>回転数</span><b>${p.g}G（台は今 ${p.since}Gハマり）</b><span>BIG・ラッシュ／REG</span><b>${p.big}回／${p.reg||0}回</b><span>投資</span><b>${yen(p.inv)}</b><span>回収</span><b>${yen(out)}</b><span>収支</span><b class="big ${net>=0?'pos':'neg'}">${net>=0?'+':''}${yen(net)}</b></div>
   <button class="btn" type="button" data-a="home">家に帰る</button>`;
 }
 function collapse(){
-  const p=P;quit(false);S.money-=20000;S.hp=30;S.phase='evening';save();status();
-  $('#view').insertAdjacentHTML('afterbegin','<p class="lead" style="color:var(--bad)">ホールで倒れて病院に運ばれた。治療費 ¥20,000</p>');
+  const p=P;quit(false);S.money-=COLLAPSE.fee;S.hp=COLLAPSE.hp;S.phase='evening';save();status();
+  $('#view').insertAdjacentHTML('afterbegin','<p class="lead" style="color:var(--bad)">ホールで倒れて病院に運ばれた。治療費 '+yen(COLLAPSE.fee)+'</p>');
 }
 function cashOutStale(){const p=S.play;if(!p)return;S.money+=p.medals*p.rate;S.peak=Math.max(S.peak,S.money);recordHist(p.hall,p.m,p.medals*p.rate-p.inv);S.play=null;S.phase='evening';save()}
 // 1回打つごとの収支を残す。日ごとの一覧は直近 HIST_MAX 回、通算（合計・勝ち・負け・最高）は全部
@@ -748,10 +750,10 @@ function act(a,b){const i=+b.dataset.i,id=b.dataset.id;
   else if(a==='self')renderSelf();
   else if(a==='me')renderMe('set');
   else if(a==='ach')renderAch();
-  else if(a==='gift'){const H=hallState(hallIdx);if(H.gift!==S.day&&spend(HALLS[hallIdx].gift)){H.gift=S.day;H.friend=Math.min(100,H.friend+8);save();toast('店員さん「いつもありがとうございます」');renderFloor()}}
+  else if(a==='gift'){const H=hallState(hallIdx);if(H.gift!==S.day&&spend(HALLS[hallIdx].gift)){H.gift=S.day;H.friend=Math.min(100,H.friend+FRIEND.gift);save();toast('店員さん「いつもありがとうございます」');renderFloor()}}
   else if(a==='ticket'){const ahead=drawTicket();toast(`${FL().ticket}番。先に${ahead}人が台を選んだ`);renderFloor()}
   else if(a==='upg'){const u=UPG[id],l=S.upg[id];if(l<u.max&&spend(u.cost(l))){S.upg[id]++;save();SND.fan();renderMe()}}
-  else if(a==='drops'){if(S.dropDay!==S.day&&spend(1500)){S.dropDay=S.day;save();toast('目がすっきりした');renderMe()}}
+  else if(a==='drops'){if(S.dropDay!==S.day&&spend(DROPS.price)){S.dropDay=S.day;save();toast('目がすっきりした');renderMe()}}
   else if(a==='black')renderBlack();
   else if(a==='buyKiban'){if(spend(kibanPrice())){S.kiban++;save();renderShop()}}
   else if(a==='kiban')roulette(i);
