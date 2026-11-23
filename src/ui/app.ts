@@ -10,7 +10,7 @@ import { dailyEffects, arrangePlaced } from '../game/life';
 import { CURRENT_BUILD, buildLabel, fetchLatestBuild, reloadToLatest } from '../version';
 import { loadSymbols, drawSymImage } from './symbols';
 import { DEV_PASSWORD, DEV_TAPS, DEV_TAP_MS, DEV_MAX_MONEY } from '../data/dev';
-import { ROOM_IMAGES, SLOT_OF, SLOTS, PLAYER_SPOT, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, FURNITURE_W, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT, roomSlot, roomPlayerSpot } from '../data/room';
+import { ROOM_IMAGES, SLOT_OF, PLAYER_IMAGE, PLAYER_ASPECT, FURNITURE_IMAGES, FURNITURE_ASPECT, HIT_SAMPLE_W, HIT_ALPHA, PLACEHOLDER_SCALE, ROOM_ASPECT, roomSlot, roomPlayerSpot } from '../data/room';
 import { AUTO_GAMES, HIST_MAX, LCD_MS, LCD_BUSY_MS, LCD_SMALL_MS, LCD_GOLD } from '../data/ui';
 import { setTabbar, pagesHTML, bindPages, openSheet, bindDrawer, closeDrawer, drawerOpen } from './widgets';
 import { CAB_ASPECT, CAB_ART, CAB_BOXES, CAB_STOPS, STOP_HIT, STATS_GAP, REELS_GAP, CAB_LEVER, LEVER_HIT, LEVER_DIP, LEVER_MS, LEVER_ART, LEVER_PRESSED } from '../data/cabinet';
@@ -207,7 +207,7 @@ function renderHome(){
     ${roomHTML()}
     ${roomEditing?`<p class="sub">家具を指でドラッグすると好きな位置に移動できます。配置は家ごとに保存されます。</p><div class="inv">${S.placed.map(p=>`<button type="button" class="chip" data-a="takeF" data-id="${p.id}">${ITEMS[p.id].n}を片付ける</button>`).join('')}</div>`:''}
     ${inv.length?`<div class="ch">持ち物（タップで部屋に置く）</div><div class="inv">${inv.map(([id])=>{const sw=S.placed.find(p=>p.id!==id&&(SLOT_OF[p.id]||p.id)===(SLOT_OF[id]||id));return `<button class="chip" type="button" data-a="putF" data-id="${id}"${sw?` aria-label="${ITEMS[id].n}（${ITEMS[sw.id].n}と入れ替え）"`:''}>${FURNITURE_IMAGES.includes(id)?`<img src="${import.meta.env.BASE_URL}furniture/${id}.webp" alt="">`:`<canvas width="16" height="16" data-icon="${id}"></canvas>`}${ITEMS[id].n}</button>`}).join('')}</div>`:''}
-    <p class="sub">${S.placed.length?'置いた家具をタップすると片付けます。':'家具は「買い物」で買えます。'}同じ場所を使う寝具とテレビは1つずつ置けます。</p>
+    <p class="sub">${roomEditing?'模様替え中は家具を指で動かせます。':S.placed.length?'置いた家具をタップすると片付けます。':'家具は「買い物」で買えます。'}寝具は新しいものに入れ替え可能です。テレビは小型・大型を両方置けます。</p>
     <p class="sub">寝ると 体調+${ev.sleep}${ev.fun?` 娯楽+${ev.fun}`:''}${ev.hp?` 体調+${ev.hp}`:''}${ev.keep?` お腹の減り−${ev.keep}`:''}${H.rent?`、家賃 ${yen(H.rent)}`:''}</p>
     <button class="cta" type="button" data-a="halls" ${S.phase!=='morning'?'disabled':''}><span class="cta-ic" aria-hidden="true"><b>7</b><b>7</b><b>7</b></span><span class="cta-t"><b>パチ屋へ行く</b><span>${S.phase==='morning'?'閉店まで打てる。1日1回':'今日はもう出かけた'}</span></span><span class="cta-go" aria-hidden="true">»</span></button>
     <div class="grid2">
